@@ -204,6 +204,12 @@ def _render_sidebar_history() -> None:
         st.rerun()
 
 
+def _render_sidebar_docs_link() -> None:
+    """Link to the /dev docs page (info.md viewer)."""
+    st.sidebar.divider()
+    st.sidebar.page_link(DEV_DOCS_PAGE, label="Developer docs", icon="📘")
+
+
 def _agent_settings() -> Dict[str, Any]:
     """Model and agent options (from config / .env, not shown in sidebar)."""
     if "map_style" not in st.session_state:
@@ -706,14 +712,14 @@ def _render_route_map(
         st.info("Map will appear when stops have location data.")
 
 
-def main() -> None:
-    st.set_page_config(page_title="Trip Planner AI Agent", layout="wide")
+def trip_planner_page() -> None:
     inject_ui_animations()
     _init_session()
     if st.session_state.get("show_celebration"):
         st.balloons()
         st.session_state.show_celebration = False
     _render_sidebar_history()
+    _render_sidebar_docs_link()
     settings = _agent_settings()
     st.session_state._sidebar_settings = settings
 
@@ -906,6 +912,25 @@ def main() -> None:
     render_agent_execution_trace(st.session_state.get("agent_trace"))
 
     _persist_if_dirty()
+
+
+TRIP_PLANNER_PAGE = st.Page(
+    trip_planner_page,
+    title="Trip Planner",
+    default=True,
+)
+DEV_DOCS_PAGE = st.Page(
+    "pages/dev.py",
+    title="Developer docs",
+    icon="📘",
+    url_path="dev",
+)
+
+
+def main() -> None:
+    st.set_page_config(page_title="Trip Planner AI Agent", layout="wide")
+    pg = st.navigation([TRIP_PLANNER_PAGE, DEV_DOCS_PAGE])
+    pg.run()
 
 
 if __name__ == "__main__":
