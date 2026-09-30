@@ -1,0 +1,12 @@
+{
+  "itinerary": null,
+  "tool_state": { "pois": {}, "chunks": [] },
+  "agent_trace": [],
+  "form_destination": "",
+  "form_origin": "",
+  "form_days": 3,
+  "form_pace": "moderate",
+  "form_interests": "museums, food, outdoors",
+  "form_constraints": "",
+  "trip_history": []
+}

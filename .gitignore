@@ -1,0 +1,24 @@
+# Virtual environments
+trip-planner-env/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.Python
+
+# Secrets — never commit API keys
+.env
+.streamlit/secrets.toml
+
+# Local runtime data (user trips, feedback — do not publish)
+data/app_state.json
+data/feedback.jsonl
+data/trip_history.json
+
+# Test / tool caches
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
