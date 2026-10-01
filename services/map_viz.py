@@ -22,16 +22,41 @@ _MAP_PITCH = 52
 _MAP_BEARING = -18
 _ARC_HEIGHT = 7
 _ROUTE_TOOLTIP_HTML = (
-    "<div style='max-width:220px;font-family:Plus Jakarta Sans,system-ui,sans-serif;"
-    "font-size:13px;line-height:1.45;color:#334155'>"
-    "<b>{stop_num}: {name}</b><br/>{category}<br/>"
-    "<i>{day_block}</i><br/>{route_hint}"
-    "<br/><img src='{image_url}' alt='' "
-    "style='width:100%;max-width:200px;border-radius:8px;margin-top:8px;"
-    "box-shadow:0 4px 12px rgba(0,0,0,.15);' "
-    "onerror=\"this.style.display='none'\"/>"
+    "<div class='trip-map-tooltip' style='padding:12px 14px;background:#fff;"
+    "color:#334155;font-family:Plus Jakarta Sans,system-ui,sans-serif;"
+    "font-size:13px;line-height:1.45;'>"
+    "<div style='font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px;'>"
+    "{stop_num}: {name}</div>"
+    "<div style='font-size:12px;font-weight:500;color:#475569;'>{category}</div>"
+    "<div style='font-size:12px;font-style:italic;color:#64748b;margin-top:4px;'>"
+    "{day_block}</div>"
+    "<div style='font-size:12px;color:#334155;margin-top:6px;'>{route_hint}</div>"
+    "<img src='{image_url}' alt='' style='display:block;width:100%;max-width:220px;"
+    "border-radius:8px;margin-top:8px;' onerror=\"this.style.display='none'\"/>"
     "</div>"
 )
+
+# deck.gl defaults to a dark tooltip shell; style overrides the popup container.
+_ROUTE_TOOLTIP_STYLE: Dict[str, str] = {
+    "backgroundColor": "#ffffff",
+    "color": "#0f172a",
+    "border": "1px solid #cbd5e1",
+    "borderRadius": "12px",
+    "boxShadow": "0 12px 32px rgba(15, 23, 42, 0.2)",
+    "padding": "0",
+    "fontSize": "13px",
+    "fontFamily": '"Plus Jakarta Sans", system-ui, sans-serif',
+    "maxWidth": "280px",
+    "lineHeight": "1.45",
+    "zIndex": "9999",
+    "pointerEvents": "none",
+}
+
+
+def route_map_tooltip() -> Dict[str, Any]:
+    """Tooltip config for PyDeck / deck.gl (html + light container style)."""
+    return {"html": _ROUTE_TOOLTIP_HTML, "style": dict(_ROUTE_TOOLTIP_STYLE)}
+
 
 MAP_THEMES: Dict[str, Dict[str, Any]] = {
     "light": {
@@ -506,15 +531,17 @@ def _build_spec_json(
 ) -> str:
     theme = MAP_THEMES.get(map_style, MAP_THEMES["light"])
     layers = _build_layers(points, map_style, endpoints)
+    tooltip = route_map_tooltip()
     deck = pdk.Deck(
         layers=layers,
         initial_view_state=view,
         map_style=None,
-        tooltip={"html": _ROUTE_TOOLTIP_HTML},
+        tooltip=tooltip,
     )
     spec = json.loads(deck.to_json())
     spec = _sanitize_deck_spec(spec)
     spec["parameters"] = {"clearColor": theme["canvas"]}
+    spec["tooltip"] = tooltip
     return json.dumps(spec)
 
 
@@ -537,7 +564,7 @@ def build_deck(
     spec_json = _build_spec_json(points, view, style_key, endpoints)
 
     deck = pdk.Deck(layers=[], initial_view_state=view, map_style=None)
-    deck._tooltip = {"html": _ROUTE_TOOLTIP_HTML}
+    deck._tooltip = route_map_tooltip()
     deck.to_json = lambda: spec_json  # type: ignore[method-assign, assignment]
     return deck
 

@@ -716,6 +716,69 @@ def inject_ui_animations() -> None:
             overflow: hidden;
             border: 1px solid #e2e8f0;
         }
+
+        /* Map hover card — always light (readable on light & dark UI theme) */
+        #deckgl-tooltip,
+        .deckgl-tooltip,
+        div#deckgl-tooltip {
+            background: #ffffff !important;
+            color: #1e293b !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18) !important;
+            padding: 0 !important;
+            max-width: 260px !important;
+            font-family: var(--tp-font) !important;
+            opacity: 1 !important;
+        }
+        #deckgl-tooltip *,
+        .deckgl-tooltip * {
+            color: inherit;
+        }
+        [data-testid="stDeckGlJsonChart"] #deckgl-tooltip,
+        [data-testid="stPydeckChart"] #deckgl-tooltip {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            filter: none !important;
+            color-scheme: only light !important;
+        }
+        .trip-map-tooltip {
+            padding: 12px 14px;
+            background: #ffffff;
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .trip-map-tooltip__title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a !important;
+            margin-bottom: 4px;
+        }
+        .trip-map-tooltip__meta {
+            font-size: 12px;
+            font-weight: 500;
+            color: #475569 !important;
+        }
+        .trip-map-tooltip__day {
+            font-size: 12px;
+            font-style: italic;
+            color: #64748b !important;
+            margin-top: 4px;
+        }
+        .trip-map-tooltip__hint {
+            font-size: 12px;
+            color: #334155 !important;
+            margin-top: 6px;
+        }
+        .trip-map-tooltip__img {
+            display: block;
+            width: 100%;
+            max-width: 220px;
+            border-radius: 8px;
+            margin-top: 8px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.1);
+        }
         </style>
         """,
         unsafe_allow_html=True,
