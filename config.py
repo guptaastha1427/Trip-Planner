@@ -48,6 +48,8 @@ _load_env_file()
 DATA_DIR = PROJECT_ROOT / "data"
 APP_STATE_PATH = DATA_DIR / "app_state.json"
 FEEDBACK_PATH = DATA_DIR / "feedback.jsonl"
+DEMO_BOOKINGS_PATH = DATA_DIR / "demo_bookings.json"
+CUSTOMER_PORTAL_STATE_PATH = DATA_DIR / "customer_portal_state.json"
 
 # OpenStreetMap endpoints (free, no API key)
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -62,6 +64,17 @@ MODEL_FALLBACKS = (
     "gemini-3.1-flash-lite-preview",
     "gemini-3-flash-preview",
 )
+
+# Gemini embed_content models (see https://ai.google.dev/gemini-api/docs/embeddings)
+# Override with GEMINI_EMBEDDING_MODEL in .env if needed.
+EMBEDDING_MODEL_FALLBACKS = (
+    "gemini-embedding-001",
+    "models/gemini-embedding-001",
+    "text-embedding-004",
+    "models/text-embedding-004",
+)
+# Bump when embedding defaults change so Streamlit @st.cache_resource rebuilds indices.
+EMBEDDING_CACHE_VERSION = 4
 
 # Agent loop limits
 DEFAULT_MAX_STEPS = 6
@@ -96,6 +109,14 @@ def get_gemini_api_key() -> Optional[str]:
     """Google Gemini / AI Studio key from .env (GEMINI_API_KEY)."""
     key = _strip_env_value(os.environ.get("GEMINI_API_KEY", ""))
     return key or None
+
+
+def get_gemini_embedding_model_candidates() -> tuple[str, ...]:
+    """Ordered embedding model ids to try for FAISS indexing."""
+    override = _strip_env_value(os.environ.get("GEMINI_EMBEDDING_MODEL", ""))
+    if override:
+        return (override, *EMBEDDING_MODEL_FALLBACKS)
+    return EMBEDDING_MODEL_FALLBACKS
 
 
 get_openai_api_key = get_gemini_api_key

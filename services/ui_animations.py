@@ -4,6 +4,8 @@ Trip Planner global styles — background, typography, cards (Streamlit-safe).
 
 import streamlit as st
 
+from services.ui_travel_theme import inject_travel_light_theme
+
 _BG_URL = "app/static/hero-travel-bg.jpg"
 
 
@@ -15,7 +17,10 @@ def inject_page_background() -> None:
             <div class="trip-planner-page-bg__veil"></div>
         </div>
         <style>
-        .stApp,
+        .stApp {{
+            background: linear-gradient(160deg, #eef2ff 0%, #f5f3ff 45%, #ede9fe 100%) !important;
+            min-height: 100vh;
+        }}
         [data-testid="stAppViewContainer"],
         [data-testid="stMain"],
         section.main,
@@ -33,41 +38,68 @@ def inject_page_background() -> None:
             position: absolute;
             inset: -20px;
             background: url("{_BG_URL}") center/cover no-repeat;
-            filter: blur(12px) saturate(1.05);
+            filter: blur(22px) saturate(1.1) brightness(1.05);
+            opacity: 0.22;
         }}
         .trip-planner-page-bg__veil {{
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.72);
+            background:
+                radial-gradient(ellipse 75% 55% at 12% 8%, rgba(167, 139, 250, 0.28), transparent 58%),
+                radial-gradient(ellipse 65% 50% at 88% 92%, rgba(129, 140, 248, 0.22), transparent 52%),
+                linear-gradient(160deg, #eef2ff 0%, #f8fafc 50%, #f5f3ff 100%);
         }}
         [data-testid="stAppViewContainer"] {{ position: relative; z-index: 1; }}
         [data-testid="stHeader"] {{
-            background: rgba(255,255,255,0.65) !important;
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.72) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
         }}
         section[data-testid="stSidebar"] {{
-            background: rgba(248,250,252,0.9) !important;
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.88) !important;
+            backdrop-filter: blur(14px);
+            border-right: 1px solid rgba(199, 210, 254, 0.55);
         }}
-        section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"],
-        section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
+        section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
+            max-height: 100vh !important;
             overflow-y: auto !important;
-        }}
-        section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
-            max-height: min(420px, 55vh);
-            overflow-x: hidden;
+            overflow-x: hidden !important;
             -webkit-overflow-scrolling: touch;
-            padding-right: 0.15rem;
+            padding-bottom: 0.25rem !important;
         }}
-        section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] .stButton button {{
+        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+            padding-bottom: 5.5rem !important;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"],
+        section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"] [data-testid="stVerticalBlock"] {{
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"] .stButton button {{
             font-family: "Plus Jakarta Sans", system-ui, sans-serif !important;
             font-size: 0.8125rem !important;
             font-weight: 500 !important;
-            color: #334155 !important;
+            color: #475569 !important;
             text-align: left !important;
             white-space: normal !important;
             line-height: 1.35 !important;
             min-height: 2.5rem;
+        }}
+        section[data-testid="stSidebar"] nav a,
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a,
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"] {{
+            white-space: normal !important;
+            line-height: 1.45 !important;
+            font-size: 1rem !important;
+            font-weight: 500 !important;
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {{
+            padding-bottom: 0.5rem !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] ul {{
+            margin-bottom: 0.65rem !important;
         }}
         </style>
         """,
@@ -84,17 +116,17 @@ def inject_ui_animations() -> None:
 
         :root {
             --tp-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-            --tp-ink-950: #0c1222;
-            --tp-ink-900: #0f172a;
-            --tp-ink-700: #334155;
-            --tp-ink-600: #475569;
+            --tp-ink-950: #1e1b4b;
+            --tp-ink-900: #312e81;
+            --tp-ink-700: #475569;
+            --tp-ink-600: #64748b;
             --tp-ink-500: #64748b;
             --tp-ink-400: #94a3b8;
-            --tp-brand-700: #0f766e;
-            --tp-brand-600: #0d9488;
-            --tp-brand-500: #14b8a6;
-            --tp-accent-600: #2563eb;
-            --tp-accent-500: #3b82f6;
+            --tp-brand-700: #4a478a;
+            --tp-brand-600: #5b57a6;
+            --tp-brand-500: #7c6cf0;
+            --tp-accent-600: #6d28d9;
+            --tp-accent-500: #8b5cf6;
             --tp-warm-600: #c2410c;
             --tp-map-600: #059669;
             --tp-text-xs: 0.75rem;
@@ -116,13 +148,22 @@ def inject_ui_animations() -> None:
             -moz-osx-font-smoothing: grayscale;
         }
 
+        [data-testid="stMainBlockContainer"].block-container,
         section.main .block-container {
-            max-width: 920px;
-            padding-top: 1.25rem;
-            padding-bottom: 2rem;
+            --tp-main-gutter: 1.25rem;
+            max-width: 1100px;
+            padding-top: var(--tp-main-gutter) !important;
+            padding-left: var(--tp-main-gutter) !important;
+            padding-right: var(--tp-main-gutter) !important;
+            padding-bottom: 1.5rem !important;
+            margin-top: 0 !important;
             color: var(--tp-ink-700);
             font-size: var(--tp-text-base);
             line-height: var(--tp-leading);
+            transition: opacity 0.3s ease-in-out;
+        }
+        section.main [data-testid="stVerticalBlock"]:first-of-type {
+            gap: 0.5rem;
         }
 
         /* Page title & tagline */
@@ -133,6 +174,7 @@ def inject_ui_animations() -> None:
             color: var(--tp-ink-950) !important;
             letter-spacing: -0.03em;
             line-height: 1.15 !important;
+            margin-top: 0 !important;
             margin-bottom: 0.2rem !important;
         }
         section.main [data-testid="stCaptionContainer"],
@@ -197,8 +239,8 @@ def inject_ui_animations() -> None:
             text-align: center;
             padding: 0.75rem 0.5rem;
             border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border: 1px solid rgba(199, 210, 254, 0.65);
         }
         .trip-stats__cell strong {
             display: block;
@@ -217,16 +259,16 @@ def inject_ui_animations() -> None:
 
         /* Bordered Streamlit containers */
         [data-testid="stVerticalBlockBorderWrapper"] {
-            background: rgba(255,255,255,0.98) !important;
-            border-radius: 14px !important;
-            border-color: #e2e8f0 !important;
+            background: rgba(255, 255, 255, 0.98) !important;
+            border-radius: 22px !important;
+            border-color: rgba(199, 210, 254, 0.65) !important;
             padding: 0.35rem 0.5rem;
-            box-shadow: 0 4px 20px rgba(15,23,42,0.04);
+            box-shadow: 0 14px 40px rgba(74, 71, 138, 0.1);
         }
         [data-testid="stVerticalBlockBorderWrapper"]
             [data-testid="stVerticalBlockBorderWrapper"] {
-            background: #f8fafc !important;
-            border-color: #e8edf3 !important;
+            background: #fafbff !important;
+            border-color: #e8eeff !important;
             box-shadow: none;
             margin-top: 0.35rem;
         }
@@ -259,11 +301,11 @@ def inject_ui_animations() -> None:
             scroll-snap-align: start;
             display: flex;
             flex-direction: column;
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid rgba(199, 210, 254, 0.65);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .hint-card:hover {
@@ -357,8 +399,8 @@ def inject_ui_animations() -> None:
             background: linear-gradient(145deg, #dbe4f0 0%, #f8fafc 55%, #e2e8f0 100%);
         }
         .dest-guide-card {
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border: 1px solid rgba(199, 210, 254, 0.65);
             border-radius: 12px;
             padding: 0.75rem 0.9rem;
             margin: 0.35rem 0 0.85rem;
@@ -414,8 +456,8 @@ def inject_ui_animations() -> None:
             color: #64748b;
         }
         .weather-card {
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border: 1px solid rgba(199, 210, 254, 0.65);
             border-radius: 12px;
             padding: 0.65rem 0.85rem;
             margin: 0.25rem 0 0.85rem;
@@ -450,8 +492,8 @@ def inject_ui_animations() -> None:
         .weather-chip__temp { display: block; font-weight: 600; color: #0f172a; }
 
         .travel-tips-card {
-            background: rgba(255, 255, 255, 0.94);
-            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border: 1px solid rgba(199, 210, 254, 0.65);
             border-radius: 12px;
             padding: 0.55rem 0.85rem;
             margin: 0.45rem 0 0.85rem;
@@ -528,22 +570,22 @@ def inject_ui_animations() -> None:
             line-height: 1.35 !important;
             font-size: 0.82rem !important;
             font-weight: 600 !important;
-            color: #0f172a !important;
-            background: #fff !important;
+            color: #1e293b !important;
+            background: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
-            border-radius: 10px !important;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
             white-space: pre-line !important;
             word-break: break-word !important;
         }
         section.main [class*="st-key-swap_"] button[kind="secondary"]:hover {
-            border-color: #3b82f6 !important;
-            background: #f8fafc !important;
+            border-color: rgba(34, 211, 238, 0.45) !important;
+            background: rgba(36, 48, 62, 0.85) !important;
         }
         section.main [class*="st-key-swap_"] button[kind="secondary"] p {
             font-size: 0.72rem !important;
             font-weight: 500 !important;
-            color: #64748b !important;
+            color: #94a3b8 !important;
             margin-top: 0.25rem !important;
             line-height: 1.3 !important;
         }
@@ -553,12 +595,19 @@ def inject_ui_animations() -> None:
             font-family: var(--tp-font) !important;
         }
         .stButton button[kind="primary"] {
-            border-radius: 10px;
-            font-weight: 600 !important;
+            border-radius: 999px;
+            font-weight: 700 !important;
             font-size: var(--tp-text-base) !important;
             letter-spacing: 0.01em;
-            background: linear-gradient(135deg, var(--tp-brand-600), var(--tp-accent-500)) !important;
+            background: linear-gradient(135deg, #4a478a, #6d28d9) !important;
+            color: #ffffff !important;
             border: none !important;
+            box-shadow: 0 10px 28px rgba(74, 71, 138, 0.32);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .stButton button[kind="primary"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 32px rgba(34, 211, 238, 0.5);
         }
         .stButton button[kind="secondary"] {
             border-radius: 10px;
@@ -567,7 +616,7 @@ def inject_ui_animations() -> None:
             color: var(--tp-ink-700) !important;
         }
 
-        /* Plan form inputs — white fields; beats theme secondaryBackgroundColor (#EEF2F6) */
+        /* Form inputs — dark glass */
         section.main input[data-testid="stTextInputField"],
         section.main .block-container input[data-testid="stTextInputField"],
         section.main textarea,
@@ -593,9 +642,9 @@ def inject_ui_animations() -> None:
         section.main [role="combobox"],
         section.main .block-container [role="combobox"] {
             background-color: #ffffff !important;
-            color: #0f172a !important;
+            color: #1e293b !important;
             border: 1px solid #e2e8f0 !important;
-            border-radius: 10px !important;
+            border-radius: 12px !important;
             font-family: var(--tp-font) !important;
             font-size: var(--tp-text-base) !important;
             font-weight: 500 !important;
@@ -613,29 +662,29 @@ def inject_ui_animations() -> None:
         section.main [role="combobox"]:focus {
             background-color: #ffffff !important;
             color: #0f172a !important;
-            border-color: #93c5fd !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            border-color: rgba(74, 71, 138, 0.45) !important;
+            box-shadow: 0 0 0 3px rgba(124, 108, 240, 0.18) !important;
             outline: none !important;
         }
         section.main [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div,
         section.main .block-container [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div,
         section.main [data-baseweb="select"]:focus-within > div,
         section.main .block-container [data-baseweb="select"]:focus-within > div {
-            background-color: #ffffff !important;
-            border-color: #93c5fd !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            background-color: rgba(15, 23, 42, 0.92) !important;
+            border-color: rgba(34, 211, 238, 0.55) !important;
+            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.22) !important;
         }
         section.main [data-testid="stNumberInput"] [data-testid="stNumberInputStepUp"],
         section.main [data-testid="stNumberInput"] [data-testid="stNumberInputStepDown"],
         section.main .block-container [data-testid="stNumberInput"] [data-testid="stNumberInputStepUp"],
         section.main .block-container [data-testid="stNumberInput"] [data-testid="stNumberInputStepDown"] {
-            background-color: #ffffff !important;
-            border-color: #e2e8f0 !important;
-            color: #334155 !important;
+            background-color: #f8fafc !important;
+            border-color: rgba(148, 163, 184, 0.22) !important;
+            color: #e2e8f0 !important;
         }
         section.main [data-testid="stSelectbox"] svg,
         section.main .block-container [data-testid="stSelectbox"] svg {
-            fill: #334155 !important;
+            fill: #cbd5e1 !important;
         }
         section.main [data-testid="stTextInput"] label,
         section.main [data-testid="stNumberInput"] label,
@@ -692,10 +741,14 @@ def inject_ui_animations() -> None:
             color: var(--tp-ink-800, var(--tp-ink-700)) !important;
         }
 
-        /* Sidebar */
+        /* Sidebar — keep nav at full size; only captions use smaller text */
         section[data-testid="stSidebar"] {
-            font-size: var(--tp-text-sm);
+            font-size: var(--tp-text-base);
             color: var(--tp-ink-600);
+        }
+        section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+        section[data-testid="stSidebar"] .stCaption {
+            font-size: var(--tp-text-sm) !important;
         }
         section[data-testid="stSidebar"] h1,
         section[data-testid="stSidebar"] h2,
@@ -704,6 +757,11 @@ def inject_ui_animations() -> None:
             font-size: var(--tp-text-md) !important;
             font-weight: 700 !important;
             color: var(--tp-ink-900) !important;
+        }
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a,
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"] {
+            font-size: 1rem !important;
+            font-weight: 500 !important;
         }
 
         hr { display: none; }
@@ -783,3 +841,4 @@ def inject_ui_animations() -> None:
         """,
         unsafe_allow_html=True,
     )
+    inject_travel_light_theme()

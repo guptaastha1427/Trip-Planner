@@ -9,8 +9,10 @@ How: Session state mirrors data/app_state.json; heavy work in button handlers,
 
 import copy
 import html
+import inspect
 import json
-from typing import Any, Dict, List, Optional, Set
+from contextlib import contextmanager
+from typing import Any, Dict, Iterator, List, Optional, Set
 
 import streamlit as st
 
@@ -56,6 +58,21 @@ from services.ui_components import (
 from services.trace_view import render_agent_execution_trace
 from services.travel_hints import attach_travel_hints
 from services.nearby_pois import nearby_alternatives
+from services.demo_dashboard import (
+    DEMO_MODE_ADMIN,
+    get_demo_dashboard_mode,
+    is_admin_dashboard_mode,
+    render_demo_dashboard_switch,
+)
+from services.customer_portal_store import get_portal_state
+from services.policy_bot_ui import (
+    mount_trip_planner_policy_bot_styles,
+    render_sidebar_trip_policy_bot,
+    render_trip_planner_policy_bot_fab,
+)
+from services.portal_ui import render_sidebar_user_dock
+from services.rag_chat_auth import init_rag_auth_session
+from services.role_dashboard import render_admin_home_dashboard
 from services.validation import (
     dedupe_itinerary_pois,
     enrich_itinerary_from_pois,
@@ -183,31 +200,41 @@ def _apply_history_entry(entry: dict) -> None:
 
 
 def _render_sidebar_history() -> None:
-    """Past trips — click to load into the main view."""
-    st.sidebar.header("Trip history")
+    """Past trips — click to load on Trip Planner (render inside sidebar expander)."""
     trips = get_trip_history_cached()
     if not trips:
-        st.sidebar.caption("No saved trips yet. Generate an itinerary to build your history.")
+        st.caption("No saved trips yet. Create an itinerary on **Trip Planner**.")
         return
 
-    st.sidebar.caption("Scroll for older trips")
-    with st.sidebar.container(height=420, border=False):
+    st.caption("Tap a trip to open it on Trip Planner")
+    with st.container(height=240, border=False, key="trip_history_scroll"):
         for entry in reversed(trips):
             label = history_button_label(entry)
             if st.button(label, key=f"hist_{entry['id']}", width="stretch"):
                 _apply_history_entry(entry)
+                st.switch_page(TRIP_PLANNER_PAGE)
                 st.rerun()
 
-    if st.sidebar.button("Clear trip history", type="secondary", width="stretch"):
+    if st.button("Clear trip history", type="secondary", width="stretch"):
         save_trip_history([], persist_disk=False)
         _flush_persist()
         st.rerun()
 
 
-def _render_sidebar_docs_link() -> None:
-    """Link to the /dev docs page (info.md viewer)."""
+def render_global_sidebar() -> None:
+    """Shared sidebar below app navigation — history, tools, account."""
     st.sidebar.divider()
-    st.sidebar.page_link(DEV_DOCS_PAGE, label="Developer docs", icon="📘")
+    if is_admin_dashboard_mode():
+        st.sidebar.caption("**Admin mode** — use the menu above for console pages.")
+    else:
+        with st.sidebar.expander("Trip history", expanded=True):
+            _render_sidebar_history()
+        demo_uid = (
+            st.session_state.get("demo_user_id")
+            or get_portal_state().get("current_user_id", "user_alex")
+        )
+        render_sidebar_trip_policy_bot(demo_uid)
+    render_sidebar_user_dock()
 
 
 def _agent_settings() -> Dict[str, Any]:
@@ -537,6 +564,42 @@ def _apply_stop_swap(
     _mark_dirty()
 
 
+def _streamlit_accepts(param: str, func: Any) -> bool:
+    try:
+        return param in inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+@contextmanager
+def _nearby_alternatives_row(row_key: str) -> Iterator[None]:
+    """Horizontal button row — omit kwargs this Streamlit build does not support."""
+    kwargs: Dict[str, Any] = {}
+    if _streamlit_accepts("horizontal", st.container):
+        kwargs["horizontal"] = True
+    if _streamlit_accepts("gap", st.container):
+        kwargs["gap"] = "small"
+    if _streamlit_accepts("width", st.container):
+        kwargs["width"] = "stretch"
+    if _streamlit_accepts("key", st.container):
+        kwargs["key"] = row_key
+    with st.container(**kwargs):
+        yield
+
+
+def _nearby_swap_button(label: str, key: str, help_text: str) -> bool:
+    kwargs: Dict[str, Any] = {
+        "key": key,
+        "type": "secondary",
+        "help": help_text,
+    }
+    if _streamlit_accepts("width", st.button):
+        kwargs["width"] = 268
+    if _streamlit_accepts("wrap", st.button):
+        kwargs["wrap"] = True
+    return bool(st.button(label, **kwargs))
+
+
 def _nearby_swap_button_label(n: Dict[str, Any]) -> str:
     name = str(n.get("name", "Place")).strip()
     dist = n.get("distance_km", "?")
@@ -568,23 +631,14 @@ def _render_nearby_alternatives(
         unsafe_allow_html=True,
     )
     row_key = f"nearby_row_{day_num}_{block}_{idx}"
-    with st.container(
-        horizontal=True,
-        wrap=False,
-        gap="small",
-        width="stretch",
-        key=row_key,
-    ):
+    with _nearby_alternatives_row(row_key):
         for n in nearby:
             pid = str(n.get("poi_id", ""))
             place_name = str(n.get("name") or "Place")
-            if st.button(
+            if _nearby_swap_button(
                 _nearby_swap_button_label(n),
                 key=f"swap_{day_num}_{block}_{idx}_{pid}",
-                type="secondary",
-                width=268,
-                wrap=True,
-                help=f"Swap to {place_name}",
+                help_text=f"Swap to {place_name}",
             ):
                 _apply_stop_swap(day_num, block, idx, pid, catalog)
                 st.rerun()
@@ -718,16 +772,22 @@ def trip_planner_page() -> None:
     if st.session_state.get("show_celebration"):
         st.balloons()
         st.session_state.show_celebration = False
-    _render_sidebar_history()
-    _render_sidebar_docs_link()
-    settings = _agent_settings()
-    st.session_state._sidebar_settings = settings
 
-    if not _resolve_gemini_key() or not get_user_agent():
-        st.warning(
-            "Add **GEMINI_API_KEY** and **OSM_CONTACT_EMAIL** to the `.env` file in this "
-            "project folder (see `.env.example`), **save the file**, then refresh this page."
+    if is_admin_dashboard_mode():
+        render_admin_home_dashboard(compact=False)
+        st.page_link(ADMIN_PAGE, label="Open full admin console", icon="🔧")
+        st.caption(
+            "Trip planning is a **customer** feature. Switch to **👤 User** in the sidebar "
+            "to use the AI itinerary builder."
         )
+        _persist_if_dirty()
+        return
+
+    demo_uid = (
+        st.session_state.get("demo_user_id")
+        or get_portal_state().get("current_user_id", "user_alex")
+    )
+    mount_trip_planner_policy_bot_styles()
 
     dest_label = display_city(st.session_state.get("form_destination") or "")
     st.title("Trip Planner")
@@ -736,6 +796,15 @@ def trip_planner_page() -> None:
     )
     if dest_label:
         st.markdown(f"**Planning for:** {html.escape(dest_label)}")
+
+    settings = _agent_settings()
+    st.session_state._sidebar_settings = settings
+
+    if not _resolve_gemini_key() or not get_user_agent():
+        st.warning(
+            "Add **GEMINI_API_KEY** and **OSM_CONTACT_EMAIL** to the `.env` file in this "
+            "project folder (see `.env.example`), **save the file**, then refresh this page."
+        )
 
     with st.container(border=True):
         section_heading("Plan your trip", "plan")
@@ -822,6 +891,26 @@ def trip_planner_page() -> None:
         st.session_state.tool_state = tool_state
 
         render_trip_summary(itinerary, st.session_state.form_destination)
+
+        b1, b2 = st.columns([1, 2])
+        with b1:
+            if st.button("Book as travel package", type="primary", use_container_width=True):
+                from services.travel_packages import (
+                    PACKAGE_BOOKING_PREFILL_KEY,
+                    package_booking_prefill_payload,
+                )
+
+                st.session_state[PACKAGE_BOOKING_PREFILL_KEY] = package_booking_prefill_payload(
+                    origin=origin,
+                    destination=dest,
+                    trip_days=int(st.session_state.get("form_days") or 3),
+                )
+                st.switch_page(BOOKINGS_PAGE)
+        with b2:
+            st.caption(
+                "Opens **My Bookings & Refunds → Book package** with this trip prefilled. "
+                "No real payment."
+            )
 
         tab_plan, tab_map, tab_travel = st.tabs(
             ["Itinerary", "Map", "Travel & stays"]
@@ -911,6 +1000,8 @@ def trip_planner_page() -> None:
 
     render_agent_execution_trace(st.session_state.get("agent_trace"))
 
+    render_trip_planner_policy_bot_fab(demo_uid)
+
     _persist_if_dirty()
 
 
@@ -925,11 +1016,88 @@ DEV_DOCS_PAGE = st.Page(
     icon="📘",
     url_path="dev",
 )
+BOOKINGS_PAGE = st.Page(
+    "pages/bookings_refunds.py",
+    title="My Bookings & Refunds",
+    icon="🧳",
+    url_path="bookings",
+)
+REFUND_BOT_PAGE = st.Page(
+    "pages/refund_assistant.py",
+    title="Refund Assistant",
+    icon="🤖",
+    url_path="refund-assistant",
+)
+TERMS_PAGE = st.Page(
+    "pages/terms_policies.py",
+    title="Terms & Policies",
+    icon="📜",
+    url_path="terms",
+)
+ACCOUNT_PAGE = st.Page(
+    "pages/account_status.py",
+    title="Account Status",
+    icon="🛡️",
+    url_path="account",
+)
+SUPPORT_PAGE = st.Page(
+    "pages/support.py",
+    title="Help & Support",
+    icon="💬",
+    url_path="support",
+)
+DOCUMENT_ASSISTANT_PAGE = st.Page(
+    "pages/document_assistant.py",
+    title="Document Assistant",
+    icon="📄",
+    url_path="document-assistant",
+)
+ADMIN_PAGE = st.Page(
+    "pages/admin_demo.py",
+    title="Admin",
+    icon="🔧",
+    url_path="admin",
+)
+
+
+def _navigation_menu() -> dict:
+    """Sidebar page groups depend on demo dashboard mode (user vs admin)."""
+    docs = {"Docs": [DEV_DOCS_PAGE]}
+    if get_demo_dashboard_mode() == DEMO_MODE_ADMIN:
+        return {
+            "Admin": [ADMIN_PAGE],
+            "Customer preview": [
+                TRIP_PLANNER_PAGE,
+                DOCUMENT_ASSISTANT_PAGE,
+                BOOKINGS_PAGE,
+                REFUND_BOT_PAGE,
+                ACCOUNT_PAGE,
+                SUPPORT_PAGE,
+                TERMS_PAGE,
+            ],
+            **docs,
+        }
+    return {
+        "Trip planning": [TRIP_PLANNER_PAGE],
+        "Bookings & support": [
+            DOCUMENT_ASSISTANT_PAGE,
+            BOOKINGS_PAGE,
+            REFUND_BOT_PAGE,
+            ACCOUNT_PAGE,
+            SUPPORT_PAGE,
+            TERMS_PAGE,
+        ],
+        **docs,
+    }
 
 
 def main() -> None:
     st.set_page_config(page_title="Trip Planner AI Agent", layout="wide")
-    pg = st.navigation([TRIP_PLANNER_PAGE, DEV_DOCS_PAGE])
+    init_rag_auth_session()
+    inject_ui_animations()
+    render_demo_dashboard_switch()
+    pg = st.navigation(_navigation_menu())
+    render_global_sidebar()
     pg.run()
 
 

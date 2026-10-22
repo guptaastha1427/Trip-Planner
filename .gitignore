@@ -14,6 +14,9 @@ __pycache__/
 data/app_state.json
 data/feedback.jsonl
 data/trip_history.json
+data/customer_portal_state.json
+data/rag_chat_users.json
+data/rag_chat_sessions.json
 
 # Test / tool caches
 .pytest_cache/

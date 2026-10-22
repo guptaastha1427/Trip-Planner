@@ -1,0 +1,10 @@
+{
+  "users": [
+    {
+      "username": "demo_traveler",
+      "email": "demo@example.com",
+      "password_hash": "pbkdf2_sha256$260000$REPLACE_WITH_SALT$REPLACE_WITH_DIGEST",
+      "created_at": "2026-01-01T00:00:00+00:00"
+    }
+  ]
+}

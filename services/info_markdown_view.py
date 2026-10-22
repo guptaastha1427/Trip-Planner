@@ -12,6 +12,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from config import PROJECT_ROOT
+from services.ui_copy import polish_ui_copy
 
 INFO_MD_PATH = PROJECT_ROOT / "info.md"
 
@@ -258,7 +259,7 @@ def render_info_document_page() -> None:
     mermaid_idx = 0
     for kind, chunk in segments:
         if kind == "md":
-            st.markdown(chunk, unsafe_allow_html=False)
+            st.markdown(polish_ui_copy(chunk), unsafe_allow_html=False)
         else:
             _render_mermaid(chunk, key=f"mermaid_{mermaid_idx}")
             mermaid_idx += 1

@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional
 import streamlit as st
 
 from services.hint_links import hotel_hint_links, transport_hint_links
+from services.ui_copy import polish_ui_copy
 
 __all__ = [
     "section_heading",
@@ -43,7 +44,7 @@ _SECTION_VARIANTS = frozenset(
 
 def section_heading(title: str, variant: str = "itinerary") -> None:
     key = variant if variant in _SECTION_VARIANTS else "itinerary"
-    safe = html.escape(str(title))
+    safe = html.escape(polish_ui_copy(str(title)))
     st.markdown(
         f'<p class="trip-h trip-h--{key}">{safe}</p>',
         unsafe_allow_html=True,
