@@ -240,19 +240,52 @@ def inject_travel_light_theme() -> None:
             border-color: rgba(167, 139, 250, 0.4) !important;
         }
 
+        [data-testid="stChatInput"] {
+            background: transparent !important;
+        }
         [data-testid="stChatInput"] > div {
             background: #ffffff !important;
-            border: 1px solid var(--tp-card-border) !important;
-            border-radius: 999px !important;
-            box-shadow: 0 8px 22px rgba(74, 71, 138, 0.1);
-            transition: all 0.3s ease-in-out;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            transition: border-color 0.15s ease;
         }
         [data-testid="stChatInput"] > div:focus-within {
-            border-color: rgba(74, 71, 138, 0.45) !important;
-            box-shadow: 0 10px 28px rgba(74, 71, 138, 0.16);
+            border-color: #cbd5e1 !important;
+            box-shadow: none !important;
         }
         [data-testid="stChatInput"] textarea {
+            background: #ffffff !important;
             color: #1e293b !important;
+        }
+        [data-testid="stChatInput"] button,
+        [data-testid="stChatInput"] button[data-testid="stBaseButton-SECONDARY"],
+        [data-testid="stChatInput"] button[data-testid="stBaseButton-secondary"] {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            border-bottom-width: 0 !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            color: #475569 !important;
+            min-width: 2.25rem !important;
+            min-height: 2.25rem !important;
+            padding: 0.25rem !important;
+            transform: none !important;
+            filter: none !important;
+        }
+        [data-testid="stChatInput"] button:hover:not(:disabled),
+        [data-testid="stChatInput"] button:active:not(:disabled) {
+            background: rgba(148, 163, 184, 0.12) !important;
+            transform: none !important;
+            filter: none !important;
+            border-bottom-width: 0 !important;
+        }
+        [data-testid="stChatInput"] [data-testid="stVerticalBlockBorderWrapper"] {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            transform: none !important;
         }
 
         /* 3D tactile buttons — Streamlit 1.55 nests <button> inside [data-testid="stButton"] */

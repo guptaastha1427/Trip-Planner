@@ -228,7 +228,7 @@ def _clear_embedding_error() -> None:
     st.session_state.pop("_embedding_init_error", None)
 
 
-@st.cache_resource(show_spinner="Loading embeddings…")
+@st.cache_resource(show_spinner=False)
 def get_embeddings(_cache_version: int = EMBEDDING_CACHE_VERSION) -> Optional[GoogleGenerativeAIEmbeddings]:
     """Pick the first Gemini embedding model that responds to a probe embed."""
     api_key = get_gemini_api_key()
@@ -277,7 +277,7 @@ def _build_faiss_from_documents(
     return FAISS.from_documents(chunks, embeddings)
 
 
-@st.cache_resource(show_spinner="Indexing Terms & Policies…")
+@st.cache_resource(show_spinner=False)
 def get_terms_vector_store(_cache_version: int = EMBEDDING_CACHE_VERSION) -> Optional[FAISS]:
     embeddings = get_embeddings()
     if embeddings is None:
@@ -289,7 +289,7 @@ def get_terms_vector_store(_cache_version: int = EMBEDDING_CACHE_VERSION) -> Opt
         return None
 
 
-@st.cache_resource(show_spinner="Indexing website…")
+@st.cache_resource(show_spinner=False)
 def get_url_vector_store(
     url: str,
     _cache_version: int = EMBEDDING_CACHE_VERSION,
