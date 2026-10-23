@@ -14,8 +14,8 @@ def inject_travel_light_theme() -> None:
             to { opacity: 1; transform: translateY(0); }
         }
         @keyframes tpSoftPulse {
-            0%, 100% { box-shadow: 0 10px 28px rgba(74, 71, 138, 0.28); }
-            50% { box-shadow: 0 14px 36px rgba(74, 71, 138, 0.42); }
+            0%, 100% { box-shadow: 0 10px 28px rgba(49, 46, 129, 0.28); }
+            50% { box-shadow: 0 14px 36px rgba(49, 46, 129, 0.42); }
         }
         @keyframes tpExpandIn {
             from { opacity: 0.6; }
@@ -31,25 +31,25 @@ def inject_travel_light_theme() -> None:
         }
 
         :root {
-            --tp-purple-700: #4a478a;
-            --tp-purple-600: #5b57a6;
-            --tp-purple-500: #7c6cf0;
+            --tp-purple-700: #312e81;
+            --tp-purple-600: #4f46e5;
+            --tp-purple-500: #6366f1;
             --tp-lavender-50: #f5f3ff;
             --tp-lavender-100: #ede9fe;
             --tp-card: #ffffff;
             --tp-card-border: rgba(199, 210, 254, 0.65);
-            --tp-shadow: 0 14px 40px rgba(74, 71, 138, 0.1);
+            --tp-shadow: 0 14px 40px rgba(49, 46, 129, 0.1);
             --tp-radius-xl: 28px;
             --tp-radius-lg: 22px;
             --tp-radius-md: 18px;
             --tp-ink-950: #1e1b4b;
             --tp-ink-700: #475569;
             --tp-ink-500: #64748b;
-            --tp-nav-chip-active: #1d4ed8;
-            --tp-nav-chip-line: #2563eb;
-            --tp-nav-chip-rail: #e8eeff;
-            --tp-btn-face: #3b82f6;
-            --tp-btn-edge: #2563eb;
+            --tp-nav-chip-active: #4338ca;
+            --tp-nav-chip-line: #6366f1;
+            --tp-nav-chip-rail: #e0e7ff;
+            --tp-btn-face: #6366f1;
+            --tp-btn-edge: #4f46e5;
             --tp-btn-radius: 0.5rem;
             --tp-btn-edge-width: 4px;
         }
@@ -137,17 +137,17 @@ def inject_travel_light_theme() -> None:
             border-radius: 14px;
             padding: 0.65rem 0.85rem;
             margin: 0.4rem 0 0.55rem 0;
-            box-shadow: 0 6px 18px rgba(74, 71, 138, 0.07);
+            box-shadow: 0 6px 18px rgba(49, 46, 129, 0.07);
             transition: all 0.3s ease-in-out;
         }
         .rag-source-block:hover {
-            box-shadow: 0 10px 24px rgba(74, 71, 138, 0.11);
+            box-shadow: 0 10px 24px rgba(49, 46, 129, 0.11);
             transform: translateY(-1px);
         }
         .rag-source-block__title {
             font-size: 0.82rem;
             font-weight: 700;
-            color: #4a478a;
+            color: #312e81;
             margin: 0 0 0.35rem 0;
         }
         .rag-source-block__meta {
@@ -168,7 +168,7 @@ def inject_travel_light_theme() -> None:
             color: var(--tp-ink-950) !important;
         }
         .trip-h--plan { color: var(--tp-purple-700) !important; }
-        .trip-h--travel { color: #6d28d9 !important; }
+        .trip-h--travel { color: #4f46e5 !important; }
         section.main [data-testid="stMarkdownContainer"] a {
             color: var(--tp-purple-600) !important;
         }
@@ -183,7 +183,7 @@ def inject_travel_light_theme() -> None:
         }
         [data-testid="stVerticalBlockBorderWrapper"]:hover {
             transform: translateY(-2px);
-            box-shadow: 0 18px 48px rgba(74, 71, 138, 0.14) !important;
+            box-shadow: 0 18px 48px rgba(49, 46, 129, 0.14) !important;
         }
         [data-testid="stVerticalBlockBorderWrapper"]
             [data-testid="stVerticalBlockBorderWrapper"] {
@@ -195,11 +195,11 @@ def inject_travel_light_theme() -> None:
             background: var(--tp-card) !important;
             border: 1px solid var(--tp-card-border) !important;
             border-radius: var(--tp-radius-md) !important;
-            box-shadow: 0 8px 24px rgba(74, 71, 138, 0.08);
+            box-shadow: 0 8px 24px rgba(49, 46, 129, 0.08);
             transition: all 0.3s ease-in-out;
         }
         details[data-testid="stExpander"][open] {
-            box-shadow: 0 12px 32px rgba(74, 71, 138, 0.12);
+            box-shadow: 0 12px 32px rgba(49, 46, 129, 0.12);
         }
         details[data-testid="stExpander"] summary {
             color: var(--tp-ink-950) !important;
@@ -221,19 +221,19 @@ def inject_travel_light_theme() -> None:
             border-radius: var(--tp-radius-md) !important;
             padding: 0.8rem 1rem !important;
             margin-bottom: 0.75rem !important;
-            box-shadow: 0 10px 28px rgba(74, 71, 138, 0.08) !important;
+            box-shadow: 0 10px 28px rgba(49, 46, 129, 0.08) !important;
             transition: all 0.3s ease-in-out;
         }
         [data-testid="stChatMessage"]:hover {
             transform: translateY(-1px);
-            box-shadow: 0 14px 34px rgba(74, 71, 138, 0.12) !important;
+            box-shadow: 0 14px 34px rgba(49, 46, 129, 0.12) !important;
         }
         [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
         [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] li {
             color: #334155 !important;
         }
         [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
-            border-color: rgba(124, 108, 240, 0.35) !important;
+            border-color: rgba(99, 102, 241, 0.35) !important;
             background: linear-gradient(180deg, #ffffff, #faf5ff) !important;
         }
         [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
@@ -383,7 +383,7 @@ def inject_travel_light_theme() -> None:
         .stApp [data-testid="stLinkButton"] a:focus-visible,
         .stApp [data-testid="stLinkButton"] button:focus-visible,
         .stApp [data-testid="stPopover"] button:focus-visible {
-            outline: 2px solid #93c5fd !important;
+            outline: 2px solid #a5b4fc !important;
             outline-offset: 2px !important;
             box-shadow: none !important;
         }
@@ -416,8 +416,8 @@ def inject_travel_light_theme() -> None:
         }
         section.main input:focus, section.main textarea:focus,
         section[data-testid="stSidebar"] input:focus {
-            border-color: rgba(74, 71, 138, 0.45) !important;
-            box-shadow: 0 0 0 3px rgba(124, 108, 240, 0.18) !important;
+            border-color: rgba(79, 70, 229, 0.45) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
         }
 
         .hint-card, .dest-guide-card, .weather-card, .travel-tips-card,
@@ -429,7 +429,7 @@ def inject_travel_light_theme() -> None:
         }
         .hint-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 18px 44px rgba(74, 71, 138, 0.14) !important;
+            box-shadow: 0 18px 44px rgba(49, 46, 129, 0.14) !important;
         }
 
         [data-baseweb="tab-border"],
@@ -494,7 +494,7 @@ def inject_travel_light_theme() -> None:
             -webkit-backdrop-filter: blur(12px) !important;
             backdrop-filter: blur(12px) !important;
             border-color: rgba(199, 210, 254, 0.65) !important;
-            box-shadow: 0 4px 14px rgba(74, 71, 138, 0.1) !important;
+            box-shadow: 0 4px 14px rgba(49, 46, 129, 0.1) !important;
             color: #1e293b !important;
         }
         [data-testid="stTabs"] [data-baseweb="tab"][aria-selected="false"]:hover,
@@ -507,7 +507,7 @@ def inject_travel_light_theme() -> None:
         }
 
         section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] {
-            background: rgba(124, 108, 240, 0.12) !important;
+            background: rgba(99, 102, 241, 0.12) !important;
             color: var(--tp-purple-700) !important;
         }
 
@@ -521,7 +521,7 @@ def inject_travel_light_theme() -> None:
             max-width: 100% !important;
             box-sizing: border-box !important;
             border: none !important;
-            box-shadow: 0 12px 32px rgba(74, 71, 138, 0.18) !important;
+            box-shadow: 0 12px 32px rgba(49, 46, 129, 0.18) !important;
         }
         .portal-hero h1, .portal-hero p { color: #ffffff !important; }
 
@@ -561,7 +561,7 @@ def inject_travel_light_theme() -> None:
             border: 1px solid rgba(199, 210, 254, 0.9);
         }
         .pkg-badge--duration {
-            background: linear-gradient(135deg, #4a478a, #6d28d9);
+            background: linear-gradient(135deg, #312e81, #6366f1);
             color: #ffffff;
             border: none;
         }
@@ -609,7 +609,7 @@ def inject_travel_light_theme() -> None:
             font-size: 0.82rem;
             font-weight: 700;
             color: #ffffff;
-            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
             border-radius: 10px;
         }
         .pkg-day-breakdown {
@@ -622,17 +622,17 @@ def inject_travel_light_theme() -> None:
         }
         .pkg-day-card {
             background: #ffffff;
-            border: 1px solid #dbeafe;
+            border: 1px solid #e0e7ff;
             border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.08);
         }
         .pkg-day-card__banner {
             padding: 0.5rem 0.75rem;
             font-size: 0.82rem;
             font-weight: 700;
             color: #ffffff;
-            background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+            background: linear-gradient(90deg, #4338ca, #6366f1);
         }
         .pkg-day-card__body {
             padding: 0.65rem 0.75rem 0.75rem 0.75rem;
@@ -653,11 +653,11 @@ def inject_travel_light_theme() -> None:
             width: 1.65rem;
             height: 1.65rem;
             border-radius: 8px;
-            background: #eff6ff center/70% no-repeat;
+            background: #eef2ff center/70% no-repeat;
         }
         .pkg-day-card__ico--stay {
-            background-color: #eff6ff;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'%3E%3Cpath d='M4 10V20h16V10l-8-6-8 6zm2 2h12v6H6v-6z'/%3E%3C/svg%3E");
+            background-color: #eef2ff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M4 10V20h16V10l-8-6-8 6zm2 2h12v6H6v-6z'/%3E%3C/svg%3E");
         }
         .pkg-day-card__ico--sight {
             background-color: #f0fdf4;
@@ -724,7 +724,7 @@ def inject_travel_light_theme() -> None:
             margin: 0;
             font-size: 1.85rem;
             font-weight: 800;
-            color: #1d4ed8;
+            color: #4338ca;
             line-height: 1.15;
         }
         .pkg-price-card__basis {

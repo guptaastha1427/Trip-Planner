@@ -75,7 +75,7 @@ def _inject_docs_styles() -> None:
             padding: 0 0.5rem;
         }
         .info-doc-hero {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #0ea5e9 120%);
+            background: linear-gradient(135deg, #312e81 0%, #6366f1 55%, #818cf8 120%);
             color: #f8fafc;
             border-radius: 16px;
             padding: 1.75rem 2rem;
@@ -106,8 +106,8 @@ def _inject_docs_styles() -> None:
         .info-doc-body h3 { color: #1e293b; margin-top: 1.25rem; }
         [data-testid="stMain"] .block-container blockquote,
         .info-doc-body blockquote {
-            border-left: 4px solid #0ea5e9;
-            background: #f0f9ff;
+            border-left: 4px solid #6366f1;
+            background: #eef2ff;
             padding: 0.75rem 1rem;
             border-radius: 0 8px 8px 0;
             margin: 1rem 0;

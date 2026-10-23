@@ -75,7 +75,7 @@ def inject_portal_styles() -> None:
             padding: 0;
         }
         .portal-hero {
-            background: linear-gradient(135deg, #0f172a 0%, #115e59 55%, #0d9488 120%);
+            background: linear-gradient(135deg, #312e81 0%, #6366f1 55%, #818cf8 120%);
             color: #f8fafc;
             border-radius: 16px;
             padding: 1.15rem 1.25rem;
@@ -107,7 +107,7 @@ def inject_portal_styles() -> None:
         .status-pill--ok { background: #d1fae5; color: #065f46; }
         .status-pill--warn { background: #fef3c7; color: #92400e; }
         .status-pill--bad { background: #fee2e2; color: #991b1b; }
-        .status-pill--info { background: #e0f2fe; color: #075985; }
+        .status-pill--info { background: #e0e7ff; color: #3730a3; }
         /* transform on expanded sidebar only — see inject_page_background for collapse rules */
         section[data-testid="stSidebar"][aria-expanded="true"] {
             position: relative !important;
@@ -127,7 +127,7 @@ def inject_portal_styles() -> None:
             border-top: none !important;
             padding: 0.5rem 1rem 0.85rem 1rem !important;
             margin: 0 !important;
-            box-shadow: 0 -10px 28px rgba(74, 71, 138, 0.1);
+            box-shadow: 0 -10px 28px rgba(49, 46, 129, 0.1);
             backdrop-filter: blur(12px);
             pointer-events: auto !important;
         }
@@ -144,17 +144,17 @@ def inject_portal_styles() -> None:
 
 
 _HERO_GRADIENTS = {
-    PAGE_BOOKINGS: "linear-gradient(135deg, #1e3a5f 0%, #0d9488 60%, #14b8a6 120%)",
+    PAGE_BOOKINGS: "linear-gradient(135deg, #1e1b4b 0%, #4338ca 52%, #818cf8 120%)",
     PAGE_REFUND_BOT: "linear-gradient(135deg, #312e81 0%, #6366f1 55%, #818cf8 120%)",
-    PAGE_ACCOUNT: "linear-gradient(135deg, #7f1d1d 0%, #b45309 50%, #f59e0b 120%)",
-    PAGE_SUPPORT: "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #38bdf8 120%)",
-    PAGE_TERMS: "linear-gradient(135deg, #1e293b 0%, #475569 50%, #64748b 120%)",
+    PAGE_ACCOUNT: "linear-gradient(135deg, #312e81 0%, #6366f1 42%, #a5b4fc 120%)",
+    PAGE_SUPPORT: "linear-gradient(135deg, #312e81 0%, #6366f1 55%, #818cf8 120%)",
+    PAGE_TERMS: "linear-gradient(135deg, #1e1b4b 0%, #312e81 48%, #6366f1 120%)",
 }
 
 
 def render_portal_hero(title: str, subtitle: str, page_kind: str = PAGE_TERMS) -> None:
     gradient = _HERO_GRADIENTS.get(
-        page_kind, "linear-gradient(135deg, #0f172a 0%, #115e59 55%, #0d9488 120%)"
+        page_kind, "linear-gradient(135deg, #312e81 0%, #6366f1 55%, #818cf8 120%)"
     )
     st.markdown(
         f"""
@@ -270,7 +270,7 @@ def _inject_profile_popover_styles(initials: str, name: str, subtitle: str) -> N
             width: 2.15rem;
             height: 2.15rem;
             border-radius: 50%;
-            background: linear-gradient(145deg, #f59e0b 0%, #ea580c 100%);
+            background: linear-gradient(145deg, #6366f1 0%, #4338ca 100%);
             color: #fff;
             font-size: 0.82rem;
             font-weight: 700;
@@ -325,16 +325,12 @@ def render_sidebar_user_dock() -> str:
             if auth:
                 st.caption(str(auth.get("email") or ""))
             else:
-                st.caption("Sign in to use Document Assistant chat across the app.")
+                st.caption("Sign in or create an account to use policy chat across the app.")
 
             if not auth:
                 if st.button("Sign in", key="portal_global_sign_in", use_container_width=True):
-                    try:
-                        import app as trip_app
-
-                        st.switch_page(trip_app.SIGN_IN_PAGE)
-                    except Exception:
-                        st.rerun()
+                    st.session_state["_pending_sign_in_nav"] = True
+                    st.rerun()
 
             if auth:
                 if st.button("Sign out", key="portal_global_sign_out", use_container_width=True):

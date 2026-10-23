@@ -1102,6 +1102,8 @@ def main() -> None:
     sync_portal_user_context()
     pg = st.navigation(_navigation_menu())
     render_global_sidebar()
+    if st.session_state.pop("_pending_sign_in_nav", False):
+        st.switch_page(SIGN_IN_PAGE)
     pg.run()
 
 

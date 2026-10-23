@@ -279,11 +279,3 @@ def render_package_pricing_actions(
             ):
                 st.session_state["pkg_picked_id"] = package_id
                 st.rerun()
-    elif st.button(
-        "Calculate price",
-        type="primary",
-        use_container_width=True,
-        key=f"pkg_calc_{package_id}_main",
-    ):
-        st.session_state["pkg_focus_calculator"] = True
-        st.rerun()

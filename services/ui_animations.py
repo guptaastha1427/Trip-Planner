@@ -96,18 +96,18 @@ def inject_page_background() -> None:
         }}
         section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:hover,
         section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:hover button {{
-            background: rgba(124, 108, 240, 0.12) !important;
-            border-color: rgba(124, 108, 240, 0.28) !important;
-            color: #4a478a !important;
-            box-shadow: 0 2px 8px rgba(74, 71, 138, 0.12) !important;
+            background: rgba(99, 102, 241, 0.12) !important;
+            border-color: rgba(99, 102, 241, 0.28) !important;
+            color: #312e81 !important;
+            box-shadow: 0 2px 8px rgba(49, 46, 129, 0.12) !important;
         }}
         section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:active,
         section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:active button {{
-            background: rgba(124, 108, 240, 0.2) !important;
+            background: rgba(99, 102, 241, 0.2) !important;
             transform: scale(0.94) !important;
         }}
         section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:focus-visible {{
-            outline: 2px solid rgba(124, 108, 240, 0.55) !important;
+            outline: 2px solid rgba(99, 102, 241, 0.55) !important;
             outline-offset: 2px !important;
         }}
         [data-testid="stSidebarNavViewButton"] button {{
@@ -115,9 +115,9 @@ def inject_page_background() -> None:
             transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
         }}
         [data-testid="stSidebarNavViewButton"] button:hover {{
-            background: rgba(124, 108, 240, 0.12) !important;
-            color: #4a478a !important;
-            box-shadow: 0 2px 8px rgba(74, 71, 138, 0.12) !important;
+            background: rgba(99, 102, 241, 0.12) !important;
+            color: #312e81 !important;
+            box-shadow: 0 2px 8px rgba(49, 46, 129, 0.12) !important;
         }}
         section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
             max-height: 100vh !important;
@@ -191,11 +191,11 @@ def inject_ui_animations() -> None:
             --tp-ink-600: #64748b;
             --tp-ink-500: #64748b;
             --tp-ink-400: #94a3b8;
-            --tp-brand-700: #4a478a;
-            --tp-brand-600: #5b57a6;
-            --tp-brand-500: #7c6cf0;
-            --tp-accent-600: #6d28d9;
-            --tp-accent-500: #8b5cf6;
+            --tp-brand-700: #312e81;
+            --tp-brand-600: #4f46e5;
+            --tp-brand-500: #6366f1;
+            --tp-accent-600: #4f46e5;
+            --tp-accent-500: #6366f1;
             --tp-warm-600: #c2410c;
             --tp-map-600: #059669;
             --tp-text-xs: 0.75rem;
@@ -291,11 +291,11 @@ def inject_ui_animations() -> None:
         .trip-h--day {
             font-size: var(--tp-text-lg);
             font-weight: 700;
-            color: #6d28d9;
+            color: #4338ca;
             margin-top: 1.25rem;
             margin-bottom: 0.35rem;
             padding-bottom: 0.3rem;
-            border-bottom: 2px solid rgba(109, 40, 217, 0.18);
+            border-bottom: 2px solid rgba(99, 102, 241, 0.22);
         }
 
         /* Stats row */
@@ -335,7 +335,7 @@ def inject_ui_animations() -> None:
             border-radius: 22px !important;
             border-color: rgba(199, 210, 254, 0.65) !important;
             padding: 0.35rem 0.5rem;
-            box-shadow: 0 14px 40px rgba(74, 71, 138, 0.1);
+            box-shadow: 0 14px 40px rgba(49, 46, 129, 0.1);
         }
         [data-testid="stVerticalBlockBorderWrapper"]
             [data-testid="stVerticalBlockBorderWrapper"] {
@@ -455,7 +455,7 @@ def inject_ui_animations() -> None:
         }
         .hint-card__link:hover {
             text-decoration: underline;
-            color: #1d4ed8;
+            color: #4f46e5;
         }
 
         .stop-card__placeholder {
@@ -728,8 +728,8 @@ def inject_ui_animations() -> None:
         section.main [role="combobox"]:focus {
             background-color: #ffffff !important;
             color: #0f172a !important;
-            border-color: rgba(74, 71, 138, 0.45) !important;
-            box-shadow: 0 0 0 3px rgba(124, 108, 240, 0.18) !important;
+            border-color: rgba(79, 70, 229, 0.45) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
             outline: none !important;
         }
         section.main [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div,

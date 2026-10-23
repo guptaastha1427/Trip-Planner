@@ -189,7 +189,7 @@ def render_agent_execution_trace(trace: Optional[List[Any]]) -> None:
                 f"**Phase {idx} — {phase['title']}**{dur_suffix}  \n"
                 f"<span style='color:#64748b;font-size:0.9em'>{phase['blurb']}</span>  \n"
                 f"<div style='background:#e2e8f0;border-radius:4px;height:6px;margin:6px 0 10px 0'>"
-                f"<div style='background:#0ea5e9;border-radius:4px;height:6px;width:{bar_pct}%'></div></div>"
+                f"<div style='background:#6366f1;border-radius:4px;height:6px;width:{bar_pct}%'></div></div>"
             )
             for sidx, (step_num, kind, name, detail, ms) in enumerate(steps, start=1):
                 kind_label = _KIND_LABELS.get(kind, kind.title() if kind else "Step")

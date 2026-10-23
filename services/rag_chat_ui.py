@@ -166,13 +166,7 @@ def render_signup_signin_panel() -> None:
         render_account_summary_panel()
         return
 
-    render_doc_hero(
-        "Sign in",
-        "Create a local account or sign in to unlock grounded policy chat.",
-        chip="Free · Saved on this machine · No real payments",
-    )
     with st.container(key="doc_auth_panel"):
-        section_heading("Account", variant="plan")
         st.markdown(
             polish_ui_copy(
                 "Registration is **local to this machine** (demo). Use a fictional email."
