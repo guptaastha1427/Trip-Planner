@@ -74,7 +74,7 @@ def _is_stored_greeting(msg: Dict[str, Any]) -> bool:
 
 
 def _strip_stored_greetings(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Welcome is rendered once in the UI, not persisted in history."""
+    """Drop legacy greeting rows when merging old session keys."""
     return [m for m in messages if not _is_stored_greeting(m)]
 
 
@@ -113,7 +113,19 @@ def _render_welcome_if_empty(messages: List[Dict[str, Any]]) -> None:
         _render_chat_body("assistant", _GREETING_TEXT)
 
 
-_TYPING_STYLES_KEY = "_policy_bot_chat_styles_v3"
+def _messages_for_display(
+    messages: List[Dict[str, Any]], *, pending: bool
+) -> List[Dict[str, Any]]:
+    """While a reply is in flight, show only the user's question (no welcome echo)."""
+    if pending:
+        return [m for m in messages if m.get("role") == "user"]
+    return [m for m in messages if not _is_stored_greeting(m)]
+
+
+_CHAT_INPUT_PLACEHOLDER = "Ask about terms, refunds, packages…"
+_SEARCHING_PLACEHOLDER = "Searching…"
+
+_TYPING_STYLES_KEY = "_policy_bot_chat_styles_v4"
 
 
 def inject_policy_chat_typing_styles() -> None:
@@ -208,6 +220,15 @@ def inject_policy_chat_typing_styles() -> None:
             border: none !important;
             box-shadow: none !important;
             transform: none !important;
+        }
+        /* Search in flight: composer pinned at bottom; hide stray chat chrome below it */
+        [class*="st-key-policy_bot_msg_scroll_"]:has(
+            ~ [class*="st-key-policy_bot_input_"] textarea:disabled
+        ) ~ *:not([class*="st-key-policy_bot_input_"]) {
+            display: none !important;
+        }
+        [class*="st-key-policy_bot_input_"]:has(textarea:disabled) ~ * {
+            display: none !important;
         }
         section[data-testid="stSidebar"] [data-testid="stPopoverBody"],
         div[role="dialog"] [data-testid="stModal"],
@@ -431,17 +452,19 @@ def render_policy_bot_chat(
             border=False,
             key=_message_scroll_key(session_key),
         ):
-            _render_welcome_if_empty(messages)
-            for msg in messages:
+            if not pending:
+                _render_welcome_if_empty(messages)
+            for msg in _messages_for_display(messages, pending=bool(pending)):
                 with st.chat_message(msg["role"]):
                     _render_chat_body(msg["role"], msg["text"])
 
-            if pending:
-                _render_typing_indicator()
+        input_key = _input_key(session_key)
+        if pending:
+            st.session_state[input_key] = ""
 
         prompt = st.chat_input(
-            "Ask about terms, refunds, packages…",
-            key=_input_key(session_key),
+            _SEARCHING_PLACEHOLDER if pending else _CHAT_INPUT_PLACEHOLDER,
+            key=input_key,
             disabled=bool(pending),
         )
         if prompt:
