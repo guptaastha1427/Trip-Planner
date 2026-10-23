@@ -23,11 +23,16 @@ def render() -> None:
             "in the sidebar — reading Terms here does not interrupt those flows."
         )
     )
-    st.page_link(
-        "pages/document_assistant.py",
-        label="Open Document Assistant (sign up & chat)",
-        icon="📄",
-    )
+    try:
+        import app as trip_app
+
+        st.page_link(
+            trip_app.DOCUMENT_ASSISTANT_PAGE,
+            label="Open Document Assistant (sign up & chat)",
+            icon="📄",
+        )
+    except Exception:
+        st.caption("Open **Document Assistant** from the profile menu at the bottom of the sidebar.")
     render_comprehensive_terms(show_platform_intro=True)
 
 

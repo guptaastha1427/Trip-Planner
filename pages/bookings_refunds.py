@@ -54,7 +54,8 @@ def render() -> None:
         )
 
     tab_book, tab_bookings, tab_refunds = st.tabs(
-        ["Book package", "My bookings", "Refund requests"]
+        ["Book package", "My bookings", "Refund requests"],
+        key="bookings_portal_tabs",
     )
 
     with tab_book:
@@ -165,53 +166,85 @@ def render() -> None:
         if not refunds:
             st.caption("No refund requests yet.")
         for r in reversed(refunds):
-            with st.container(border=True):
-                booking = booking_for_refund_display(str(r.get("booking_id", "")))
-                booking_status = (
-                    str(booking.get("status", "—")).title() if booking else "Unknown"
-                )
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    status_badge("Refund status", str(r.get("workflow_status", "Submitted")))
-                with c2:
-                    status_badge("Eligibility", str(r.get("eligibility", "—")))
-                with c3:
+            booking = booking_for_refund_display(str(r.get("booking_id", "")))
+            booking_status = (
+                str(booking.get("status", "—")).title() if booking else "Unknown"
+            )
+            refund_status = str(r.get("workflow_status", "Submitted"))
+            eligibility = str(r.get("eligibility", "—"))
+            reason_label = refund_reason_label(str(r.get("reason", "")))
+            header = (
+                f"{r.get('request_id')} · booking {r.get('booking_id')} · "
+                f"{refund_status}"
+            )
+            with st.expander(header, expanded=False):
+                with st.expander(
+                    f"Refund status — {refund_status}",
+                    expanded=False,
+                ):
+                    status_badge("Refund status", refund_status)
+
+                with st.expander(
+                    f"Eligibility — {eligibility}",
+                    expanded=False,
+                ):
+                    status_badge("Eligibility", eligibility)
+                    detail = r.get("explanation_detail") or r.get("explanation", "")
+                    if detail:
+                        st.info(detail)
+
+                with st.expander(
+                    f"Booking / ticket — {booking_status}",
+                    expanded=False,
+                ):
                     status_badge("Booking / ticket", booking_status)
+                    if booking:
+                        st.markdown(booking_detail_markdown(booking))
+                    else:
+                        st.warning("Linked booking not found.")
 
-                st.markdown(f"**{r.get('request_id')}** · booking **{r.get('booking_id')}**")
-                st.markdown(
-                    f"**Reason you raised this:** {refund_reason_label(str(r.get('reason', '')))}"
-                )
-                detail = r.get("explanation_detail") or r.get("explanation", "")
-                if detail:
-                    st.info(detail)
-
-                if booking:
-                    st.markdown("**Booking & ticket details**")
-                    st.markdown(booking_detail_markdown(booking))
-                else:
-                    st.warning("Linked booking not found.")
-
-                st.markdown(
-                    f"**Refund estimate:** original ₹{r.get('original_amount', 0):,.0f} · "
-                    f"cancellation fee ₹{r.get('cancellation_fee', 0):,.0f} · "
-                    f"est. refund ₹{r.get('estimated_refund', 0):,.0f}"
-                )
-                if r.get("processing_time"):
-                    st.caption(
-                        f"Typical processing: {polish_ui_copy(str(r.get('processing_time', '')))}"
+                with st.expander(
+                    f"Reason — {reason_label}",
+                    expanded=False,
+                ):
+                    st.markdown(
+                        f"**Reason you raised this:** {reason_label}"
                     )
+
+                est_refund = float(r.get("estimated_refund", 0) or 0)
+                with st.expander(
+                    f"Refund estimate — ₹{est_refund:,.0f}",
+                    expanded=False,
+                ):
+                    st.markdown(
+                        f"**Original amount:** ₹{r.get('original_amount', 0):,.0f}"
+                    )
+                    st.markdown(
+                        f"**Cancellation fee:** ₹{r.get('cancellation_fee', 0):,.0f}"
+                    )
+                    st.markdown(
+                        f"**Estimated refund:** ₹{est_refund:,.0f}"
+                    )
+                    if r.get("processing_time"):
+                        st.caption(
+                            f"Typical processing: "
+                            f"{polish_ui_copy(str(r.get('processing_time', '')))}"
+                        )
 
                 hist = r.get("status_history") or []
                 if hist:
-                    st.markdown("**Status timeline**")
-                    for step in hist:
-                        note = step.get("note")
-                        extra = f" — {note}" if note else ""
-                        st.caption(
-                            f"{format_portal_datetime(str(step.get('ts', '')))}: "
-                            f"**{polish_ui_copy(str(step.get('status', '')))}**{polish_ui_copy(extra)}"
-                        )
+                    with st.expander(
+                        f"Status timeline — {len(hist)} update(s)",
+                        expanded=False,
+                    ):
+                        for step in hist:
+                            note = step.get("note")
+                            extra = f" — {note}" if note else ""
+                            st.caption(
+                                f"{format_portal_datetime(str(step.get('ts', '')))}: "
+                                f"**{polish_ui_copy(str(step.get('status', '')))}**"
+                                f"{polish_ui_copy(extra)}"
+                            )
 
 
 render()

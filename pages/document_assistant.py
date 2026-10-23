@@ -6,12 +6,24 @@ import streamlit as st
 
 from services.policy_bot_ui import render_policy_bot_chat, render_url_indexer_panel
 from services.portal_ui import portal_page_setup
-from services.rag_chat_auth import chat_user_id, current_user, is_logged_in
+from services.portal_user_context import resolve_portal_user_id
+from services.portal_user_context import sync_portal_user_context
+from services.rag_chat_auth import (
+    chat_user_id,
+    current_user,
+    init_rag_auth_session,
+    is_logged_in,
+    mount_rag_auth_cookie_component,
+    render_auth_toasts,
+)
 from services.rag_chat_layout import inject_document_assistant_styles, render_doc_hero
 from services.rag_chat_ui import (
+    MENU_ACCOUNT,
     MENU_CHAT,
     MENU_SIGNUP,
     MENU_TERMS,
+    ensure_document_assistant_menu,
+    navigate_rag_menu,
     render_full_terms,
     render_page_menu,
     render_signup_signin_panel,
@@ -23,6 +35,9 @@ _SESSION_KEY = "document_assistant"
 
 
 def render() -> None:
+    mount_rag_auth_cookie_component()
+    init_rag_auth_session()
+    sync_portal_user_context()
     inject_document_assistant_styles()
     portal_page_setup(
         "Document & Policy Assistant",
@@ -30,10 +45,22 @@ def render() -> None:
         page_kind=PAGE_SUPPORT,
     )
 
+    ensure_document_assistant_menu()
     menu = render_page_menu()
+    render_auth_toasts()
 
-    if menu == MENU_SIGNUP:
-        render_signup_signin_panel()
+    if is_logged_in() and menu == MENU_SIGNUP:
+        navigate_rag_menu(MENU_CHAT)
+        return
+
+    if menu in (MENU_SIGNUP, MENU_ACCOUNT):
+        if is_logged_in():
+            if menu == MENU_ACCOUNT:
+                render_signup_signin_panel()
+            else:
+                navigate_rag_menu(MENU_CHAT)
+        else:
+            render_signup_signin_panel()
         return
 
     if menu == MENU_TERMS:
@@ -54,7 +81,7 @@ def render() -> None:
         return
 
     render_welcome_banner()
-    demo_uid = st.session_state.get("demo_user_id") or "user-1"
+    demo_uid = resolve_portal_user_id()
 
     chat_col, tools_col = st.columns([1.65, 1], gap="large")
 

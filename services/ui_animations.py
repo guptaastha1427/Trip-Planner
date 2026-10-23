@@ -60,15 +60,74 @@ def inject_page_background() -> None:
             backdrop-filter: blur(14px);
             border-right: 1px solid rgba(199, 210, 254, 0.55);
         }}
+        /* Expanded: transform anchors fixed profile dock to the sidebar panel */
+        section[data-testid="stSidebar"][aria-expanded="true"] {{
+            position: relative !important;
+            transform: translateZ(0) !important;
+            overflow: visible !important;
+        }}
+        /* Collapsed: clip content so labels do not wrap in a narrow strip */
+        section[data-testid="stSidebar"][aria-expanded="false"] {{
+            overflow: hidden !important;
+            min-width: 0 !important;
+            border-right: none !important;
+        }}
+        section[data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarUserContent"],
+        section[data-testid="stSidebar"][aria-expanded="false"] [data-testid="stSidebarNav"] {{
+            display: none !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button {{
+            width: 2rem !important;
+            height: 2rem !important;
+            min-width: 2rem !important;
+            min-height: 2rem !important;
+            padding: 0 !important;
+            border-radius: 10px !important;
+            border: 1px solid transparent !important;
+            background: transparent !important;
+            color: #64748b !important;
+            transition:
+                background 0.15s ease,
+                border-color 0.15s ease,
+                color 0.15s ease,
+                box-shadow 0.15s ease,
+                transform 0.12s ease !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:hover,
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:hover button {{
+            background: rgba(124, 108, 240, 0.12) !important;
+            border-color: rgba(124, 108, 240, 0.28) !important;
+            color: #4a478a !important;
+            box-shadow: 0 2px 8px rgba(74, 71, 138, 0.12) !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:active,
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:active button {{
+            background: rgba(124, 108, 240, 0.2) !important;
+            transform: scale(0.94) !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:focus-visible {{
+            outline: 2px solid rgba(124, 108, 240, 0.55) !important;
+            outline-offset: 2px !important;
+        }}
+        [data-testid="stSidebarNavViewButton"] button {{
+            border-radius: 10px !important;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
+        }}
+        [data-testid="stSidebarNavViewButton"] button:hover {{
+            background: rgba(124, 108, 240, 0.12) !important;
+            color: #4a478a !important;
+            box-shadow: 0 2px 8px rgba(74, 71, 138, 0.12) !important;
+        }}
         section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {{
             max-height: 100vh !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: 0.25rem !important;
+            padding-bottom: 0 !important;
         }}
         section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-            padding-bottom: 5.5rem !important;
+            padding-bottom: 6.5rem !important;
         }}
         section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"],
         section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"] [data-testid="stVerticalBlock"] {{
@@ -78,12 +137,15 @@ def inject_page_background() -> None:
         section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"] .stButton button {{
             font-family: "Plus Jakarta Sans", system-ui, sans-serif !important;
             font-size: 0.8125rem !important;
-            font-weight: 500 !important;
-            color: #475569 !important;
+            font-weight: 600 !important;
             text-align: left !important;
             white-space: normal !important;
             line-height: 1.35 !important;
             min-height: 2.5rem;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-trip_history_scroll"] .stButton button p {{
+            color: #ffffff !important;
+            text-align: left !important;
         }}
         section[data-testid="stSidebar"] nav a,
         section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a,
@@ -100,6 +162,13 @@ def inject_page_background() -> None:
         }}
         section[data-testid="stSidebar"] [data-testid="stSidebarNav"] ul {{
             margin-bottom: 0.65rem !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[href*="document-assistant"],
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"][href*="document-assistant"] {{
+            display: none !important;
+        }}
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] li:has(a[href*="document-assistant"]) {{
+            display: none !important;
         }}
         </style>
         """,
@@ -156,7 +225,10 @@ def inject_ui_animations() -> None:
             padding-left: var(--tp-main-gutter) !important;
             padding-right: var(--tp-main-gutter) !important;
             padding-bottom: 1.5rem !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
             margin-top: 0 !important;
+            box-sizing: border-box !important;
             color: var(--tp-ink-700);
             font-size: var(--tp-text-base);
             line-height: var(--tp-leading);
@@ -273,20 +345,14 @@ def inject_ui_animations() -> None:
             margin-top: 0.35rem;
         }
 
-        /* Tabs */
-        [data-baseweb="tab-list"] {
-            gap: 0.5rem;
+        /* Tabs — hide Base Web underline / sliding indicator bars */
+        [data-baseweb="tab-border"],
+        [data-baseweb="tab-highlight"] {
+            display: none !important;
+            height: 0 !important;
+            border: none !important;
+            background: transparent !important;
         }
-        [data-baseweb="tab"] {
-            font-family: var(--tp-font) !important;
-            font-weight: 600 !important;
-            font-size: var(--tp-text-sm) !important;
-            color: var(--tp-ink-500) !important;
-        }
-        [data-baseweb="tab"][aria-selected="true"] {
-            color: var(--tp-brand-700) !important;
-        }
-
         /* Hint cards — horizontal scroll */
         .hint-scroll {
             display: flex;
@@ -560,7 +626,7 @@ def inject_ui_animations() -> None:
             padding-bottom: 0.35rem;
             -webkit-overflow-scrolling: touch;
         }
-        section.main [class*="st-key-swap_"] button[kind="secondary"] {
+        section.main [class*="st-key-swap_"] [data-testid="stButton"] button {
             min-width: 268px !important;
             max-width: 268px !important;
             min-height: 4.75rem !important;
@@ -572,48 +638,48 @@ def inject_ui_animations() -> None:
             font-weight: 600 !important;
             color: #1e293b !important;
             background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 14px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+            border: 1px solid #cbd5e1 !important;
+            border-bottom-width: 4px !important;
+            border-bottom-color: #94a3b8 !important;
+            border-radius: var(--tp-btn-radius, 0.5rem) !important;
+            box-shadow: none !important;
             white-space: pre-line !important;
             word-break: break-word !important;
         }
-        section.main [class*="st-key-swap_"] button[kind="secondary"]:hover {
-            border-color: rgba(34, 211, 238, 0.45) !important;
-            background: rgba(36, 48, 62, 0.85) !important;
+        section.main [class*="st-key-swap_"] [data-testid="stButton"] button:hover {
+            filter: brightness(1.03) !important;
+            transform: translateY(-1px) !important;
+            border-bottom-width: 6px !important;
+            background: #f8fafc !important;
         }
-        section.main [class*="st-key-swap_"] button[kind="secondary"] p {
+        section.main [class*="st-key-swap_"] [data-testid="stButton"] button:active {
+            filter: brightness(0.97) !important;
+            transform: translateY(2px) !important;
+            border-bottom-width: 2px !important;
+        }
+        section.main [class*="st-key-swap_"] [data-testid="stButton"] button p {
+            color: #1e293b !important;
+            font-size: 0.82rem !important;
+            font-weight: 600 !important;
+            margin: 0 !important;
+            line-height: 1.35 !important;
+        }
+        section.main [class*="st-key-swap_"] [data-testid="stButton"] button p + p {
             font-size: 0.72rem !important;
             font-weight: 500 !important;
-            color: #94a3b8 !important;
+            color: #64748b !important;
             margin-top: 0.25rem !important;
             line-height: 1.3 !important;
         }
 
-        /* Buttons */
-        .stButton button {
+        /* Buttons — font only (3D look from inject_travel_light_theme) */
+        .stButton button,
+        [data-testid="stFormSubmitButton"] button,
+        [data-testid="stDownloadButton"] button,
+        [data-testid="stLinkButton"] a {
             font-family: var(--tp-font) !important;
-        }
-        .stButton button[kind="primary"] {
-            border-radius: 999px;
-            font-weight: 700 !important;
             font-size: var(--tp-text-base) !important;
             letter-spacing: 0.01em;
-            background: linear-gradient(135deg, #4a478a, #6d28d9) !important;
-            color: #ffffff !important;
-            border: none !important;
-            box-shadow: 0 10px 28px rgba(74, 71, 138, 0.32);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .stButton button[kind="primary"]:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 32px rgba(34, 211, 238, 0.5);
-        }
-        .stButton button[kind="secondary"] {
-            border-radius: 10px;
-            font-size: var(--tp-text-sm) !important;
-            font-weight: 600 !important;
-            color: var(--tp-ink-700) !important;
         }
 
         /* Form inputs — dark glass */

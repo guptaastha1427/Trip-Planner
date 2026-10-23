@@ -74,6 +74,11 @@ def _verify_password(password: str, stored: str) -> bool:
     return secrets.compare_digest(actual, expected)
 
 
+def list_auth_user_profiles() -> List[Dict[str, Any]]:
+    """Public profiles for all Document Assistant accounts (no password hashes)."""
+    return [_public_profile(u) for u in _load_users()]
+
+
 def _load_users() -> List[Dict[str, Any]]:
     if not USERS_PATH.is_file():
         return []
@@ -181,6 +186,37 @@ def _clear_auth_cookie() -> None:
         pass
 
 
+def _read_portal_persisted_token() -> Optional[str]:
+    try:
+        from services.customer_portal_store import load_portal_state
+
+        raw = load_portal_state().get("rag_session_token")
+    except Exception:
+        return None
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return None
+
+
+def _persist_portal_auth_token(token: Optional[str]) -> None:
+    try:
+        from services.customer_portal_store import get_portal_state, save_portal_state
+
+        state = get_portal_state()
+        if token:
+            state["rag_session_token"] = token
+        else:
+            state.pop("rag_session_token", None)
+        save_portal_state(state)
+    except Exception:
+        pass
+
+
+def mount_rag_auth_cookie_component() -> None:
+    """Mount the cookie component early in the run (before other widgets)."""
+    _cookie_manager()
+
+
 def _create_server_session(email: str) -> str:
     token = secrets.token_urlsafe(32)
     sessions = _load_sessions()
@@ -191,6 +227,7 @@ def _create_server_session(email: str) -> str:
     _save_sessions(sessions)
     st.session_state[SESSION_TOKEN_KEY] = token
     _write_auth_cookie(token)
+    _persist_portal_auth_token(token)
     return token
 
 
@@ -225,11 +262,16 @@ def init_rag_auth_session() -> None:
     if isinstance(token, str) and token and _apply_session_token(token):
         return
 
+    portal_token = _read_portal_persisted_token()
+    if portal_token and _apply_session_token(portal_token):
+        return
+
     attempts = int(st.session_state.get("_rag_auth_cookie_attempts", 0))
     if attempts < 2:
         cookie_token = _read_auth_cookie()
         st.session_state["_rag_auth_cookie_attempts"] = attempts + 1
         if cookie_token and _apply_session_token(cookie_token):
+            _persist_portal_auth_token(cookie_token)
             return
         if _cookie_manager() is not None and attempts == 0 and not cookie_token:
             st.rerun()
@@ -266,6 +308,9 @@ def register_user(username: str, email: str, password: str) -> Tuple[bool, str]:
     users.append(profile)
     _save_users(users)
     _establish_login(profile)
+    from services.customer_portal_store import upsert_portal_customer
+
+    upsert_portal_customer(name, em, created_at=str(profile.get("created_at", "")))
     return True, f"Welcome, {name}! Your account was created."
 
 
@@ -301,6 +346,13 @@ def login_user(email: str, password: str) -> Tuple[bool, str]:
         return False, "Incorrect password. Try again or create a new account."
 
     _establish_login(user)
+    from services.customer_portal_store import upsert_portal_customer
+
+    upsert_portal_customer(
+        str(user.get("username", em)),
+        em,
+        created_at=str(user.get("created_at", "")),
+    )
     name = user.get("username", em)
     return True, f"Signed in as **{name}**."
 
@@ -314,6 +366,40 @@ def logout_user() -> None:
     st.session_state.pop("_rag_auth_cookie_attempts", None)
     st.session_state.pop("_rag_auth_cookie_checked", None)
     _clear_auth_cookie()
+    _persist_portal_auth_token(None)
+
+
+_AUTH_TOAST_KEY = "rag_auth_toast"
+
+
+def queue_auth_toast(message: str, kind: str = "success") -> None:
+    """Show on the next rerun (after login, logout, or registration)."""
+    if kind not in ("success", "error", "info", "warning"):
+        kind = "info"
+    st.session_state[_AUTH_TOAST_KEY] = (kind, message)
+
+
+def render_auth_toasts() -> None:
+    payload = st.session_state.pop(_AUTH_TOAST_KEY, None)
+    if not payload:
+        return
+    kind, message = payload
+    icons = {
+        "success": "✅",
+        "error": "❌",
+        "info": "ℹ️",
+        "warning": "⚠️",
+    }
+    icon = icons.get(kind, "ℹ️")
+    try:
+        st.toast(message, icon=icon)
+    except Exception:
+        if kind == "error":
+            st.error(message)
+        elif kind == "warning":
+            st.warning(message)
+        else:
+            st.success(message)
 
 
 def current_user() -> Optional[Dict[str, Any]]:

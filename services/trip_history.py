@@ -20,6 +20,8 @@ __all__ = [
     "load_trip_history",
     "get_trip_history_cached",
     "save_trip_history",
+    "list_trip_history_for_portal_user",
+    "clear_trip_history_for_portal_user",
     "append_trip_record",
     "snapshot_history_entry",
     "find_history_entry",
@@ -62,6 +64,32 @@ def get_trip_history_cached() -> List[dict]:
     return st.session_state.trip_history_cache
 
 
+def _trip_owner_id(entry: dict) -> str:
+    from services.demo_users import DEFAULT_USER_ID
+
+    owner = entry.get("portal_user_id")
+    if isinstance(owner, str) and owner:
+        return owner
+    return DEFAULT_USER_ID
+
+
+def list_trip_history_for_portal_user(portal_user_id: str) -> List[dict]:
+    return [
+        entry
+        for entry in get_trip_history_cached()
+        if _trip_owner_id(entry) == portal_user_id
+    ]
+
+
+def clear_trip_history_for_portal_user(portal_user_id: str, *, persist_disk: bool = True) -> None:
+    kept = [
+        entry
+        for entry in get_trip_history_cached()
+        if _trip_owner_id(entry) != portal_user_id
+    ]
+    save_trip_history(kept, persist_disk=persist_disk)
+
+
 def save_trip_history(entries: List[dict], *, persist_disk: bool = True) -> None:
     st.session_state.trip_history_cache = entries
     if not persist_disk:
@@ -81,8 +109,13 @@ def append_trip_record(
     constraints: str,
     itinerary: dict,
     tool_state: dict,
+    portal_user_id: Optional[str] = None,
     persist_disk: bool = True,
 ) -> dict:
+    if not portal_user_id:
+        from services.portal_user_context import resolve_portal_user_id
+
+        portal_user_id = resolve_portal_user_id()
     entry = {
         "id": str(uuid.uuid4())[:8],
         "created_at": time.strftime("%Y-%m-%d %H:%M"),
@@ -92,6 +125,7 @@ def append_trip_record(
         "pace": pace,
         "interests": interests,
         "constraints": constraints,
+        "portal_user_id": portal_user_id,
         "itinerary": copy.deepcopy(itinerary),
         "tool_state": copy.deepcopy(tool_state),
     }
@@ -139,10 +173,16 @@ def snapshot_history_entry(
         save_trip_history(history, persist_disk=persist_disk)
 
 
-def find_history_entry(entry_id: str) -> Optional[dict]:
+def find_history_entry(
+    entry_id: str,
+    portal_user_id: Optional[str] = None,
+) -> Optional[dict]:
     for entry in get_trip_history_cached():
-        if entry.get("id") == entry_id:
-            return entry
+        if entry.get("id") != entry_id:
+            continue
+        if portal_user_id and _trip_owner_id(entry) != portal_user_id:
+            continue
+        return entry
     return None
 
 

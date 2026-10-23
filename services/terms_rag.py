@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from services.rag_citations import assistant_message_uses_html, embed_sources_in_reply
 from services.ui_copy import polish_ui_copy
 from services.website_rag import (
     RetrievedChunk,
@@ -102,8 +103,10 @@ def answer_from_terms_document(
     if "_Source:" not in body:
         body = body + footer
 
-    reply = polish_ui_copy(body)
     sources = chunks_to_source_dicts(strong)
+    reply = polish_ui_copy(body)
+    if sources and not assistant_message_uses_html(reply):
+        reply = embed_sources_in_reply(reply, sources)
     return reply, _low_confidence(strong, min_score), sources
 
 
@@ -123,4 +126,7 @@ def answer_from_retrieved_chunks(
     if llm_err:
         answer = f"{answer}\n\n_{llm_err}_"
     sources = chunks_to_source_dicts(strong)
-    return polish_ui_copy(answer), _low_confidence(strong, min_score), sources
+    reply = polish_ui_copy(answer)
+    if sources and not assistant_message_uses_html(reply):
+        reply = embed_sources_in_reply(reply, sources)
+    return reply, _low_confidence(strong, min_score), sources

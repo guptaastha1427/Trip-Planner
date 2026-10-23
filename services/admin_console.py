@@ -32,6 +32,45 @@ _REFUND_TERMINAL = {"Rejected", "Completed (demo)", "Completed"}
 _TICKET_CLOSED = {"resolved", "closed", "approved"}
 
 
+def refund_workflow_is_terminal(status: str) -> bool:
+    return status in _REFUND_TERMINAL
+
+
+def refund_request_expander_title(r: dict) -> str:
+    rid = str(r.get("request_id", ""))
+    uid = str(r.get("user_id", ""))
+    status = polish_ui_copy(str(r.get("workflow_status", "Submitted")))
+    booking_id = r.get("booking_id", "")
+    return polish_ui_copy(
+        f"**{rid}** · user `{uid}` · booking **{booking_id}** · **{status}**"
+    )
+
+
+def render_refund_request_details(r: dict, *, show_customer: bool = True) -> None:
+    """Reason, eligibility, booking, and policy notes for one refund request."""
+    uid = str(r.get("user_id", ""))
+    if show_customer:
+        st.markdown(f"**Customer:** `{uid}` ({_user_name(uid)})")
+    st.markdown(
+        f"**Raised because:** {refund_reason_label(str(r.get('reason', '')))} "
+        f"· eligibility **{r.get('eligibility', '—')}**"
+    )
+    expl = r.get("explanation_detail") or r.get("explanation", "")
+    if expl:
+        st.markdown(expl)
+    booking = booking_for_refund_display(str(r.get("booking_id", "")))
+    if booking:
+        st.markdown(
+            f"**Ticket/booking:** {booking.get('status', '—')} · "
+            f"{booking.get('origin')} → {booking.get('destination')}"
+        )
+        detail = booking_detail_markdown(booking)
+        if detail:
+            st.markdown(detail)
+    else:
+        st.caption(f"No booking record for `{r.get('booking_id')}` in sample data.")
+
+
 def inject_admin_console_styles() -> None:
     st.markdown(
         """
@@ -45,17 +84,11 @@ def inject_admin_console_styles() -> None:
             font-size: 0.9rem;
         }
         [data-testid="stTabs"] [data-baseweb="tab-list"] {
-            gap: 0.35rem;
+            gap: 0.85rem !important;
             flex-wrap: wrap;
         }
         [data-testid="stTabs"] [data-baseweb="tab"] {
             font-size: 0.8rem !important;
-            padding: 0.35rem 0.65rem !important;
-            min-height: 2rem;
-        }
-        [data-testid="stTabs"] [data-baseweb="tab"][aria-selected="true"] {
-            background: #f0fdfa !important;
-            border-radius: 8px;
         }
         </style>
         """,
@@ -65,6 +98,57 @@ def inject_admin_console_styles() -> None:
 
 def _user_name(uid: str) -> str:
     return DEMO_USERS.get(uid, {}).get("display_name", uid)
+
+
+def list_restricted_users() -> List[Dict[str, Any]]:
+    """Demo customers whose effective account status is not active."""
+    rows: List[Dict[str, Any]] = []
+    for uid, meta in DEMO_USERS.items():
+        profile = effective_account_profile(uid)
+        status = profile.get("account_status", "active")
+        if status == "active":
+            continue
+        rows.append(
+            {
+                "user_id": uid,
+                "display_name": meta.get("display_name") or uid,
+                "email": meta.get("email", ""),
+                "account_status": status,
+                "status_label": account_status_label(status),
+                "restriction_notes": list(profile.get("restriction_notes") or []),
+            }
+        )
+    rows.sort(key=lambda r: str(r["display_name"]))
+    return rows
+
+
+def _restricted_users_metric_help(users: List[Dict[str, Any]]) -> str:
+    if not users:
+        return "No restricted demo accounts."
+    lines = [f"{len(users)} restricted account(s):", ""]
+    for u in users:
+        lines.append(f"• {u['display_name']}")
+        lines.append(f"  {u['status_label']} · {u['user_id']}")
+        notes = u.get("restriction_notes") or []
+        if notes:
+            summary = str(notes[0].get("summary") or "").strip()
+            if summary:
+                lines.append(f"  {summary}")
+        lines.append("")
+    lines.append("Update status in Admin → Accounts.")
+    return "\n".join(lines).strip()
+
+
+def render_restricted_users_metric(column) -> None:
+    """Plain metric; hover the ? icon to see who is restricted."""
+    users = list_restricted_users()
+    count = len(users)
+    with column:
+        st.metric(
+            "Restricted users",
+            count,
+            help=_restricted_users_metric_help(users),
+        )
 
 
 def get_admin_queue_counts(state: Optional[Dict[str, Any]] = None) -> Dict[str, int]:
@@ -86,11 +170,7 @@ def _queue_counts(state: Dict[str, Any]) -> Dict[str, int]:
     open_appeals = [
         a for a in appeals if (a.get("status") or "").lower() in ("submitted", "under review")
     ]
-    restricted = sum(
-        1
-        for u in DEMO_USERS.values()
-        if effective_account_profile(u["user_id"]).get("account_status") != "active"
-    )
+    restricted = len(list_restricted_users())
     return {
         "pending_refunds": len(pending_refunds),
         "open_tickets": len(open_tickets),
@@ -144,7 +224,7 @@ def render_admin_console(show_warning: bool = True) -> None:
     m1.metric("Refunds to process", counts["pending_refunds"])
     m2.metric("Open tickets", counts["open_tickets"])
     m3.metric("Appeals waiting", counts["open_appeals"])
-    m4.metric("Restricted users", counts["restricted"])
+    render_restricted_users_metric(m4)
 
     tabs = st.tabs(_tab_labels(counts))
     with tabs[0]:
@@ -248,28 +328,13 @@ def _render_refunds(state: Dict[str, Any]) -> None:
 
     for r in filtered:
         rid = r.get("request_id", "")
-        uid = r.get("user_id", "")
         status = r.get("workflow_status", "Submitted")
         nxt = advance_demo_workflow(status)
-        title = polish_ui_copy(
-            f"{rid} · {_user_name(uid)} · {r.get('booking_id')} · **{status}**"
-        )
-        with st.expander(title, expanded=status not in _REFUND_TERMINAL):
-            st.markdown(f"**Customer:** `{uid}` ({_user_name(uid)})")
-            st.markdown(
-                f"**Why the customer raised this:** "
-                f"{refund_reason_label(str(r.get('reason', '')))}"
-            )
-            st.markdown(f"**Eligibility:** {r.get('eligibility', '—')}")
-            expl = r.get("explanation_detail") or r.get("explanation", "")
-            if expl:
-                st.info(expl)
-            booking = booking_for_refund_display(str(r.get("booking_id", "")))
-            if booking:
-                st.markdown("**Booking / ticket under review**")
-                st.markdown(booking_detail_markdown(booking))
-            else:
-                st.caption(f"No booking record for `{r.get('booking_id')}` in sample data.")
+        with st.expander(
+            refund_request_expander_title(r),
+            expanded=status not in _REFUND_TERMINAL,
+        ):
+            render_refund_request_details(r)
             if r.get("status_history"):
                 with st.popover("Status history"):
                     for h in r["status_history"][-8:]:
@@ -391,11 +456,17 @@ def _render_tickets(state: Dict[str, Any], *, embedded: bool) -> None:
         _render_ticket_card(t, compact=embedded)
 
 
-def render_admin_tickets_embedded(limit: int = 10, heading: str = "Support tickets") -> None:
+def render_admin_tickets_embedded(
+    limit: int = 10,
+    heading: str = "Support tickets",
+    user_id: Optional[str] = None,
+) -> None:
     """Compact ticket tools for Support page admin strip."""
     section_heading(heading, variant="travel")
     state = get_portal_state()
     tickets = state.get("support_tickets") or []
+    if user_id:
+        tickets = [t for t in tickets if t.get("user_id") == user_id]
     if not tickets:
         st.caption("No tickets in portal state.")
         return

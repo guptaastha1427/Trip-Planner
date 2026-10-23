@@ -13,6 +13,7 @@ from services.refund_policy_config import get_policy, policy_as_dict
 from services.ui_copy import polish_ui_copy
 from services.travel_packages import (
     FARE_TIERS,
+    PACKAGE_MAX_TRAVELERS,
     estimate_package_total,
     get_package,
     journey_iso,
@@ -146,7 +147,8 @@ def create_package_booking(
     tier = FARE_TIERS.get(fare_tier, FARE_TIERS["standard"])
     policy_id, ticket_type, _, _ = tier
     nights_val = nights if nights is not None else pkg.nights
-    amount = estimate_package_total(pkg, travelers, fare_tier, nights=nights_val)
+    headcount = max(1, min(PACKAGE_MAX_TRAVELERS, int(travelers)))
+    amount = estimate_package_total(pkg, headcount, fare_tier, nights=nights_val)
     booking_id = new_id("BK-PKG")
     record = {
         "booking_id": booking_id,
@@ -164,7 +166,7 @@ def create_package_booking(
         "package_id": pkg.package_id,
         "package_name": pkg.name,
         "package_tagline": pkg.tagline,
-        "travelers": travelers,
+        "travelers": headcount,
         "nights": nights_val,
         "includes": list(pkg.includes),
         "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),

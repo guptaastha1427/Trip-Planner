@@ -5,5 +5,7 @@
   "account_appeals": [],
   "audit_log": [],
   "account_overrides": {},
-  "user_bookings": []
+  "user_bookings": [],
+  "registered_customers": {},
+  "rag_session_token": null
 }

@@ -14,7 +14,7 @@ from services.customer_portal_store import (
     set_demo_user,
 )
 from services.demo_dashboard import is_admin_dashboard_mode
-from services.demo_users import DEMO_USERS, account_status_label
+from services.demo_users import account_status_label
 from services.portal_session_ui import clear_ephemeral_portal_ui
 from services.ui_copy import polish_ui_copy
 from services.role_dashboard import (
@@ -25,7 +25,18 @@ from services.role_dashboard import (
     PAGE_TERMS,
     render_page_context_strip,
 )
+from services.portal_user_context import (
+    can_pick_customer_preview,
+    effective_portal_profile,
+    list_portal_customer_ids,
+    portal_customer_label,
+    portal_user_display_name,
+    portal_user_id_for_auth,
+    resolve_portal_user_id,
+    sync_portal_user_context,
+)
 from services.rag_chat_auth import current_user, is_logged_in, logout_user
+from services.rag_chat_ui import MENU_SIGNUP, set_rag_chat_menu
 from services.ui_animations import inject_ui_animations
 
 
@@ -34,12 +45,44 @@ def inject_portal_styles() -> None:
     st.markdown(
         """
         <style>
+        /* Portal pages — align hero with main column gutters (app-wide via inject_ui_animations) */
+        [data-testid="stMainBlockContainer"]:has(.portal-hero-wrap) {
+            padding-top: var(--tp-main-gutter, 1.25rem) !important;
+            padding-left: var(--tp-main-gutter, 1.25rem) !important;
+            padding-right: var(--tp-main-gutter, 1.25rem) !important;
+        }
+        [data-testid="stMainBlockContainer"]:has(.portal-hero-wrap)
+            > div > div > [data-testid="stVerticalBlock"] > div:first-child:has([data-testid="stHeading"]) {
+            display: none !important;
+        }
+        [data-testid="stMainBlockContainer"]:has(.portal-hero-wrap) [data-testid="stVerticalBlock"] {
+            gap: 0.5rem !important;
+        }
+        [data-testid="stMainBlockContainer"]:has(.portal-hero-wrap)
+            [data-testid="stElementContainer"]:has(.portal-hero-wrap) {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .portal-hero-wrap {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin: 0 0 0.65rem 0;
+            padding: 0;
+        }
         .portal-hero {
             background: linear-gradient(135deg, #0f172a 0%, #115e59 55%, #0d9488 120%);
             color: #f8fafc;
             border-radius: 16px;
-            padding: 1.25rem 1.5rem;
-            margin: 0 0 0.85rem 0;
+            padding: 1.15rem 1.25rem;
+            margin: 0;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             transition: all 0.3s ease-in-out;
         }
         .portal-hero h1 {
@@ -65,77 +108,34 @@ def inject_portal_styles() -> None:
         .status-pill--warn { background: #fef3c7; color: #92400e; }
         .status-pill--bad { background: #fee2e2; color: #991b1b; }
         .status-pill--info { background: #e0f2fe; color: #075985; }
+        /* transform on expanded sidebar only — see inject_page_background for collapse rules */
+        section[data-testid="stSidebar"][aria-expanded="true"] {
+            position: relative !important;
+            transform: translateZ(0) !important;
+            overflow: visible !important;
+        }
         section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] {
-            position: sticky !important;
+            position: fixed !important;
+            left: 0 !important;
+            right: 0 !important;
             bottom: 0 !important;
             z-index: 30 !important;
-            background: rgba(255, 255, 255, 0.96) !important;
-            border-top: 1px solid rgba(199, 210, 254, 0.65) !important;
-            padding: 0.35rem 0 0.5rem !important;
-            margin-top: 0.5rem !important;
-            box-shadow: 0 -10px 28px rgba(74, 71, 138, 0.08);
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            background: rgba(255, 255, 255, 0.98) !important;
+            border-top: none !important;
+            padding: 0.5rem 1rem 0.85rem 1rem !important;
+            margin: 0 !important;
+            box-shadow: 0 -10px 28px rgba(74, 71, 138, 0.1);
             backdrop-filter: blur(12px);
+            pointer-events: auto !important;
         }
-        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] button {
-            border-radius: 12px !important;
-            min-height: 2.75rem !important;
+        section[data-testid="stSidebar"][aria-expanded="false"] [class*="st-key-portal_user_dock"] {
+            display: none !important;
+        }
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverBody"] button {
             font-weight: 600 !important;
-            text-align: left !important;
-            justify-content: flex-start !important;
-        }
-        .portal-user-dock-wrap {
-            position: relative;
-            margin-bottom: 0.15rem;
-        }
-        .portal-user-switch-hint {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: calc(100% + 4px);
-            background: #ffffff;
-            border: 1px solid rgba(199, 210, 254, 0.7);
-            border-radius: 12px;
-            padding: 0.45rem 0.55rem;
-            box-shadow: 0 12px 32px rgba(74, 71, 138, 0.12);
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(6px);
-            transition: opacity 0.18s ease, transform 0.18s ease;
-            font-size: 0.78rem;
-            color: #475569;
-            z-index: 40;
-        }
-        .portal-user-dock-wrap:hover .portal-user-switch-hint {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .portal-user-switch-row {
-            padding: 0.2rem 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .portal-user-switch-row:last-child {
-            border-bottom: none;
-        }
-        .portal-user-switch-cta {
-            display: block;
-            margin-top: 0.35rem;
-            font-size: 0.7rem;
-            color: #0d9488;
-            font-weight: 600;
-        }
-        .portal-user-avatar-dot {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 1.65rem;
-            height: 1.65rem;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #0d9488, #2563eb);
-            color: #fff;
-            font-size: 0.72rem;
-            font-weight: 700;
-            margin-right: 0.35rem;
-            vertical-align: middle;
         }
         </style>
         """,
@@ -158,9 +158,11 @@ def render_portal_hero(title: str, subtitle: str, page_kind: str = PAGE_TERMS) -
     )
     st.markdown(
         f"""
-        <div class="portal-hero" style="background: {gradient};">
-          <h1>{html.escape(polish_ui_copy(title))}</h1>
-          <p>{html.escape(polish_ui_copy(subtitle))}</p>
+        <div class="portal-hero-wrap">
+          <div class="portal-hero" style="background: {gradient};">
+            <h1>{html.escape(polish_ui_copy(title))}</h1>
+            <p>{html.escape(polish_ui_copy(subtitle))}</p>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -196,116 +198,166 @@ def _on_demo_user_changed() -> None:
 
 
 def _sync_demo_user_state() -> str:
-    current = st.session_state.get("demo_user_id") or get_portal_state().get(
-        "current_user_id", "user_alex"
+    return sync_portal_user_context()
+
+
+def _profile_initials(display_name: str) -> str:
+    tokens = [t for t in display_name.replace("(", " ").split() if t and t[0].isalpha()]
+    return "".join(t[0].upper() for t in tokens[:2]) or "U"
+
+
+def _profile_display_name(auth: Optional[dict], portal_uid: str) -> str:
+    if auth:
+        name = str(auth.get("username") or "User")
+        return name if len(name) <= 24 else name[:22] + "…"
+    short = portal_customer_label(portal_uid).split("(")[0].strip()
+    return short if len(short) <= 24 else short[:22] + "…"
+
+
+def _profile_subtitle(auth: Optional[dict], portal_uid: str) -> str:
+    if auth:
+        profile = effective_portal_profile(portal_uid)
+        return account_status_label(profile.get("account_status", "active"))
+    return "Guest · sign in to chat"
+
+
+def _css_content_escape(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", " ")
+        .replace("\r", "")
     )
-    options = list(DEMO_USERS.keys())
-    if current not in options:
-        current = options[0]
-    if "portal_demo_user_select" not in st.session_state:
-        st.session_state.portal_demo_user_select = current
-    if st.session_state.get("demo_user_id") != st.session_state.portal_demo_user_select:
-        set_demo_user(st.session_state.portal_demo_user_select)
-    choice = st.session_state.portal_demo_user_select
-    if st.session_state.get("demo_user_id") != choice:
-        set_demo_user(choice)
-    return choice
+
+
+def _inject_profile_popover_styles(initials: str, name: str, subtitle: str) -> None:
+    ini = _css_content_escape(initials)
+    nm = _css_content_escape(name)
+    sub = _css_content_escape(subtitle)
+    st.markdown(
+        f"""
+        <style>
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopover"] {{
+            width: 100% !important;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"] {{
+            min-height: 3.25rem !important;
+            height: auto !important;
+            width: 100% !important;
+            padding: 0.5rem 0.75rem 0.5rem 3.4rem !important;
+            border-radius: 12px !important;
+            background: #f1f5f9 !important;
+            border: 1px solid rgba(148, 163, 184, 0.35) !important;
+            box-shadow: none !important;
+            position: relative !important;
+            justify-content: flex-start !important;
+            overflow: hidden !important;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"]:hover {{
+            background: #e8edf4 !important;
+            border-color: rgba(100, 116, 139, 0.45) !important;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"] p,
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"] [data-testid="stMarkdownContainer"] {{
+            display: none !important;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"]::before {{
+            content: "{ini}";
+            position: absolute;
+            left: 0.55rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2.15rem;
+            height: 2.15rem;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f59e0b 0%, #ea580c 100%);
+            color: #fff;
+            font-size: 0.82rem;
+            font-weight: 700;
+            line-height: 2.15rem;
+            text-align: center;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"]::after {{
+            content: "{nm}\\A{sub}";
+            white-space: pre;
+            display: block;
+            text-align: left;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #0f172a;
+            line-height: 1.2;
+            max-width: calc(100% - 0.25rem);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"] svg,
+        section[data-testid="stSidebar"] [class*="st-key-portal_user_dock"] [data-testid="stPopoverButton"] [data-testid="stIconMaterial"] {{
+            display: none !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_sidebar_user_dock() -> str:
-    """Bottom-left sidebar profile — signed-in app user + optional booking demo profile."""
+    """Bottom sidebar profile bar (Gemini-style) — popover with sign-in / sign-out."""
+    inject_portal_styles()
     get_portal_state()
-    choice = _sync_demo_user_state()
-    options = list(DEMO_USERS.keys())
-    labels = {uid: DEMO_USERS[uid]["display_name"] for uid in options}
-
+    choice = resolve_portal_user_id()
+    options = list_portal_customer_ids()
     auth = current_user()
-    if auth:
-        auth_name = str(auth.get("username") or "User")
-        auth_email = str(auth.get("email") or "")
-        auth_tokens = [t for t in auth_name.split() if t and t[0].isalpha()]
-        auth_initials = "".join(t[0].upper() for t in auth_tokens[:2]) or "U"
-        auth_short = auth_name if len(auth_name) <= 20 else auth_name[:18] + "…"
-        pop_label = f"{auth_initials}  {auth_short}"
-    else:
-        profile = effective_account_profile(choice)
-        name = labels.get(choice, choice)
-        email = DEMO_USERS.get(choice, {}).get("email", "")
-        status = account_status_label(profile.get("account_status", "active"))
-        tokens = [t for t in name.replace("(", " ").split() if t and t[0].isalpha()]
-        initials = "".join(t[0].upper() for t in tokens[:2]) or "U"
-        short = name.split("(")[0].strip()
-        if len(short) > 20:
-            short = short[:18] + "…"
-        pop_label = f"{initials}  {short}"
+    signed_in_uid = portal_user_id_for_auth() if auth else None
 
-    others = [
-        f'<div class="portal-user-switch-row">{html.escape(labels[u])}</div>'
-        for u in options
-        if u != choice
-    ]
-    hint = (
-        "".join(others)
-        + '<span class="portal-user-switch-cta">Click profile below for account options</span>'
-    )
+    def _customer_radio_label(uid: str) -> str:
+        label = portal_customer_label(uid)
+        if signed_in_uid and uid == signed_in_uid:
+            return f"{label} · signed in"
+        return label
+
+    display_name = _profile_display_name(auth, choice)
+    initials = _profile_initials(display_name)
+    subtitle = _profile_subtitle(auth, choice)
 
     with st.sidebar.container(key="portal_user_dock"):
-        st.markdown(
-            f'<div class="portal-user-dock-wrap"><div class="portal-user-switch-hint">{hint}</div></div>',
-            unsafe_allow_html=True,
-        )
-        with st.popover(pop_label, use_container_width=True):
+        _inject_profile_popover_styles(initials, display_name, subtitle)
+        with st.popover(" ", use_container_width=True):
             if auth:
-                st.markdown(
-                    f'<span class="portal-user-avatar-dot">{html.escape(auth_initials)}</span> '
-                    f"**{html.escape(auth_name)}**",
-                    unsafe_allow_html=True,
-                )
-                st.caption(auth_email)
-                st.caption("_Signed in — session active across all pages._")
-                if st.button("Sign out", key="portal_global_sign_out", use_container_width=True):
-                    logout_user()
-                    st.session_state["rag_chat_menu"] = "Sign up / Sign in"
+                st.caption(str(auth.get("email") or ""))
+            else:
+                st.caption("Sign in to use Document Assistant chat across the app.")
+
+            if not auth:
+                if st.button("Sign in", key="portal_global_sign_in", use_container_width=True):
+                    set_rag_chat_menu(MENU_SIGNUP)
                     try:
                         import app as trip_app
 
                         st.switch_page(trip_app.DOCUMENT_ASSISTANT_PAGE)
                     except Exception:
                         st.rerun()
-                st.divider()
-                st.caption("**Booking & refund preview** (sample customer data)")
+
+            if auth:
+                if st.button("Sign out", key="portal_global_sign_out", use_container_width=True):
+                    from services.rag_chat_auth import queue_auth_toast
+
+                    former_uid = resolve_portal_user_id()
+                    logout_user()
+                    set_demo_user(former_uid)
+                    st.session_state.portal_demo_user_select = former_uid
+                    set_rag_chat_menu(MENU_SIGNUP)
+                    queue_auth_toast("You have been signed out.", "info")
+                    st.rerun()
+
+            st.divider()
+            if can_pick_customer_preview():
+                st.caption("_Switch customer account (admin preview)._")
             else:
-                profile = effective_account_profile(choice)
-                name = labels.get(choice, choice)
-                email = DEMO_USERS.get(choice, {}).get("email", "")
-                status = account_status_label(profile.get("account_status", "active"))
-                tokens = [t for t in name.replace("(", " ").split() if t and t[0].isalpha()]
-                initials = "".join(t[0].upper() for t in tokens[:2]) or "U"
-                st.markdown(
-                    f'<span class="portal-user-avatar-dot">{html.escape(initials)}</span> '
-                    f"**{html.escape(name)}**",
-                    unsafe_allow_html=True,
-                )
-                st.caption(f"{email}")
-                st.caption(f"Account: **{status}**")
-                try:
-                    import app as trip_app
-
-                    st.page_link(
-                        trip_app.DOCUMENT_ASSISTANT_PAGE,
-                        label="Sign in / Create account",
-                        icon="🔐",
-                    )
-                except Exception:
-                    pass
-                st.caption("_Sign in to unlock Document Assistant chat._")
-
-            if is_admin_dashboard_mode():
-                st.caption("_Admin preview — pick a customer account._")
+                st.caption("_Switch account to preview portal data._")
             st.radio(
                 "Switch account",
                 options=options,
-                format_func=lambda x: labels[x],
+                format_func=_customer_radio_label,
                 key="portal_demo_user_select",
                 on_change=_on_demo_user_changed,
                 label_visibility="collapsed",
@@ -350,11 +402,9 @@ def portal_page_setup(
         st.caption(
             f"App session: **{auth.get('username', 'User')}** · {auth.get('email', '')}"
         )
+    user_id = resolve_portal_user_id()
     if show_page_strip:
-        user_id = _sync_demo_user_state()
         render_page_context_strip(page_kind, user_id)
-    else:
-        user_id = _sync_demo_user_state()
     st.session_state.demo_user_id = user_id
     persist_portal_state()
     return user_id

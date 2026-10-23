@@ -14,6 +14,7 @@ from services.customer_portal_store import (
 from services.demo_users import account_status_label
 from services.refund_policy_config import POLICIES, get_policy
 from services.terms_content import FAQ_ITEMS
+from services.rag_citations import assistant_message_uses_html, embed_sources_in_reply
 from services.terms_rag import answer_from_terms_document
 from services.ui_copy import polish_ui_copy
 
@@ -44,7 +45,11 @@ def _reply(
     escalate: bool,
     sources: List[Dict[str, Any]] | None = None,
 ) -> Tuple[str, bool, List[Dict[str, Any]]]:
-    return polish_ui_copy(text), escalate, sources or []
+    body = polish_ui_copy(text)
+    srcs = sources or []
+    if srcs and not assistant_message_uses_html(body):
+        body = embed_sources_in_reply(body, srcs)
+    return body, escalate, []
 
 
 def answer_support_query(

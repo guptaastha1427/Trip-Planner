@@ -8,17 +8,57 @@ import streamlit as st
 
 from services.bookings import create_package_booking
 from services.demo_dashboard import is_admin_dashboard_mode
+from services.package_details_ui import (
+    render_package_detail_panel,
+    render_package_pricing_actions,
+)
 from services.travel_packages import (
     FARE_TIERS,
+    PACKAGE_DEFAULT_TRAVELERS,
+    PACKAGE_MAX_TRAVELERS,
     PACKAGE_BOOKING_PREFILL_KEY,
+    catalog_route_label,
+    package_includes_summary,
     estimate_package_breakdown,
     get_package,
+    get_package_detail,
     list_packages,
+    package_duration_label,
 )
 from services.ui_components import section_heading
 
 _PKG_CONFIRMED_FLASH = "pkg_booking_confirmed_flash"
 _PKG_CONFIRMED_SNAPSHOT = "pkg_booking_confirmed_snapshot"
+
+
+def _render_package_catalog_expander(pkg) -> None:
+    """Rich package card for Book package → Available packages."""
+    detail = get_package_detail(pkg.package_id)
+    includes = package_includes_summary(pkg.package_id)
+    preview = estimate_package_breakdown(
+        pkg, PACKAGE_DEFAULT_TRAVELERS, "standard", nights=pkg.nights
+    )
+    render_package_detail_panel(
+        pkg,
+        detail,
+        per_person=preview["per_person"],
+        total=preview["total"],
+        travelers=PACKAGE_DEFAULT_TRAVELERS,
+        fare_label="Standard",
+        compact=True,
+    )
+    st.markdown(f"**Includes:** {includes}")
+    st.caption(f"Package ID: `{pkg.package_id}` · {package_duration_label(pkg.nights)}")
+    if detail:
+        with st.expander("Cancellation & who it's for", expanded=False):
+            st.markdown(f"**Refunds:** {detail.cancellation_hint}")
+            st.markdown(f"**Ideal for:** {detail.ideal_for}")
+            st.caption(detail.operator_contact)
+    st.caption(
+        "Full legal and pricing rules: **Terms & Policies** → Packages & tiers "
+        "(also searchable in Document Assistant / policy chat)."
+    )
+    render_package_pricing_actions(package_id=pkg.package_id, catalog_mode=True)
 
 
 def _package_form_snapshot(
@@ -110,53 +150,98 @@ def render_book_package_tab(user_id: str) -> None:
             st.session_state["pkg_nights"] = pkg.nights
         st.session_state["_pkg_last_id"] = picked_id
 
+    package_panel_slot = st.empty()
+
+    st.markdown("##### Trip options")
+    o1, o2 = st.columns(2)
+    with o1:
+        nights = st.number_input(
+            "Nights",
+            min_value=1,
+            max_value=14,
+            value=int(st.session_state.get("pkg_nights", pkg.nights)),
+            key="pkg_nights",
+        )
+    with o2:
+        fare_tier = st.selectbox(
+            "Fare type",
+            options=list(FARE_TIERS.keys()),
+            format_func=lambda k: FARE_TIERS[k][3],
+            key="pkg_fare_tier",
+        )
+    st.caption(
+        "**Standard:** base catalog price (1.0×) · **Flex:** +12% on base (1.12×), easier refunds. "
+        "Full comparison: **Terms & Policies** → *Travel package catalog* → *Package fare types*."
+    )
+
+    st.markdown("##### Travel details")
     c1, c2 = st.columns(2)
-    origin = c1.text_input("From", key="pkg_origin")
-    destination = c2.text_input("To", key="pkg_destination")
-
-    c3, c4, c5 = st.columns(3)
-    departure = c3.date_input(
-        "Departure date",
-        value=date.today() + timedelta(days=14),
-        min_value=date.today() + timedelta(days=1),
-        key="pkg_departure",
-    )
-    travelers = c4.number_input(
-        "Travelers", min_value=1, max_value=8, value=2, key="pkg_travelers"
-    )
-    nights = c5.number_input(
-        "Nights", min_value=1, max_value=14, value=int(pkg.nights), key="pkg_nights"
-    )
-
-    fare_tier = st.radio(
-        "Fare type",
-        options=list(FARE_TIERS.keys()),
-        format_func=lambda k: FARE_TIERS[k][3],
-        horizontal=True,
-        key="pkg_fare_tier",
-    )
+    with c1:
+        origin = st.text_input("From", key="pkg_origin")
+    with c2:
+        destination = st.text_input("To", key="pkg_destination")
+    c3, c4 = st.columns(2)
+    with c3:
+        departure = st.date_input(
+            "Departure date",
+            value=date.today() + timedelta(days=14),
+            min_value=date.today() + timedelta(days=1),
+            key="pkg_departure",
+        )
+    with c4:
+        travelers = st.number_input(
+            "Travelers",
+            min_value=1,
+            max_value=PACKAGE_MAX_TRAVELERS,
+            value=int(st.session_state.get("pkg_travelers", PACKAGE_DEFAULT_TRAVELERS)),
+            key="pkg_travelers",
+            help="Per-traveler fare; each traveler gets a private room (single occupancy).",
+        )
 
     breakdown = estimate_package_breakdown(
         pkg, int(travelers), fare_tier, nights=int(nights)
     )
+    tier_label = FARE_TIERS[fare_tier][3]
+    detail = get_package_detail(picked_id)
+    with package_panel_slot.container():
+        render_package_detail_panel(
+            pkg,
+            detail,
+            per_person=breakdown["per_person"],
+            total=breakdown["total"],
+            travelers=int(travelers),
+            fare_label=tier_label,
+        )
+
+    focus_calc = st.session_state.pop("pkg_focus_calculator", False)
+    if focus_calc:
+        st.info(
+            "Adjust travelers in **Travel details** and nights or fare in **Trip options** — "
+            "the estimate updates instantly."
+        )
+    st.markdown('<div id="pkg-price-calculator"></div>', unsafe_allow_html=True)
     st.markdown("##### Estimated price")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total", f"₹{breakdown['total']:,.0f}")
-    m2.metric("Per person", f"₹{breakdown['per_person']:,.0f}")
+    m2.metric("Per traveler", f"₹{breakdown['per_person']:,.0f}")
     m3.metric("Base (all travelers)", f"₹{breakdown['base_subtotal']:,.0f}")
     extra = breakdown["fare_adjustment"] + breakdown["nights_extra"]
     m4.metric("Extras (fare + nights)", f"₹{extra:,.0f}")
 
-    tier_label = FARE_TIERS[fare_tier][3]
     st.caption(
-        f"{tier_label} · **{int(travelers)}** traveler(s) · **{int(nights)}** night(s) · "
+        f"{tier_label} · **{int(travelers)}** traveler(s), single occupancy · "
+        f"**{int(nights)}** night(s) · "
         f"Includes: {', '.join(i.replace('_', ' ') for i in pkg.includes)}"
     )
     if breakdown["nights_extra"] > 0:
+        inc = int(breakdown.get("included_nights", pkg.nights))
+        extra = int(breakdown.get("extra_nights", 0))
         st.caption(
             f"Night add-on: ₹{breakdown['nights_extra']:,.0f} "
-            f"(₹1,200 × extra nights beyond 2 × travelers)"
+            f"(₹1,200 × {extra} extra night(s) beyond {inc} included × travelers)"
         )
+
+    render_package_pricing_actions(package_id=picked_id, catalog_mode=False)
 
     form_snapshot = _package_form_snapshot(
         picked_id, origin, destination, departure, int(travelers), int(nights), fare_tier
@@ -199,10 +284,13 @@ def render_book_package_tab(user_id: str) -> None:
                 st.rerun()
 
     st.markdown("**Available packages**")
+    st.caption(
+        "Expand a package for itinerary, inclusions, exclusions, and refund hints. "
+        "The same text is indexed under **Terms & Policies** for policy chat."
+    )
     for p in packages:
-        with st.expander(p.name):
-            st.write(p.tagline)
-            st.caption(
-                f"From **{p.default_origin}** to **{p.default_destination}** · "
-                f"{p.nights} nights · from ₹{p.base_price_per_person:,.0f} / person (standard)"
-            )
+        summary = (
+            f"{catalog_route_label(p)} · from ₹{p.base_price_per_person:,.0f}/person"
+        )
+        with st.expander(f"{p.name} — {summary}", expanded=False):
+            _render_package_catalog_expander(p)

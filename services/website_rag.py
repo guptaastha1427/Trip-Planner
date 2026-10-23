@@ -8,8 +8,9 @@ Embeddings and vector stores are cached with ``@st.cache_resource``.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from dataclasses import dataclass, field
+from types import MappingProxyType
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
 import streamlit as st
@@ -45,17 +46,34 @@ WEB_SPLIT_SEPARATORS = ["\n\n", "\n", ". ", "? ", "! ", "; ", ", ", " ", ""]
 TERMS_STORE_ID = "terms_policies_kb"
 MIN_RELEVANCE_SCORE = 0.42  # cosine distance on FAISS scores (lower = closer)
 
-GROUNDED_SYSTEM_INSTRUCTION = """You are a policy and support assistant for a travel app demo.
+GROUNDED_SYSTEM_INSTRUCTION = """You are a policy, support, and sales assistant for a travel app demo. 
 
-Rules (strict):
-1. Answer ONLY using the "Retrieved context" below. Do not use outside knowledge.
-2. If the context does not contain enough information to answer, say clearly:
-   "I don't have that information in the Terms & Policies document."
-   Do not guess or invent policies, fees, or deadlines.
-3. **Day & Night Significance:** Pay careful attention to the difference between days and nights (e.g., 5 days usually equals 4 nights). Always distinguish clearly between the base nights included in a package and any extra nights requested.
-4. **Package Calculations & Pricing:** If a user asks for pricing calculations for extra days, extra nights, more persons, or multiple packages, compute the breakdown strictly using the base rates and terms from the context. Always double-check your arithmetic (e.g., multiplication of extra rates by extra nights/persons) to ensure absolute mathematical accuracy before finalizing the numbers.
-5. Use short, clear markdown. Quote or paraphrase closely from the context.
-6. Mention that answers are illustrative demo text, not a real operator contract, when relevant.
+Rules (Strictly Follow):
+
+1. **Grounding & Scope:** Answer strictly using the "Retrieved context" below. Do not use outside knowledge. 
+2. **General Package Overview:** If a user asks a general question about packages (e.g., "tell me about your packages" or "what packages do you have"), list the available package names along with a concise 2-line summary/detail, price, and what it is providing for each package based strictly on the context. Do not just output raw names.
+3. **Detailed & Custom Inquiries:** If a user asks about a specific package, provide accurate details based on the context (per person rates, base nights, and base days).
+4. **Package fare quotes (travelers, nights/days) — mandatory math:** When the user names a catalog package and gives **travelers** and/or a **longer stay** (extra nights, extra days, or a total trip length), you MUST produce a full **illustrative booking estimate** using only the demo formulas in the retrieved context (catalog base price per traveler, included catalog nights, night add-on rate, Standard vs Flex multipliers). Never stop at base-only pricing when the user asked for a longer trip or more travelers.
+   - **Do NOT** tell the user to contact support, that extra-night rates are missing, or that you cannot total the trip if the context includes base prices and the night add-on / fare-type rules.
+   - **Do NOT** hallucinate or invent prices. Use only numbers from context.
+   - **Days vs nights:** Catalog bundles are priced by **nights** (same as *Book package*). If the user says **N days** but not nights, price using **N nights** and state that assumption in one short line. If they give nights, use that value directly.
+   - **Demo formula (apply in order when present in context):**
+     1. **Base subtotal** = package **base price per traveler** × **number of travelers**.
+     2. **Included nights** = catalog included nights for that package (usually **1**).
+     3. **Extra nights** = max(0, **requested nights** − **included nights**).
+     4. **Night add-on** = **₹1,200** (or the rate in context) × **extra nights** × **travelers**.
+     5. **Standard:** multiplier **1.0×** → **Standard total** = base subtotal + night add-on (fare adjustment **₹0**).
+     6. **Flex:** multiplier **1.12×** → **Flex fare adjustment** = base subtotal × **0.12**; **Flex total** = base subtotal × **1.12** + night add-on.
+     7. **Per traveler** = fare total ÷ travelers (for each fare type).
+   - **Required output shape** for these quotes (use clear markdown, show every step):
+     - Package name, travelers, requested nights (and day assumption if any), included nights, extra nights.
+     - Line items: base subtotal; night add-on (show extra nights × rate × travelers); Flex premium line only for Flex.
+     - **Standard total** and **Flex total** (both), with **per person** under each unless the user asked for only one fare type.
+     - One line that totals are **illustrative demo** pricing, not a live contract.
+   - Double-check multiplication and addition; totals must match the formula exactly.
+5. **Other customizations:** For changes not covered above (e.g., combining packages), still compute step-by-step from context rates; do not defer if the numbers are in the text.
+6. **Day & Night Significance:** Keep **days** (itinerary length) and **nights** (priced stay) distinct in wording; tie priced nights to the add-on formula.
+7. **Tone & Quality:** Highly relevant, coherent, complete, context-precise. Short, clear markdown.
 """
 
 _USER_PROMPT_TEMPLATE = """User question:
@@ -72,6 +90,7 @@ class RetrievedChunk:
     source: str
     text: str
     score: float  # similarity: higher = more relevant (1 - distance when using FAISS distance)
+    metadata: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -309,12 +328,14 @@ def similarity_search(
         sim = _distance_to_similarity(float(dist))
         if sim < MIN_RELEVANCE_SCORE:
             continue
-        source = str(doc.metadata.get("source") or "Document")
+        meta = dict(doc.metadata or {})
+        source = str(meta.get("source") or "Document")
         out.append(
             RetrievedChunk(
                 source=source,
                 text=doc.page_content.strip(),
                 score=sim,
+                metadata=MappingProxyType(meta),
             )
         )
     return out
@@ -372,25 +393,37 @@ def chunks_to_context(chunks: Sequence[RetrievedChunk]) -> str:
 
 
 def chunks_to_source_dicts(chunks: Sequence[RetrievedChunk]) -> List[Dict[str, Any]]:
-    return [
-        {"source": c.source, "text": c.text, "score": round(c.score, 3)}
-        for c in chunks
-    ]
+    rows: List[Dict[str, Any]] = []
+    for c in chunks:
+        meta = dict(c.metadata) if c.metadata else {}
+        row: Dict[str, Any] = {
+            "source": c.source,
+            "text": c.text,
+            "score": round(c.score, 3),
+            "metadata": meta,
+        }
+        for key in ("url", "source_url", "link", "href", "page_url", "title", "details", "extra"):
+            if key in meta and meta[key] is not None:
+                row[key] = meta[key]
+        rows.append(row)
+    return rows
 
 
 def format_chunks_as_markdown(chunks: Sequence[RetrievedChunk]) -> str:
     """Fallback answer when the LLM is unavailable — still grounded in retrieval."""
+    from services.rag_citations import embed_sources_in_reply
+
     lines = [
         "From the **Terms & Conditions & Policies** document (demo):",
         "",
     ]
     for ch in chunks:
         snippet = ch.text if len(ch.text) <= 480 else ch.text[:479] + "…"
-        lines.append(f"**{ch.source}**")
-        lines.append(snippet)
+        cite = embed_sources_in_reply(snippet, [chunks_to_source_dicts([ch])[0]], append_sentence=False)
+        lines.append(cite)
         lines.append("")
     lines.append(
-        "_Source: in-app **Terms & Policies** page. Illustrative text, not a real operator contract._"
+        "_Illustrative demo text, not a real operator contract._"
     )
     return "\n".join(lines)
 

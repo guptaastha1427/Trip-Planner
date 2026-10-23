@@ -37,8 +37,10 @@ from services.weather import attach_weather
 from services.persistence import load_app_state, save_app_state
 from services.trip_history import (
     append_trip_record,
+    clear_trip_history_for_portal_user,
     get_trip_history_cached,
     history_button_label,
+    list_trip_history_for_portal_user,
     save_trip_history,
     snapshot_history_entry,
 )
@@ -64,14 +66,14 @@ from services.demo_dashboard import (
     is_admin_dashboard_mode,
     render_demo_dashboard_switch,
 )
-from services.customer_portal_store import get_portal_state
 from services.policy_bot_ui import (
     mount_trip_planner_policy_bot_styles,
     render_sidebar_trip_policy_bot,
     render_trip_planner_policy_bot_fab,
 )
 from services.portal_ui import render_sidebar_user_dock
-from services.rag_chat_auth import init_rag_auth_session
+from services.portal_user_context import portal_user_display_name, resolve_portal_user_id, sync_portal_user_context
+from services.rag_chat_auth import init_rag_auth_session, is_logged_in, mount_rag_auth_cookie_component
 from services.role_dashboard import render_admin_home_dashboard
 from services.validation import (
     dedupe_itinerary_pois,
@@ -201,12 +203,13 @@ def _apply_history_entry(entry: dict) -> None:
 
 def _render_sidebar_history() -> None:
     """Past trips — click to load on Trip Planner (render inside sidebar expander)."""
-    trips = get_trip_history_cached()
+    portal_uid = resolve_portal_user_id()
+    trips = list_trip_history_for_portal_user(portal_uid)
     if not trips:
         st.caption("No saved trips yet. Create an itinerary on **Trip Planner**.")
         return
 
-    st.caption("Tap a trip to open it on Trip Planner")
+    st.caption(f"Trips for **{portal_user_display_name(portal_uid)}** — tap to open")
     with st.container(height=240, border=False, key="trip_history_scroll"):
         for entry in reversed(trips):
             label = history_button_label(entry)
@@ -215,8 +218,8 @@ def _render_sidebar_history() -> None:
                 st.switch_page(TRIP_PLANNER_PAGE)
                 st.rerun()
 
-    if st.button("Clear trip history", type="secondary", width="stretch"):
-        save_trip_history([], persist_disk=False)
+    if st.button("Clear my trip history", type="secondary", width="stretch"):
+        clear_trip_history_for_portal_user(portal_uid, persist_disk=False)
         _flush_persist()
         st.rerun()
 
@@ -229,11 +232,7 @@ def render_global_sidebar() -> None:
     else:
         with st.sidebar.expander("Trip history", expanded=True):
             _render_sidebar_history()
-        demo_uid = (
-            st.session_state.get("demo_user_id")
-            or get_portal_state().get("current_user_id", "user_alex")
-        )
-        render_sidebar_trip_policy_bot(demo_uid)
+        render_sidebar_trip_policy_bot(resolve_portal_user_id())
     render_sidebar_user_dock()
 
 
@@ -783,10 +782,7 @@ def trip_planner_page() -> None:
         _persist_if_dirty()
         return
 
-    demo_uid = (
-        st.session_state.get("demo_user_id")
-        or get_portal_state().get("current_user_id", "user_alex")
-    )
+    portal_uid = resolve_portal_user_id()
     mount_trip_planner_policy_bot_styles()
 
     dest_label = display_city(st.session_state.get("form_destination") or "")
@@ -794,6 +790,10 @@ def trip_planner_page() -> None:
     st.caption(
         "Real places from OpenStreetMap · AI-built day plans · swap nearby stops anytime"
     )
+    if is_logged_in() and not is_admin_dashboard_mode():
+        st.caption(
+            f"Your saved trips and booking context: **{portal_user_display_name(portal_uid)}**"
+        )
     if dest_label:
         st.markdown(f"**Planning for:** {html.escape(dest_label)}")
 
@@ -1000,7 +1000,7 @@ def trip_planner_page() -> None:
 
     render_agent_execution_trace(st.session_state.get("agent_trace"))
 
-    render_trip_planner_policy_bot_fab(demo_uid)
+    render_trip_planner_policy_bot_fab(portal_uid)
 
     _persist_if_dirty()
 
@@ -1062,30 +1062,31 @@ ADMIN_PAGE = st.Page(
 
 def _navigation_menu() -> dict:
     """Sidebar page groups depend on demo dashboard mode (user vs admin)."""
+    # Document Assistant is in navigation for routing/page_link; sidebar link hidden via CSS.
     docs = {"Docs": [DEV_DOCS_PAGE]}
     if get_demo_dashboard_mode() == DEMO_MODE_ADMIN:
         return {
             "Admin": [ADMIN_PAGE],
             "Customer preview": [
                 TRIP_PLANNER_PAGE,
-                DOCUMENT_ASSISTANT_PAGE,
                 BOOKINGS_PAGE,
                 REFUND_BOT_PAGE,
                 ACCOUNT_PAGE,
                 SUPPORT_PAGE,
                 TERMS_PAGE,
+                DOCUMENT_ASSISTANT_PAGE,
             ],
             **docs,
         }
     return {
         "Trip planning": [TRIP_PLANNER_PAGE],
         "Bookings & support": [
-            DOCUMENT_ASSISTANT_PAGE,
             BOOKINGS_PAGE,
             REFUND_BOT_PAGE,
             ACCOUNT_PAGE,
             SUPPORT_PAGE,
             TERMS_PAGE,
+            DOCUMENT_ASSISTANT_PAGE,
         ],
         **docs,
     }
@@ -1093,9 +1094,12 @@ def _navigation_menu() -> dict:
 
 def main() -> None:
     st.set_page_config(page_title="Trip Planner AI Agent", layout="wide")
+    mount_rag_auth_cookie_component()
     init_rag_auth_session()
+    sync_portal_user_context()
     inject_ui_animations()
     render_demo_dashboard_switch()
+    sync_portal_user_context()
     pg = st.navigation(_navigation_menu())
     render_global_sidebar()
     pg.run()

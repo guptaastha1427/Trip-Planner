@@ -7,11 +7,13 @@ from typing import Any, Dict, List
 import streamlit as st
 
 from services.rag_chat_auth import is_logged_in
+from services.rag_citations import assistant_message_uses_html
 from services.support_faq import answer_support_query
 from services.ui_copy import polish_ui_copy
 from services.website_rag import load_documents_from_url, validate_http_url
 
 _FAB_KEY = "trip_policy_bot_fab_btn"
+_POLICY_DIALOG_OPEN_KEY = "trip_policy_bot_dialog_open"
 
 
 def _messages_key(user_id: str, session_key: str) -> str:
@@ -24,6 +26,106 @@ def _input_key(session_key: str) -> str:
 
 def _url_index_key(session_key: str) -> str:
     return f"policy_bot_url_index_{session_key}"
+
+
+def _pending_query_key(user_id: str, session_key: str) -> str:
+    return f"policy_bot_pending_{session_key}_{user_id}"
+
+
+_TYPING_STYLES_KEY = "_policy_bot_typing_styles"
+
+
+def inject_policy_chat_typing_styles() -> None:
+    """One-time CSS for in-chat thinking indicator (three animated dots)."""
+    if st.session_state.get(_TYPING_STYLES_KEY):
+        return
+    st.session_state[_TYPING_STYLES_KEY] = True
+    st.markdown(
+        """
+        <style>
+        .policy-bot-typing {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 1.25rem;
+            padding: 0.15rem 0;
+        }
+        .policy-bot-typing span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7c6cf0;
+            animation: policy-bot-dot-bounce 1.2s ease-in-out infinite;
+        }
+        .policy-bot-typing span:nth-child(2) { animation-delay: 0.15s; }
+        .policy-bot-typing span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes policy-bot-dot-bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+            40% { transform: translateY(-6px); opacity: 1; }
+        }
+        a.rag-inline-cite {
+            color: #5b57a6 !important;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        a.rag-inline-cite:hover {
+            color: #6d28d9 !important;
+        }
+        span.rag-inline-cite {
+            color: #5b57a6;
+            font-weight: 600;
+            border-bottom: 1px dotted rgba(91, 87, 166, 0.55);
+            cursor: help;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_typing_indicator() -> None:
+    inject_policy_chat_typing_styles()
+    st.markdown(
+        '<div class="policy-bot-typing" role="status" aria-live="polite" '
+        'aria-label="Assistant is thinking"><span></span><span></span><span></span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _append_assistant_turn(
+    mk: str,
+    *,
+    portal_user_id: str | None,
+    user_id: str,
+    query: str,
+    escalate_page_hint: str,
+) -> None:
+    try:
+        reply, escalate, sources = answer_support_query(
+            portal_user_id or user_id,
+            query,
+        )
+    except Exception as exc:
+        reply = polish_ui_copy(
+            "I couldn't complete that search right now. "
+            "Check **GEMINI_API_KEY** and try "
+            "**GEMINI_EMBEDDING_MODEL=gemini-embedding-001** in `.env`, "
+            "then restart Streamlit. "
+            f"({type(exc).__name__})"
+        )
+        escalate, sources = True, []
+    st.session_state[mk].append(
+        {"role": "assistant", "text": reply, "sources": sources}
+    )
+    if escalate:
+        st.session_state[mk].append(
+            {
+                "role": "assistant",
+                "text": f"For more help, open a support ticket under {escalate_page_hint}.",
+                "sources": [],
+            }
+        )
 
 
 def inject_policy_bot_fab_styles() -> None:
@@ -51,18 +153,21 @@ def inject_policy_bot_fab_styles() -> None:
             border: none !important;
             font-size: 1.55rem !important;
             line-height: 1 !important;
-            background: linear-gradient(135deg, #4a478a 0%, #5b57a6 55%, #6d28d9 100%) !important;
+            background: #3b82f6 !important;
             color: #ffffff !important;
-            box-shadow: 0 10px 32px rgba(74, 71, 138, 0.38),
-                0 4px 12px rgba(109, 40, 217, 0.25) !important;
+            box-shadow: 0 4px 0 #2563eb !important;
             cursor: pointer !important;
             transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
         }}
         div.element-container.st-key-{_FAB_KEY} button:hover {{
-            filter: brightness(1.08);
-            transform: scale(1.06) translateY(-2px);
-            box-shadow: 0 14px 40px rgba(34, 211, 238, 0.55),
-                0 6px 16px rgba(20, 184, 166, 0.4) !important;
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 0 #2563eb !important;
+        }}
+        div.element-container.st-key-{_FAB_KEY} button:active {{
+            filter: brightness(0.9);
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #2563eb !important;
         }}
         div.element-container.st-key-{_FAB_KEY} button p {{
             color: #ffffff !important;
@@ -105,25 +210,12 @@ def render_url_indexer_panel(session_key: str, *, compact: bool = False) -> None
                 )
 
 
-def _render_sources(sources: List[Dict[str, Any]]) -> None:
-    """Retrieved chunks as accordions under each assistant reply."""
-    if not sources:
-        return
-    st.markdown("**Grounded references**")
-    st.caption(
-        "Expand a reference to see the exact excerpt used before the answer was generated."
-    )
-    for i, src in enumerate(sources, 1):
-        label = polish_ui_copy(str(src.get("source") or f"Document chunk {i}"))
-        snippet = polish_ui_copy(str(src.get("text") or ""))
-        score = src.get("score")
-        title = f"Reference {i} — {label}"
-        with st.expander(title, expanded=False):
-            if score is not None:
-                st.caption(f"Similarity score: {score}")
-            else:
-                st.caption("Retrieved from policy index")
-            st.markdown(snippet)
+def _render_chat_body(role: str, text: str) -> None:
+    body = polish_ui_copy(text)
+    if role == "assistant" and assistant_message_uses_html(body):
+        st.markdown(body, unsafe_allow_html=True)
+    else:
+        st.markdown(body)
 
 
 def render_policy_bot_chat(
@@ -150,7 +242,7 @@ def render_policy_bot_chat(
     if show_intro:
         st.caption(
             "Answers from **Terms & Conditions & Policies** (and your account when relevant). "
-            "Each reply includes **grounded references** — expand each accordion to verify excerpts."
+            "Retrieved sources appear as **inline citations** in each reply (hover for excerpts)."
         )
 
     if show_url_indexer and not url_indexer_in_tools_panel:
@@ -170,51 +262,51 @@ def render_policy_bot_chat(
             }
         ]
 
+    pk = _pending_query_key(user_id, session_key)
+    inject_policy_chat_typing_styles()
+
     chat_panel = (
         st.container(key=chat_panel_key) if chat_panel_key else st.container()
     )
     with chat_panel:
         for msg in st.session_state[mk]:
             with st.chat_message(msg["role"]):
-                st.markdown(polish_ui_copy(msg["text"]))
-                if msg["role"] == "assistant":
-                    _render_sources(msg.get("sources") or [])
+                _render_chat_body(msg["role"], msg["text"])
 
+        # Keep chat_input before pending work so the bar stays mounted every run.
         prompt = st.chat_input(
             "Ask about terms, refunds, packages…",
             key=_input_key(session_key),
+            disabled=bool(st.session_state.get(pk)),
         )
         if prompt:
-            st.session_state[mk].append({"role": "user", "text": prompt, "sources": []})
-            try:
-                reply, escalate, sources = answer_support_query(
-                    portal_user_id or user_id,
-                    prompt,
-                )
-            except Exception as exc:
-                reply = polish_ui_copy(
-                    "I couldn't complete that search right now. "
-                    "Check **GEMINI_API_KEY** and try "
-                    "**GEMINI_EMBEDDING_MODEL=gemini-embedding-001** in `.env`, "
-                    "then restart Streamlit. "
-                    f"({type(exc).__name__})"
-                )
-                escalate, sources = True, []
             st.session_state[mk].append(
-                {"role": "assistant", "text": reply, "sources": sources}
+                {"role": "user", "text": prompt, "sources": []}
             )
-            if escalate:
-                st.session_state[mk].append(
-                    {
-                        "role": "assistant",
-                        "text": f"For more help, open a support ticket under {escalate_page_hint}.",
-                        "sources": [],
-                    }
-                )
+            st.session_state[pk] = prompt
+            st.rerun()
+
+        pending = st.session_state.get(pk)
+        if pending:
+            with st.chat_message("assistant"):
+                _render_typing_indicator()
+                with st.spinner("Thinking…"):
+                    _append_assistant_turn(
+                        mk,
+                        portal_user_id=portal_user_id,
+                        user_id=user_id,
+                        query=str(pending),
+                        escalate_page_hint=escalate_page_hint,
+                    )
+            st.session_state.pop(pk, None)
             st.rerun()
 
 
-@st.dialog("Policy assistant", width="large")
+def _dismiss_trip_policy_dialog() -> None:
+    st.session_state[_POLICY_DIALOG_OPEN_KEY] = False
+
+
+@st.dialog("Policy assistant", width="large", on_dismiss=_dismiss_trip_policy_dialog)
 def _trip_planner_policy_dialog(user_id: str) -> None:
     render_policy_bot_chat(
         user_id,
@@ -229,12 +321,18 @@ def mount_trip_planner_policy_bot_styles() -> None:
 
 
 def render_trip_planner_policy_bot_fab(user_id: str) -> None:
+    if _POLICY_DIALOG_OPEN_KEY not in st.session_state:
+        st.session_state[_POLICY_DIALOG_OPEN_KEY] = False
+
     if st.button(
         "🤖",
         key=_FAB_KEY,
         help="Policy & terms assistant",
         type="primary",
     ):
+        st.session_state[_POLICY_DIALOG_OPEN_KEY] = True
+
+    if st.session_state[_POLICY_DIALOG_OPEN_KEY]:
         _trip_planner_policy_dialog(user_id)
 
 

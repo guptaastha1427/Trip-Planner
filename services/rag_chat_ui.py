@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import streamlit as st
 
+from services.customer_portal_store import set_demo_user
+from services.portal_user_context import resolve_portal_user_id
 from services.rag_chat_auth import (
     current_user,
     is_logged_in,
     login_user,
     logout_user,
+    queue_auth_toast,
     register_user,
 )
 from services.rag_chat_layout import inject_document_assistant_styles, render_doc_hero
@@ -17,19 +20,69 @@ from services.ui_components import section_heading
 from services.ui_copy import polish_ui_copy
 
 MENU_SIGNUP = "Sign up / Sign in"
+MENU_ACCOUNT = "Account"
 MENU_CHAT = "Chat"
 MENU_TERMS = "Terms & Conditions"
 
 MENU_OPTIONS = (MENU_SIGNUP, MENU_CHAT, MENU_TERMS)
+MENU_OPTIONS_SIGNED_IN = (MENU_ACCOUNT, MENU_CHAT, MENU_TERMS)
+
+_PENDING_MENU_KEY = "rag_chat_menu_pending"
+
+
+def set_rag_chat_menu(menu: str) -> None:
+    """Apply on the next run before the section radio is drawn."""
+    if menu in MENU_OPTIONS or menu in MENU_OPTIONS_SIGNED_IN:
+        st.session_state[_PENDING_MENU_KEY] = menu
+
+
+def navigate_rag_menu(menu: str) -> None:
+    set_rag_chat_menu(menu)
+    st.rerun()
+
+
+def _apply_pending_rag_chat_menu() -> None:
+    pending = st.session_state.pop(_PENDING_MENU_KEY, None)
+    if pending in MENU_OPTIONS or pending in MENU_OPTIONS_SIGNED_IN:
+        st.session_state["rag_chat_menu"] = pending
+
+
+def _sync_menu_options_for_auth() -> None:
+    """Map auth tab label to signed-in vs signed-out menu sets (before radio renders)."""
+    _apply_pending_rag_chat_menu()
+    current = st.session_state.get("rag_chat_menu")
+    if is_logged_in():
+        if current == MENU_SIGNUP:
+            set_rag_chat_menu(MENU_ACCOUNT)
+            _apply_pending_rag_chat_menu()
+    elif current == MENU_ACCOUNT:
+        set_rag_chat_menu(MENU_SIGNUP)
+        _apply_pending_rag_chat_menu()
+
+
+def ensure_document_assistant_menu() -> None:
+    """
+    Keep the section radio aligned with auth (Streamlit keeps stale values when options change).
+    Logged-in users default to Chat instead of the sign-up screen.
+    """
+    _sync_menu_options_for_auth()
+    allowed = MENU_OPTIONS_SIGNED_IN if is_logged_in() else MENU_OPTIONS
+    current = st.session_state.get("rag_chat_menu")
+    if current not in allowed:
+        st.session_state["rag_chat_menu"] = MENU_CHAT if is_logged_in() else MENU_SIGNUP
+    elif is_logged_in() and current == MENU_SIGNUP:
+        st.session_state["rag_chat_menu"] = MENU_CHAT
 
 
 def render_page_menu() -> str:
     """Document Assistant sections — main area (keeps the app sidebar uncluttered)."""
     inject_document_assistant_styles()
+    ensure_document_assistant_menu()
     st.caption("Document Assistant")
+    menu_options = MENU_OPTIONS_SIGNED_IN if is_logged_in() else MENU_OPTIONS
     choice = st.radio(
         "Section",
-        MENU_OPTIONS,
+        menu_options,
         key="rag_chat_menu",
         horizontal=True,
         label_visibility="collapsed",
@@ -39,10 +92,13 @@ def render_page_menu() -> str:
         st.caption(
             f"Signed in as **{user.get('username', 'User')}** · {user.get('email', '')}"
         )
-        if st.button("Sign out", key="rag_chat_logout"):
+        if st.button("Sign out", key="rag_chat_logout", type="primary"):
+            former_uid = resolve_portal_user_id()
             logout_user()
-            st.session_state["rag_chat_menu"] = MENU_SIGNUP
-            st.rerun()
+            set_demo_user(former_uid)
+            st.session_state.portal_demo_user_select = former_uid
+            queue_auth_toast("You have been signed out.", "info")
+            navigate_rag_menu(MENU_SIGNUP)
     st.divider()
     return choice
 
@@ -70,9 +126,26 @@ def render_account_summary_panel() -> None:
             f"- **Member since:** {user.get('created_at', '—')}"
         )
         st.info("Open the **Chat** tab above to talk to the policy assistant.")
-        if st.button("Go to Chat", type="primary", key="rag_goto_chat"):
-            st.session_state["rag_chat_menu"] = MENU_CHAT
-            st.rerun()
+        chat_col, out_col = st.columns(2)
+        with chat_col:
+            if st.button("Go to Chat", type="primary", key="rag_goto_chat"):
+                navigate_rag_menu(MENU_CHAT)
+        with out_col:
+            if st.button("Sign out", key="rag_account_sign_out"):
+                former_uid = resolve_portal_user_id()
+                logout_user()
+                set_demo_user(former_uid)
+                st.session_state.portal_demo_user_select = former_uid
+                queue_auth_toast("You have been signed out.", "info")
+                navigate_rag_menu(MENU_SIGNUP)
+
+
+def _login_email_prefill() -> str:
+    from services.portal_user_context import effective_portal_profile
+
+    uid = resolve_portal_user_id()
+    profile = effective_portal_profile(uid)
+    return str(profile.get("email") or "").strip()
 
 
 def render_signup_signin_panel() -> None:
@@ -92,8 +165,17 @@ def render_signup_signin_panel() -> None:
                 "Registration is **local to this machine** (demo). Use a fictional email."
             )
         )
+        if not is_logged_in():
+            st.info(
+                "The sidebar profile is a **guest preview** until you sign in here. "
+                "After sign-in, your session is saved on this device (cookie + local app data)."
+            )
 
         tab_reg, tab_login = st.tabs(["Sign up", "Sign in"])
+
+        prefill_email = _login_email_prefill()
+        if prefill_email and not st.session_state.get("rag_login_email"):
+            st.session_state["rag_login_email"] = prefill_email
 
         with tab_reg:
             with st.form("rag_chat_register"):
@@ -104,6 +186,11 @@ def render_signup_signin_panel() -> None:
                     type="password",
                     placeholder="At least 8 characters",
                 )
+                password_confirm = st.text_input(
+                    "Confirm password",
+                    type="password",
+                    placeholder="Re-enter your password",
+                )
                 accept = st.checkbox(
                     "I have read the **Terms & Conditions** (sidebar → Terms & Conditions)",
                     value=False,
@@ -112,11 +199,16 @@ def render_signup_signin_panel() -> None:
                 if submitted:
                     if not accept:
                         st.error("Please accept the Terms & Conditions before signing up.")
+                    elif password != password_confirm:
+                        st.error("Passwords do not match. Please re-enter them.")
                     else:
                         ok, msg = register_user(username, email, password)
                         if ok:
-                            st.session_state["rag_chat_menu"] = MENU_CHAT
-                            st.success(msg)
+                            from services.portal_user_context import sync_portal_user_context
+
+                            sync_portal_user_context()
+                            set_rag_chat_menu(MENU_CHAT)
+                            queue_auth_toast(msg.replace("**", ""), "success")
                             st.rerun()
                         else:
                             st.error(msg)
@@ -129,8 +221,11 @@ def render_signup_signin_panel() -> None:
                 if submitted:
                     ok, msg = login_user(email, password)
                     if ok:
-                        st.session_state["rag_chat_menu"] = MENU_CHAT
-                        st.success(msg)
+                        from services.portal_user_context import sync_portal_user_context
+
+                        sync_portal_user_context()
+                        set_rag_chat_menu(MENU_CHAT)
+                        queue_auth_toast(msg.replace("**", ""), "success")
                         st.rerun()
                     else:
                         st.error(msg)

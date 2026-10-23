@@ -17,7 +17,7 @@ def test_info_md_exists_and_splits():
     segments = _split_markdown_and_mermaid(body)
     kinds = [k for k, _ in segments]
     assert "mermaid" in kinds
-    assert sum(1 for k in kinds if k == "mermaid") == 19
+    assert sum(1 for k in kinds if k == "mermaid") == 21
     assert len(segments) >= 20
 
 

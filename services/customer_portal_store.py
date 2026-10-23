@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 import streamlit as st
 
 from config import CUSTOMER_PORTAL_STATE_PATH, DATA_DIR
-from services.demo_users import DEFAULT_USER_ID, DEMO_USERS, get_demo_user
+from services.demo_users import ACCOUNT_ACTIVE, DEFAULT_USER_ID, DEMO_USERS, get_demo_user
 
 
 def _utc_now_iso() -> str:
@@ -34,6 +34,7 @@ def _empty_state() -> Dict[str, Any]:
         "audit_log": [],
         "account_overrides": {},
         "user_bookings": [],
+        "registered_customers": {},
         "seeded": False,
     }
 
@@ -141,6 +142,52 @@ def bootstrap_demo_data(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
+def get_registered_customers() -> Dict[str, Dict[str, Any]]:
+    state = get_portal_state()
+    reg = state.get("registered_customers")
+    return reg if isinstance(reg, dict) else {}
+
+
+def upsert_portal_customer(
+    username: str,
+    email: str,
+    *,
+    created_at: str = "",
+) -> str:
+    """Persist a signup/login account in the sidebar customer list (survives refresh)."""
+    from services.portal_user_context import portal_user_id_for_email
+
+    uid = portal_user_id_for_email(email)
+    if uid in DEMO_USERS:
+        return uid
+    state = get_portal_state()
+    reg = state.setdefault("registered_customers", {})
+    display = (username or email or "User").strip()
+    reg[uid] = {
+        "user_id": uid,
+        "display_name": f"{display} (registered account)",
+        "username": display,
+        "email": (email or "").strip().lower(),
+        "created_at": created_at or _utc_now_iso(),
+        "account_status": ACCOUNT_ACTIVE,
+        "restriction_notes": [],
+    }
+    save_portal_state(state)
+    return uid
+
+
+def sync_registered_customers_from_auth_users() -> None:
+    """Ensure every Document Assistant account appears in the portal customer list."""
+    from services.rag_chat_auth import list_auth_user_profiles
+
+    for profile in list_auth_user_profiles():
+        upsert_portal_customer(
+            str(profile.get("username", "")),
+            str(profile.get("email", "")),
+            created_at=str(profile.get("created_at", "")),
+        )
+
+
 def init_portal_session() -> None:
     if st.session_state.get("portal_bootstrapped"):
         return
@@ -149,6 +196,7 @@ def init_portal_session() -> None:
     st.session_state.portal_bootstrapped = True
     st.session_state.portal_state = disk
     st.session_state.demo_user_id = disk.get("current_user_id", DEFAULT_USER_ID)
+    sync_registered_customers_from_auth_users()
 
 
 def get_portal_state() -> Dict[str, Any]:
@@ -163,20 +211,33 @@ def get_portal_state() -> Dict[str, Any]:
 
 def persist_portal_state() -> None:
     state = get_portal_state()
-    state["current_user_id"] = st.session_state.get(
-        "demo_user_id", state.get("current_user_id", DEFAULT_USER_ID)
-    )
+    from services.portal_user_context import can_pick_customer_preview
+    from services.rag_chat_auth import is_logged_in
+
+    if can_pick_customer_preview() or not is_logged_in():
+        state["current_user_id"] = st.session_state.get(
+            "demo_user_id", state.get("current_user_id", DEFAULT_USER_ID)
+        )
     save_portal_state(state)
 
 
 def set_demo_user(user_id: str) -> None:
+    from services.portal_user_context import can_pick_customer_preview
+    from services.rag_chat_auth import is_logged_in
+
     st.session_state.demo_user_id = user_id
+    st.session_state.portal_demo_user_select = user_id
     state = get_portal_state()
-    state["current_user_id"] = user_id
-    persist_portal_state()
+    if can_pick_customer_preview() or not is_logged_in():
+        state["current_user_id"] = user_id
+        save_portal_state(state)
 
 
 def effective_account_profile(user_id: str) -> Dict[str, Any]:
+    if user_id not in DEMO_USERS:
+        from services.portal_user_context import effective_portal_profile
+
+        return effective_portal_profile(user_id)
     base = dict(get_demo_user(user_id))
     overrides = get_portal_state().get("account_overrides", {}).get(user_id, {})
     if overrides:

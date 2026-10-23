@@ -7,8 +7,12 @@ from typing import List, Optional
 import streamlit as st
 
 from services.bookings import list_bookings_for_user
-from services.admin_console import render_admin_tickets_embedded
-from services.portal_display import booking_for_refund_display, refund_reason_label
+from services.admin_console import (
+    refund_request_expander_title,
+    refund_workflow_is_terminal,
+    render_admin_tickets_embedded,
+    render_refund_request_details,
+)
 from services.customer_portal_store import (
     effective_account_profile,
     get_portal_state,
@@ -17,6 +21,11 @@ from services.customer_portal_store import (
 )
 from services.demo_dashboard import is_admin_dashboard_mode
 from services.demo_users import DEMO_USERS, account_status_label, get_demo_user
+from services.portal_user_context import (
+    effective_portal_profile,
+    portal_user_display_name,
+    resolve_portal_user_id,
+)
 from services.rag_chat_auth import current_user, is_logged_in
 from services.ui_components import section_heading
 
@@ -34,9 +43,11 @@ def render_signed_in_user_banner(user_id: str) -> None:
         auth = current_user() or {}
         name = auth.get("username") or "User"
         email = auth.get("email", "")
+        portal_name = portal_user_display_name(resolve_portal_user_id())
         st.markdown(
             f"**Signed in as:** {name}  \n"
-            f"<span style='color:#64748b;font-size:0.9rem'>{email} · App session</span>",
+            f"<span style='color:#64748b;font-size:0.9rem'>{email} · "
+            f"Bookings & trips: **{portal_name}**</span>",
             unsafe_allow_html=True,
         )
         return
@@ -55,7 +66,11 @@ def render_signed_in_user_banner(user_id: str) -> None:
 
 def render_admin_home_dashboard(compact: bool = False) -> None:
     """Admin snapshot on Trip Planner (admin mode) — links to full console."""
-    from services.admin_console import get_admin_queue_counts, inject_admin_console_styles
+    from services.admin_console import (
+        get_admin_queue_counts,
+        inject_admin_console_styles,
+        render_restricted_users_metric,
+    )
 
     inject_admin_console_styles()
     counts = get_admin_queue_counts()
@@ -66,7 +81,7 @@ def render_admin_home_dashboard(compact: bool = False) -> None:
     c1.metric("Refunds to process", counts["pending_refunds"])
     c2.metric("Open tickets", counts["open_tickets"])
     c3.metric("Appeals waiting", counts["open_appeals"])
-    c4.metric("Restricted users", counts["restricted"])
+    render_restricted_users_metric(c4)
 
     try:
         import app as trip_app
@@ -85,10 +100,10 @@ def render_admin_home_dashboard(compact: bool = False) -> None:
 def render_page_context_strip(page_kind: str, user_id: str) -> None:
     """One short, page-specific header — not the full customer dashboard."""
     if is_admin_dashboard_mode():
-        _render_admin_page_strip(page_kind)
+        _render_admin_page_strip(page_kind, user_id)
         return
 
-    profile = effective_account_profile(user_id)
+    profile = effective_portal_profile(user_id)
     bookings = list_bookings_for_user(user_id)
     refunds = list_refunds_for_user(user_id)
     tickets = list_tickets_for_user(user_id)
@@ -111,7 +126,7 @@ def render_page_context_strip(page_kind: str, user_id: str) -> None:
         )
     elif page_kind == PAGE_SUPPORT:
         st.caption(
-            f"Help center for **{get_demo_user(user_id).get('display_name', user_id)}** — "
+            f"Help center for **{portal_user_display_name(user_id)}** — "
             f"**{len(open_tickets)}** open ticket(s)."
         )
     elif page_kind == PAGE_TERMS:
@@ -121,7 +136,10 @@ def render_page_context_strip(page_kind: str, user_id: str) -> None:
     st.divider()
 
 
-def _render_admin_page_strip(page_kind: str) -> None:
+def _render_admin_page_strip(page_kind: str, preview_user_id: str) -> None:
+    preview_name = portal_user_display_name(preview_user_id)
+    if page_kind not in (PAGE_TERMS, PAGE_REFUND_BOT):
+        st.caption(f"**Customer preview:** {preview_name} (`{preview_user_id}`)")
     if page_kind == PAGE_TERMS:
         st.info("Admin mode — policy reference for all customers.")
         return
@@ -132,54 +150,77 @@ def _render_admin_page_strip(page_kind: str) -> None:
         )
         return
     if page_kind == PAGE_ACCOUNT:
-        render_admin_account_panel()
+        render_admin_account_panel(preview_user_id=preview_user_id)
         return
     if page_kind == PAGE_SUPPORT:
-        render_admin_support_panel()
+        render_admin_support_panel(preview_user_id=preview_user_id)
         return
     if page_kind == PAGE_BOOKINGS:
-        render_admin_bookings_panel()
-        st.caption("Customer section below previews the selected account only.")
+        render_admin_bookings_panel(preview_user_id=preview_user_id)
+        st.caption(f"Tabs below show **{preview_name}** only.")
 
 
-def render_admin_bookings_panel() -> None:
+def render_admin_bookings_panel(preview_user_id: Optional[str] = None) -> None:
     state = get_portal_state()
     refunds = state.get("refund_requests") or []
-    section_heading("All refund requests (admin view)", variant="travel")
+    if preview_user_id:
+        refunds = [r for r in refunds if r.get("user_id") == preview_user_id]
+        section_heading(
+            f"Refund requests — {portal_user_display_name(preview_user_id)}",
+            variant="travel",
+        )
+    else:
+        section_heading("All refund requests (admin view)", variant="travel")
     if not refunds:
         st.caption("No refund requests in portal state yet.")
         return
     for r in reversed(refunds[-12:]):
-        with st.container(border=True):
-            st.markdown(
-                f"**{r.get('request_id')}** · user `{r.get('user_id')}` · "
-                f"booking **{r.get('booking_id')}** · **{r.get('workflow_status')}**"
-            )
-            st.markdown(
-                f"**Raised because:** {refund_reason_label(str(r.get('reason', '')))} "
-                f"· eligibility **{r.get('eligibility', '—')}**"
-            )
-            booking = booking_for_refund_display(str(r.get("booking_id", "")))
-            if booking:
-                st.caption(
-                    f"Ticket/booking: {booking.get('status', '—')} · "
-                    f"{booking.get('origin')} → {booking.get('destination')}"
-                )
-            expl = r.get("explanation_detail") or r.get("explanation", "")
-            if expl:
-                st.caption(expl)
+        status = str(r.get("workflow_status", "Submitted"))
+        with st.expander(
+            refund_request_expander_title(r),
+            expanded=not refund_workflow_is_terminal(status),
+        ):
+            render_refund_request_details(r, show_customer=False)
 
 
-def render_admin_support_panel(limit: int = 10) -> None:
+def render_admin_support_panel(
+    limit: int = 10,
+    *,
+    preview_user_id: Optional[str] = None,
+) -> None:
     if not is_admin_dashboard_mode():
         st.caption("Switch to **Admin** in the sidebar to manage tickets.")
         return
-    render_admin_tickets_embedded(limit=limit, heading="Support tickets (quick actions)")
+    heading = "Support tickets (quick actions)"
+    if preview_user_id:
+        heading = f"Tickets — {portal_user_display_name(preview_user_id)}"
+    render_admin_tickets_embedded(
+        limit=limit,
+        heading=heading,
+        user_id=preview_user_id,
+    )
 
 
-def render_admin_account_panel() -> None:
+def render_admin_account_panel(preview_user_id: Optional[str] = None) -> None:
     state = get_portal_state()
     appeals = state.get("account_appeals") or []
+    if preview_user_id:
+        profile = effective_portal_profile(preview_user_id)
+        user_appeals = [a for a in appeals if a.get("user_id") == preview_user_id]
+        section_heading(
+            f"Account — {portal_user_display_name(preview_user_id)}",
+            variant="travel",
+        )
+        st.caption(
+            f"Status: **{account_status_label(profile.get('account_status', 'active'))}** · "
+            f"**{len(user_appeals)}** appeal(s) for this customer."
+        )
+        for note in profile.get("restriction_notes") or []:
+            st.caption(f"· {note.get('summary', '')}")
+        for a in user_appeals:
+            st.caption(f"Appeal **{a.get('appeal_id')}** — {a.get('status', '—')}")
+        return
+
     overrides = state.get("account_overrides") or {}
     section_heading("Account oversight (admin view)", variant="travel")
     st.caption(f"**{len(appeals)}** appeal(s) in queue · **{len(overrides)}** status override(s) on disk.")

@@ -74,7 +74,7 @@ This software is provided **as-is** for demonstration, coursework, and UX protot
 | Capability | What you get |
 |------------|----------------|
 | **Website / document RAG chat** | Ask questions in natural language; answers use **semantic search** over indexed policy text, then (when configured) an LLM bound to retrieved chunks. |
-| **Transparent sources** | Each assistant reply can show a **Sources** expander with exact retrieved snippets and relevance scores. |
+| **Transparent sources** | Each assistant reply includes **inline citations** with hover excerpts (and links when a URL is in metadata). |
 | **Instant document querying** | No manual PDF hunting — ask about refunds, packages, accounts, or assistant rules in one chat thread. |
 | **URL scrape test (optional)** | Validate that a public page can be fetched and chunked (demo pipeline); primary Q&A still uses in-app Terms. |
 | **Signup-gated chat** | **Document Assistant** requires a lightweight local account before chat (session + optional JSON store). |
@@ -166,7 +166,7 @@ for documentation and UI copy. **Enforcement is off** unless you implement it in
 You may use the assistant to:
 
 - Ask questions about **terms, refunds, packages, bookings, accounts, and support** in this demo app.
-- Review **grounded answers** that cite retrieved policy text (see **Sources** under each reply).
+- Review **grounded answers** that cite retrieved policy text via **inline citations** in the reply.
 - Optionally **test a public URL** (Help & Support or Document Assistant) to verify that a page can be scraped and chunked.
 
 You must **not**:
@@ -182,7 +182,7 @@ You must **not**:
         """
 **Chat** sends your message to a **semantic search** step over indexed policy text, then (when configured) to an **AI model** with instructions to stay within retrieved context.
 
-- **Source snippets** in the **Sources** expander show the exact chunks used — read them to verify answers.
+- **Hover inline citations** to see the retrieved excerpt and relevance used for each answer.
 - If the model cannot answer from retrieved text, it should state that the information is **not in the document**.
 - Chat history for registered users is kept in **Streamlit session state** for your current browser session; it is not a permanent support ticket.
 - Switching demo portal users (sidebar profile) does not replace your **Document Assistant** login — those are separate identities.
@@ -315,11 +315,13 @@ The customer portal uses **prototype login** (no real authentication).
     (
         "Package pricing & confirmation (demo)",
         """
-On **Book package**, the **estimated price** updates when you change package, travelers, nights, or fare type. This is **illustrative math only**:
+On **Book package**, the **estimated price** updates when you change package, **travelers**, nights, or fare type. Each traveler is **single occupancy** (private room; no twin sharing). This is **illustrative math only**:
 
-- **Base** = package base price per person × number of travelers.
-- **Fare type:** **Standard** uses the base rate; **Flex** applies a higher demo multiplier (easier refund terms — see policies `package_standard` and `package_flex`).
-- **Extra nights:** For nights beyond **2**, a demo add-on of **₹1,200 × extra nights × travelers** is added to the estimate.
+- **Base subtotal** = package base price per traveler × **number of travelers**.
+- **Standard fare** — multiplier **1.0×** (no premium on base). Refund policy **`package_standard`**: **partial** refunds if you cancel **120+ hours** before departure; **25%** cancellation fee; up to **70%** of the remainder refundable in the demo engine.
+- **Flex fare** — multiplier **1.12×** (**+12%** on base subtotal). Refund policy **`package_flex`**: **full** refundability if you cancel **72+ hours** before departure; **8%** service fee; processing typically **7–14** demo days.
+- **Night add-on:** **₹1,200 × max(0, nights − included catalog nights) × travelers** (usually **1** included night).
+- **Total** = base subtotal × fare multiplier + night add-on. See **Travel package catalog & fare types** in these Terms for a comparison table and a **Weekend Escape** worked example.
 - **Confirm package booking** creates a **confirmed** demo record with the shown total — **no payment gateway** is used.
 - The final amount stored on the booking is the estimate at confirmation time; it is not a contract with any real operator.
         """,
@@ -527,10 +529,14 @@ FAQ_ITEMS = [
     },
     {
         "q": "What makes the Document Assistant different?",
-        "a": "It uses semantic search plus grounded LLM replies with a Sources expander so you can verify each answer against retrieved policy text.",
+        "a": "It uses semantic search plus grounded LLM replies with **inline source citations** in each answer (hover for excerpts; URLs open when available).",
     },
     {
         "q": "What packages can I book in the demo?",
-        "a": "Weekend Escape, City Explorer, Heritage Trail, Coastal Bus Getaway, and Custom trip bundle — see Terms → Packages & tiers for details and placeholder subscription limits.",
+        "a": "Weekend Escape, City Explorer, Heritage Trail, Coastal Bus Getaway, and Custom trip bundle — each has itinerary, inclusions, exclusions, and cancellation hints in Terms → Travel package catalog (detailed descriptions) and on My Bookings → Book package → Available packages.",
+    },
+    {
+        "q": "What is the difference between Standard and Flex package fares?",
+        "a": "Standard uses the base catalog price (1.0×) with stricter refunds (package_standard: 120+ hours, partial, 25% fee). Flex costs about 12% more (1.12×) but uses package_flex: cancel 72+ hours before departure for full refundability with an 8% service fee. See Terms → Travel package catalog → Package fare types for the full table and pricing example.",
     },
 ]
