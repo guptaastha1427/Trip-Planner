@@ -24,15 +24,23 @@ MENU_ACCOUNT = "Account"
 MENU_CHAT = "Chat"
 MENU_TERMS = "Terms & Conditions"
 
-MENU_OPTIONS = (MENU_SIGNUP, MENU_CHAT, MENU_TERMS)
+MENU_OPTIONS = (MENU_CHAT, MENU_TERMS)
 MENU_OPTIONS_SIGNED_IN = (MENU_ACCOUNT, MENU_CHAT, MENU_TERMS)
 
 _PENDING_MENU_KEY = "rag_chat_menu_pending"
+RAG_OPEN_SIGNIN_KEY = "rag_open_signin"
+
+
+def open_rag_signin_view() -> None:
+    """Open Document Assistant on the sign-in screen (sidebar profile → Sign in)."""
+    st.session_state[RAG_OPEN_SIGNIN_KEY] = True
+    set_rag_chat_menu(MENU_CHAT)
 
 
 def set_rag_chat_menu(menu: str) -> None:
     """Apply on the next run before the section radio is drawn."""
-    if menu in MENU_OPTIONS or menu in MENU_OPTIONS_SIGNED_IN:
+    allowed = set(MENU_OPTIONS) | set(MENU_OPTIONS_SIGNED_IN) | {MENU_SIGNUP}
+    if menu in allowed:
         st.session_state[_PENDING_MENU_KEY] = menu
 
 
@@ -43,7 +51,8 @@ def navigate_rag_menu(menu: str) -> None:
 
 def _apply_pending_rag_chat_menu() -> None:
     pending = st.session_state.pop(_PENDING_MENU_KEY, None)
-    if pending in MENU_OPTIONS or pending in MENU_OPTIONS_SIGNED_IN:
+    allowed = set(MENU_OPTIONS) | set(MENU_OPTIONS_SIGNED_IN) | {MENU_SIGNUP}
+    if pending in allowed:
         st.session_state["rag_chat_menu"] = pending
 
 
@@ -56,7 +65,7 @@ def _sync_menu_options_for_auth() -> None:
             set_rag_chat_menu(MENU_ACCOUNT)
             _apply_pending_rag_chat_menu()
     elif current == MENU_ACCOUNT:
-        set_rag_chat_menu(MENU_SIGNUP)
+        set_rag_chat_menu(MENU_CHAT)
         _apply_pending_rag_chat_menu()
 
 
@@ -68,9 +77,11 @@ def ensure_document_assistant_menu() -> None:
     _sync_menu_options_for_auth()
     allowed = MENU_OPTIONS_SIGNED_IN if is_logged_in() else MENU_OPTIONS
     current = st.session_state.get("rag_chat_menu")
-    if current not in allowed:
-        st.session_state["rag_chat_menu"] = MENU_CHAT if is_logged_in() else MENU_SIGNUP
+    if current not in allowed and current != MENU_SIGNUP:
+        st.session_state["rag_chat_menu"] = MENU_CHAT
     elif is_logged_in() and current == MENU_SIGNUP:
+        st.session_state["rag_chat_menu"] = MENU_CHAT
+    elif not is_logged_in() and current == MENU_SIGNUP:
         st.session_state["rag_chat_menu"] = MENU_CHAT
 
 
@@ -97,8 +108,9 @@ def render_page_menu() -> str:
             logout_user()
             set_demo_user(former_uid)
             st.session_state.portal_demo_user_select = former_uid
+            st.session_state.pop(RAG_OPEN_SIGNIN_KEY, None)
             queue_auth_toast("You have been signed out.", "info")
-            navigate_rag_menu(MENU_SIGNUP)
+            navigate_rag_menu(MENU_CHAT)
     st.divider()
     return choice
 
@@ -136,8 +148,9 @@ def render_account_summary_panel() -> None:
                 logout_user()
                 set_demo_user(former_uid)
                 st.session_state.portal_demo_user_select = former_uid
+                st.session_state.pop(RAG_OPEN_SIGNIN_KEY, None)
                 queue_auth_toast("You have been signed out.", "info")
-                navigate_rag_menu(MENU_SIGNUP)
+                navigate_rag_menu(MENU_CHAT)
 
 
 def _login_email_prefill() -> str:
@@ -154,22 +167,17 @@ def render_signup_signin_panel() -> None:
         return
 
     render_doc_hero(
-        "Welcome",
-        "Create a local account to unlock grounded policy chat.",
+        "Sign in",
+        "Create a local account or sign in to unlock grounded policy chat.",
         chip="Free · Saved on this machine · No real payments",
     )
     with st.container(key="doc_auth_panel"):
-        section_heading("Create an account or sign in", variant="plan")
+        section_heading("Account", variant="plan")
         st.markdown(
             polish_ui_copy(
                 "Registration is **local to this machine** (demo). Use a fictional email."
             )
         )
-        if not is_logged_in():
-            st.info(
-                "The sidebar profile is a **guest preview** until you sign in here. "
-                "After sign-in, your session is saved on this device (cookie + local app data)."
-            )
 
         tab_reg, tab_login = st.tabs(["Sign up", "Sign in"])
 
@@ -207,6 +215,7 @@ def render_signup_signin_panel() -> None:
                             from services.portal_user_context import sync_portal_user_context
 
                             sync_portal_user_context()
+                            st.session_state.pop(RAG_OPEN_SIGNIN_KEY, None)
                             set_rag_chat_menu(MENU_CHAT)
                             queue_auth_toast(msg.replace("**", ""), "success")
                             st.rerun()
@@ -224,6 +233,7 @@ def render_signup_signin_panel() -> None:
                         from services.portal_user_context import sync_portal_user_context
 
                         sync_portal_user_context()
+                        st.session_state.pop(RAG_OPEN_SIGNIN_KEY, None)
                         set_rag_chat_menu(MENU_CHAT)
                         queue_auth_toast(msg.replace("**", ""), "success")
                         st.rerun()

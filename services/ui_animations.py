@@ -163,11 +163,11 @@ def inject_page_background() -> None:
         section[data-testid="stSidebar"] [data-testid="stSidebarNav"] ul {{
             margin-bottom: 0.65rem !important;
         }}
-        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[href*="document-assistant"],
-        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"][href*="document-assistant"] {{
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] a[href*="sign-in"],
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] [data-testid="stSidebarNavLink"][href*="sign-in"] {{
             display: none !important;
         }}
-        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] li:has(a[href*="document-assistant"]) {{
+        section[data-testid="stSidebar"] [data-testid="stSidebarNav"] li:has(a[href*="sign-in"]) {{
             display: none !important;
         }}
         </style>

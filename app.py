@@ -1046,11 +1046,11 @@ SUPPORT_PAGE = st.Page(
     icon="💬",
     url_path="support",
 )
-DOCUMENT_ASSISTANT_PAGE = st.Page(
-    "pages/document_assistant.py",
-    title="Document Assistant",
-    icon="📄",
-    url_path="document-assistant",
+SIGN_IN_PAGE = st.Page(
+    "pages/sign_in.py",
+    title="Sign in",
+    icon="🔐",
+    url_path="sign-in",
 )
 ADMIN_PAGE = st.Page(
     "pages/admin_demo.py",
@@ -1062,7 +1062,7 @@ ADMIN_PAGE = st.Page(
 
 def _navigation_menu() -> dict:
     """Sidebar page groups depend on demo dashboard mode (user vs admin)."""
-    # Document Assistant is in navigation for routing/page_link; sidebar link hidden via CSS.
+    # Sign-in is in navigation for routing/page_link; sidebar link hidden via CSS.
     docs = {"Docs": [DEV_DOCS_PAGE]}
     if get_demo_dashboard_mode() == DEMO_MODE_ADMIN:
         return {
@@ -1074,7 +1074,7 @@ def _navigation_menu() -> dict:
                 ACCOUNT_PAGE,
                 SUPPORT_PAGE,
                 TERMS_PAGE,
-                DOCUMENT_ASSISTANT_PAGE,
+                SIGN_IN_PAGE,
             ],
             **docs,
         }
@@ -1086,7 +1086,7 @@ def _navigation_menu() -> dict:
             ACCOUNT_PAGE,
             SUPPORT_PAGE,
             TERMS_PAGE,
-            DOCUMENT_ASSISTANT_PAGE,
+            SIGN_IN_PAGE,
         ],
         **docs,
     }

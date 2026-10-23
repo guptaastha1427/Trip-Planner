@@ -27,7 +27,7 @@ def render() -> None:
         import app as trip_app
 
         st.page_link(
-            trip_app.DOCUMENT_ASSISTANT_PAGE,
+            trip_app.SIGN_IN_PAGE,
             label="Open Document Assistant (sign up & chat)",
             icon="📄",
         )

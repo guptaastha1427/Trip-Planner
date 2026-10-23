@@ -36,7 +36,7 @@ from services.portal_user_context import (
     sync_portal_user_context,
 )
 from services.rag_chat_auth import current_user, is_logged_in, logout_user
-from services.rag_chat_ui import MENU_SIGNUP, set_rag_chat_menu
+from services.rag_chat_ui import set_rag_chat_menu
 from services.ui_animations import inject_ui_animations
 
 
@@ -329,11 +329,10 @@ def render_sidebar_user_dock() -> str:
 
             if not auth:
                 if st.button("Sign in", key="portal_global_sign_in", use_container_width=True):
-                    set_rag_chat_menu(MENU_SIGNUP)
                     try:
                         import app as trip_app
 
-                        st.switch_page(trip_app.DOCUMENT_ASSISTANT_PAGE)
+                        st.switch_page(trip_app.SIGN_IN_PAGE)
                     except Exception:
                         st.rerun()
 
@@ -345,7 +344,7 @@ def render_sidebar_user_dock() -> str:
                     logout_user()
                     set_demo_user(former_uid)
                     st.session_state.portal_demo_user_select = former_uid
-                    set_rag_chat_menu(MENU_SIGNUP)
+                    set_rag_chat_menu(MENU_CHAT)
                     queue_auth_toast("You have been signed out.", "info")
                     st.rerun()
 
