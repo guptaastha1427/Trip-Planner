@@ -19,23 +19,29 @@ import streamlit as st
 from config import (
     DEFAULT_MODEL,
     FAST_MODE_MAX_STEPS,
+    configure_crewai_storage,
     get_gemini_api_key,
+    get_orchestration_mode,
     get_user_agent,
     is_wikivoyage_rag_enabled,
 )
-from services.agent import AgentTraceStep, run_agent
-from services.feedback import append_feedback, feedback_stats
-from services.map_viz import (
+
+configure_crewai_storage()
+from services.trip.agent_trace import AgentTraceStep
+from services.trip.agent import run_agent
+from services.trip.crew_trip import run_crew_trip
+from services.trip.feedback import append_feedback, feedback_stats
+from services.trip.map_viz import (
     build_deck,
     collect_points_for_filter,
     render_pydeck_map,
     route_steps_markdown,
 )
-from services.destination_guide import attach_destination_guide
-from services.place_images import enrich_itinerary_with_photos, enrich_travel_hints_photos
-from services.weather import attach_weather
-from services.persistence import load_app_state, save_app_state
-from services.trip_history import (
+from services.trip.destination_guide import attach_destination_guide
+from services.trip.place_images import enrich_itinerary_with_photos, enrich_travel_hints_photos
+from services.trip.weather import attach_weather
+from services.core.persistence import load_app_state, save_app_state
+from services.trip.trip_history import (
     append_trip_record,
     clear_trip_history_for_portal_user,
     get_trip_history_cached,
@@ -44,8 +50,8 @@ from services.trip_history import (
     save_trip_history,
     snapshot_history_entry,
 )
-from services.ui_animations import inject_ui_animations
-from services.ui_components import (
+from services.ui.ui_animations import inject_ui_animations
+from services.ui.ui_components import (
     category_label,
     display_city,
     render_hint_tile,
@@ -57,25 +63,25 @@ from services.ui_components import (
     render_weather_section,
     section_heading,
 )
-from services.trace_view import render_agent_execution_trace
-from services.travel_hints import attach_travel_hints
-from services.nearby_pois import nearby_alternatives
-from services.demo_dashboard import (
+from services.trip.trace_view import render_agent_execution_trace, render_live_trace_markdown
+from services.trip.travel_hints import attach_travel_hints
+from services.trip.nearby_pois import nearby_alternatives
+from services.portal.demo_dashboard import (
     DEMO_MODE_ADMIN,
     get_demo_dashboard_mode,
     is_admin_dashboard_mode,
     render_demo_dashboard_switch,
 )
-from services.policy_bot_ui import (
+from services.ui.policy_bot_ui import (
     mount_trip_planner_policy_bot_styles,
     render_sidebar_trip_policy_bot,
     render_trip_planner_policy_bot_fab,
 )
-from services.portal_ui import render_sidebar_user_dock
-from services.portal_user_context import portal_user_display_name, resolve_portal_user_id, sync_portal_user_context
-from services.rag_chat_auth import init_rag_auth_session, is_logged_in, mount_rag_auth_cookie_component
-from services.role_dashboard import render_admin_home_dashboard
-from services.validation import (
+from services.portal.portal_ui import render_sidebar_user_dock
+from services.portal.portal_user_context import portal_user_display_name, resolve_portal_user_id, sync_portal_user_context
+from services.portal.rag_chat_auth import init_rag_auth_session, is_logged_in, mount_rag_auth_cookie_component
+from services.portal.role_dashboard import render_admin_home_dashboard
+from services.core.validation import (
     dedupe_itinerary_pois,
     enrich_itinerary_from_pois,
     itinerary_poi_id_set,
@@ -86,7 +92,7 @@ from services.validation import (
 
 def hint_card_links(place: Dict[str, Any], kind: str = "hotel") -> List[tuple]:
     """Lazy import — avoids Streamlit hot-reload ImportError on hint_links."""
-    from services.hint_links import hint_card_links as _links
+    from services.trip.hint_links import hint_card_links as _links
 
     return _links(place, kind)
 
@@ -118,23 +124,17 @@ def _show_refinement_diff(before: Optional[Dict], after: Optional[Dict]) -> None
 
 
 def _init_session() -> None:
-    """Load persisted state once per browser session."""
+    """Load trip history once per browser session; planner starts with no active itinerary."""
     if "bootstrapped" in st.session_state:
         return
     disk = load_app_state()
+    get_trip_history_cached()
     st.session_state.bootstrapped = True
-    st.session_state.itinerary = disk.get("itinerary")
-    st.session_state.tool_state = disk.get("tool_state", {"pois": {}, "chunks": []})
-    st.session_state.agent_trace: List[AgentTraceStep] = disk.get("agent_trace", [])
-    st.session_state.form_destination = disk.get("form_destination", "")
-    st.session_state.form_origin = disk.get("form_origin", "")
-    st.session_state.form_days = disk.get("form_days", 3)
-    st.session_state.form_pace = disk.get("form_pace", "moderate")
-    st.session_state.form_interests = disk.get("form_interests", "museums, food, outdoors")
-    st.session_state.form_constraints = disk.get("form_constraints", "")
+    _clear_active_trip(reset_form=True)
     st.session_state.last_error = None
-    st.session_state.pending_refinement_compare = None
     st.session_state.show_celebration = False
+    if disk.get("itinerary") or disk.get("agent_trace"):
+        _mark_dirty()
 
 
 def _mark_dirty() -> None:
@@ -185,6 +185,80 @@ def _parse_interests(text: str) -> List[str]:
     return [p.strip() for p in text.split(",") if p.strip()]
 
 
+# Tap-to-fill examples only — does not load saved itineraries.
+_TRIP_IDEA_SUGGESTIONS: List[Dict[str, Any]] = [
+    {
+        "label": "Goa · 2 days",
+        "origin": "Mumbai",
+        "destination": "Goa",
+        "days": 2,
+        "pace": "packed",
+        "interests": "beaches, food, nightlife",
+    },
+    {
+        "label": "Jaipur · 3 days",
+        "origin": "Delhi",
+        "destination": "Jaipur",
+        "days": 3,
+        "pace": "moderate",
+        "interests": "history, food, shopping",
+    },
+    {
+        "label": "Bengaluru · 2 days",
+        "origin": "Chennai",
+        "destination": "Bengaluru",
+        "days": 2,
+        "pace": "relaxed",
+        "interests": "cafes, parks, museums",
+    },
+]
+
+
+def _clear_active_trip(*, reset_form: bool = False) -> None:
+    """Drop in-memory itinerary so the planner opens fresh (history sidebar unchanged)."""
+    st.session_state.itinerary = None
+    st.session_state.tool_state = {"pois": {}, "chunks": []}
+    st.session_state.agent_trace = []
+    st.session_state.active_history_id = None
+    st.session_state.pending_refinement_compare = None
+    st.session_state.raw_model_output = ""
+    st.session_state.last_planning_context = None
+    if reset_form:
+        st.session_state.form_destination = ""
+        st.session_state.form_origin = ""
+        st.session_state.form_days = 3
+        st.session_state.form_pace = "moderate"
+        st.session_state.form_interests = ""
+        st.session_state.form_constraints = ""
+
+
+def _apply_trip_idea(idea: Dict[str, Any]) -> None:
+    _clear_active_trip(reset_form=False)
+    st.session_state.form_origin = idea.get("origin", "")
+    st.session_state.form_destination = idea.get("destination", "")
+    st.session_state.form_days = int(idea.get("days", 3))
+    st.session_state.form_pace = idea.get("pace", "moderate")
+    st.session_state.form_interests = idea.get("interests", "")
+    st.session_state.last_error = None
+    _mark_dirty()
+
+
+def _render_trip_idea_suggestions() -> None:
+    if st.session_state.get("itinerary"):
+        return
+    st.caption("**Trip ideas** — tap to fill the form (then **Create my itinerary**).")
+    cols = st.columns(len(_TRIP_IDEA_SUGGESTIONS))
+    for col, idea in zip(cols, _TRIP_IDEA_SUGGESTIONS):
+        with col:
+            if st.button(
+                idea["label"],
+                key=f"trip_idea_{idea['destination']}",
+                use_container_width=True,
+            ):
+                _apply_trip_idea(idea)
+                st.rerun()
+
+
 def _apply_history_entry(entry: dict) -> None:
     """Restore a saved trip into the active session (no disk write — instant rerun)."""
     st.session_state.itinerary = copy.deepcopy(entry.get("itinerary"))
@@ -198,7 +272,10 @@ def _apply_history_entry(entry: dict) -> None:
     st.session_state.form_interests = entry.get("interests", "")
     st.session_state.form_constraints = entry.get("constraints", "")
     st.session_state.active_history_id = entry.get("id")
+    st.session_state.agent_trace = []
     st.session_state.last_error = None
+    st.session_state.last_planning_context = None
+    _mark_dirty()
 
 
 def _render_sidebar_history() -> None:
@@ -219,8 +296,7 @@ def _render_sidebar_history() -> None:
                 st.rerun()
 
     if st.button("Clear my trip history", type="secondary", width="stretch"):
-        clear_trip_history_for_portal_user(portal_uid, persist_disk=False)
-        _flush_persist()
+        clear_trip_history_for_portal_user(portal_uid, persist_disk=True)
         st.rerun()
 
 
@@ -236,10 +312,20 @@ def render_global_sidebar() -> None:
     render_sidebar_user_dock()
 
 
+def _resolve_orchestration_mode() -> str:
+    """Session UI override, else ORCHESTRATION_MODE from .env (default gemini)."""
+    mode = st.session_state.get("orchestration_mode")
+    if mode in ("gemini", "crew"):
+        return str(mode)
+    return get_orchestration_mode()
+
+
 def _agent_settings() -> Dict[str, Any]:
     """Model and agent options (from config / .env, not shown in sidebar)."""
     if "map_style" not in st.session_state:
         st.session_state.map_style = "light"
+    if "orchestration_mode" not in st.session_state:
+        st.session_state.orchestration_mode = get_orchestration_mode()
     return {
         "api_key": _resolve_gemini_key(),
         "model": DEFAULT_MODEL,
@@ -247,6 +333,7 @@ def _agent_settings() -> Dict[str, Any]:
         "max_steps": FAST_MODE_MAX_STEPS,
         "rag_enabled": is_wikivoyage_rag_enabled(),
         "map_style": st.session_state.map_style,
+        "orchestration": _resolve_orchestration_mode(),
     }
 
 
@@ -276,52 +363,115 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
         )
         return
 
+    planner_user_id = resolve_portal_user_id()
+
     status = st.empty()
+    steps_panel = st.empty()
+    trace_live = st.empty()
 
     progress_bar = st.progress(0, text="Starting agent…")
+    live_steps: List[str] = []
+    orchestration = settings.get("orchestration") or get_orchestration_mode()
+    use_crew = orchestration == "crew" and mode == "generate"
+
+    def sync_trace(tr: List[AgentTraceStep]) -> None:
+        st.session_state.agent_trace = list(tr)
+        md = render_live_trace_markdown(tr)
+        if md:
+            trace_live.markdown(md, unsafe_allow_html=True)
 
     def progress(line: str) -> None:
+        live_steps.append(line)
         status.info(line)
-        if "retry" in line.lower():
+        sync_trace(st.session_state.get("agent_trace") or [])
+        if live_steps:
+            title = (
+                "**Planning steps (live · CrewAI)**"
+                if use_crew
+                else "**Planning steps (live)**"
+            )
+            steps_panel.markdown(
+                title + "  \n" + "\n".join(f"- {s}" for s in live_steps[-14:])
+            )
+        low = line.lower()
+        if "retry" in low:
             progress_bar.progress(40, text=line[:80])
-        elif "tool" in line.lower() or "running" in line.lower():
+        elif "tool" in low or "running" in low:
             progress_bar.progress(65, text=line[:80])
-        elif "gemini" in line.lower():
+        elif "gemini" in low or "step" in low or "crew" in low:
             progress_bar.progress(30, text=line[:80])
         else:
             progress_bar.progress(90, text=line[:80])
 
     before_itin = st.session_state.itinerary
+    initial_tool_state = st.session_state.get("tool_state")
+    if mode == "generate":
+        st.session_state.itinerary = None
+        st.session_state.active_history_id = None
+        st.session_state.agent_trace = []
+        sync_trace([])
+        before_itin = None
+        initial_tool_state = {"pois": {}, "chunks": []}
 
     spinner_msg = (
         "✨ Applying your refinement…"
         if mode == "refine"
-        else "✈️ Agent is planning your trip…"
+        else (
+            "🤝 Multi-agent crew is planning your trip…"
+            if use_crew
+            else (
+                "✏️ Updating your trip…"
+                if mode == "single_day"
+                else "✈️ Agent is planning your trip…"
+            )
+        )
+    )
+    agent_kwargs = dict(
+        api_key=api_key,
+        model=settings.get("model", DEFAULT_MODEL),
+        destination=st.session_state.form_destination,
+        trip_days=int(st.session_state.form_days),
+        pace=st.session_state.form_pace,
+        interests=_parse_interests(st.session_state.form_interests),
+        constraints=st.session_state.form_constraints,
+        user_agent=ua,
+        on_progress=progress,
+        on_trace=sync_trace,
     )
     with st.spinner(spinner_msg):
-        result = run_agent(
-            api_key=api_key,
-            model=settings.get("model", DEFAULT_MODEL),
-            destination=st.session_state.form_destination,
-            trip_days=int(st.session_state.form_days),
-            pace=st.session_state.form_pace,
-            interests=_parse_interests(st.session_state.form_interests),
-            constraints=st.session_state.form_constraints,
-            user_agent=ua,
-            fast_mode=settings.get("fast_mode", False),
-            max_steps=settings.get("max_steps"),
-            rag_enabled=settings.get("rag_enabled", False),
-            mode=mode,
-            existing_itinerary=before_itin,
-            target_day=target_day,
-            user_request=user_request or None,
-            initial_tool_state=st.session_state.get("tool_state"),
-            on_progress=progress,
-        )
+        if orchestration == "crew" and mode == "generate":
+            result = run_crew_trip(**agent_kwargs)
+        else:
+            result = run_agent(
+                **agent_kwargs,
+                fast_mode=settings.get("fast_mode", False),
+                max_steps=settings.get("max_steps"),
+                rag_enabled=settings.get("rag_enabled", False),
+                mode=mode,
+                existing_itinerary=before_itin,
+                target_day=target_day,
+                user_request=user_request or None,
+                initial_tool_state=initial_tool_state,
+            )
 
     status.empty()
+    steps_panel.empty()
+    trace_live.empty()
     progress_bar.empty()
     st.session_state.agent_trace = result.trace
+    st.session_state.last_planning_live_steps = live_steps
+    st.session_state.last_orchestration_used = orchestration if mode == "generate" else "gemini"
+    st.session_state.last_agent_mode = mode
+    st.session_state.last_planning_context = {
+        "orchestration": orchestration if mode == "generate" else "gemini",
+        "mode": mode,
+        "model": settings.get("model", DEFAULT_MODEL),
+        "destination": st.session_state.form_destination,
+        "trip_days": int(st.session_state.form_days),
+        "pace": st.session_state.form_pace,
+        "fast_mode": settings.get("fast_mode"),
+        "ok": result.ok,
+    }
 
     if not result.ok:
         st.session_state.show_celebration = False
@@ -363,18 +513,43 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
         st.session_state.refine_success = True
     if mode in ("refine", "single_day", "generate"):
         _mark_dirty()
-    if mode == "generate":
-        append_trip_record(
-            destination=st.session_state.form_destination,
-            origin=(st.session_state.get("form_origin") or "").strip(),
-            trip_days=int(st.session_state.form_days),
-            pace=st.session_state.form_pace,
-            interests=st.session_state.form_interests,
-            constraints=st.session_state.form_constraints,
+    if result.itinerary:
+        _save_trip_for_portal_user(
+            mode,
+            planner_user_id=planner_user_id,
             itinerary=result.itinerary,
             tool_state=result.tool_state,
-            persist_disk=False,
         )
+
+
+def _save_trip_for_portal_user(
+    mode: str,
+    *,
+    planner_user_id: str,
+    itinerary: Dict[str, Any],
+    tool_state: Dict[str, Any],
+) -> None:
+    """Append or update trip history for the portal user who started this run."""
+    common = dict(
+        destination=st.session_state.form_destination,
+        origin=(st.session_state.get("form_origin") or "").strip(),
+        trip_days=int(st.session_state.form_days),
+        pace=st.session_state.form_pace,
+        interests=st.session_state.form_interests,
+        constraints=st.session_state.form_constraints,
+        itinerary=itinerary,
+        tool_state=tool_state,
+        portal_user_id=planner_user_id,
+        persist_disk=True,
+    )
+    if mode == "generate":
+        append_trip_record(**common)
+        return
+    hid = st.session_state.get("active_history_id")
+    if hid:
+        snapshot_history_entry(hid, **common)
+        return
+    append_trip_record(**common)
 
 
 def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7) -> None:
@@ -768,6 +943,7 @@ def _render_route_map(
 def trip_planner_page() -> None:
     inject_ui_animations()
     _init_session()
+    sync_portal_user_context()
     if st.session_state.get("show_celebration"):
         st.balloons()
         st.session_state.show_celebration = False
@@ -830,6 +1006,14 @@ def trip_planner_page() -> None:
             placeholder="Diet, budget, accessibility…",
             height=72,
         )
+        _render_trip_idea_suggestions()
+        st.selectbox(
+            "Orchestration (generate only)",
+            options=["gemini", "crew"],
+            key="orchestration_mode",
+            help="gemini = default agent; crew = CrewAI multi-agent pipeline. "
+            "Refine / single-day always use gemini agent.",
+        )
         if st.button("Create my itinerary", type="primary", use_container_width=True):
             _run_generation("generate")
 
@@ -837,6 +1021,11 @@ def trip_planner_page() -> None:
         st.error(st.session_state.last_error)
 
     itinerary = st.session_state.get("itinerary")
+    if not itinerary:
+        st.info(
+            "No itinerary yet — use the placeholders above, pick a **trip idea**, "
+            "then **Create my itinerary** for a new plan."
+        )
 
     # Render itinerary + map OUTSIDE button handlers (capstone requirement)
     if itinerary:
@@ -895,7 +1084,7 @@ def trip_planner_page() -> None:
         b1, b2 = st.columns([1, 2])
         with b1:
             if st.button("Book as travel package", type="primary", use_container_width=True):
-                from services.travel_packages import (
+                from services.portal.travel_packages import (
                     PACKAGE_BOOKING_PREFILL_KEY,
                     package_booking_prefill_payload,
                 )
@@ -978,7 +1167,8 @@ def trip_planner_page() -> None:
                     pace=st.session_state.form_pace,
                     interests=st.session_state.form_interests,
                     constraints=st.session_state.form_constraints,
-                    persist_disk=False,
+                    portal_user_id=portal_uid,
+                    persist_disk=True,
                 )
                 st.session_state._history_snap_sig = snap_sig
                 _mark_dirty()
@@ -998,7 +1188,13 @@ def trip_planner_page() -> None:
             if raw:
                 st.code(raw, language="json")
 
-    render_agent_execution_trace(st.session_state.get("agent_trace"))
+    render_agent_execution_trace(
+        st.session_state.get("agent_trace") if itinerary else None,
+        orchestration=st.session_state.get("last_orchestration_used")
+        or st.session_state.get("orchestration_mode"),
+        agent_mode=st.session_state.get("last_agent_mode"),
+        planning_context=st.session_state.get("last_planning_context"),
+    )
 
     render_trip_planner_policy_bot_fab(portal_uid)
 
@@ -1017,43 +1213,43 @@ DEV_DOCS_PAGE = st.Page(
     url_path="dev",
 )
 BOOKINGS_PAGE = st.Page(
-    "pages/bookings_refunds.py",
+    "pages/portal/bookings_refunds.py",
     title="My Bookings & Refunds",
     icon="🧳",
     url_path="bookings",
 )
 REFUND_BOT_PAGE = st.Page(
-    "pages/refund_assistant.py",
+    "pages/portal/refund_assistant.py",
     title="Refund Assistant",
     icon="🤖",
     url_path="refund-assistant",
 )
 TERMS_PAGE = st.Page(
-    "pages/terms_policies.py",
+    "pages/portal/terms_policies.py",
     title="Terms & Policies",
     icon="📜",
     url_path="terms",
 )
 ACCOUNT_PAGE = st.Page(
-    "pages/account_status.py",
+    "pages/portal/account_status.py",
     title="Account Status",
     icon="🛡️",
     url_path="account",
 )
 SUPPORT_PAGE = st.Page(
-    "pages/support.py",
+    "pages/portal/support.py",
     title="Help & Support",
     icon="💬",
     url_path="support",
 )
 SIGN_IN_PAGE = st.Page(
-    "pages/sign_in.py",
+    "pages/portal/sign_in.py",
     title="Sign in",
     icon="🔐",
     url_path="sign-in",
 )
 ADMIN_PAGE = st.Page(
-    "pages/admin_demo.py",
+    "pages/portal/admin_demo.py",
     title="Admin",
     icon="🔧",
     url_path="admin",

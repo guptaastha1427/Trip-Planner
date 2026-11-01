@@ -1,1 +1,1 @@
-# Service modules for geocoding, POI search, RAG, agent, maps, and persistence.
+# Service packages: core, trip, rag, portal, ui — see subfolders.

@@ -54,6 +54,14 @@ CUSTOMER_PORTAL_STATE_PATH = DATA_DIR / "customer_portal_state.json"
 # OpenStreetMap endpoints (free, no API key)
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Tried in order when primary returns 429/502/503/504 (override primary with OVERPASS_URL in .env)
+OVERPASS_FALLBACK_URLS: tuple[str, ...] = (
+    "https://lz4.overpass-api.de/api/interpreter",
+    "https://z.overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
+    "https://overpass.osm.ch/api/interpreter",
+)
 
 # Wikimedia / Wikivoyage (optional RAG)
 WIKIVOYAGE_API = "https://en.wikivoyage.org/w/api.php"
@@ -76,6 +84,13 @@ EMBEDDING_MODEL_FALLBACKS = (
 # Bump when embedding defaults change so Streamlit @st.cache_resource rebuilds indices.
 EMBEDDING_CACHE_VERSION = 4
 
+# Bump when GROUNDED_SYSTEM_INSTRUCTION changes so Gemini CachedContent is recreated.
+PROMPT_CACHE_VERSION = 1
+
+# Semantic retrieval cache (Terms KB chunks only — not LLM replies)
+SEMANTIC_CACHE_THRESHOLD_DEFAULT = 0.91
+SEMANTIC_CACHE_MAX_ENTRIES_DEFAULT = 200
+
 # Agent loop limits
 DEFAULT_MAX_STEPS = 6
 FAST_MODE_MAX_STEPS = 4
@@ -87,7 +102,9 @@ DOWNVOTE_BOOST = -0.35
 
 # HTTP timeouts and retries
 REQUEST_TIMEOUT_SEC = 15
+OVERPASS_TIMEOUT_SEC_DEFAULT = 35
 MAX_RETRIES = 2
+OVERPASS_MAX_RETRIES = 3
 
 # RAG chunk size range from instructions
 RAG_CHUNK_MIN = 800
@@ -143,6 +160,76 @@ def is_wikivoyage_rag_enabled() -> bool:
 def is_destination_guide_ai_enabled() -> bool:
     """Extra Gemini call for season copy (DESTINATION_GUIDE_AI in .env, default off)."""
     return _env_bool("DESTINATION_GUIDE_AI", default=False)
+
+
+def get_orchestration_mode() -> str:
+    """Trip generate orchestration: gemini (default) or crew (CrewAI multi-agent)."""
+    raw = _strip_env_value(os.environ.get("ORCHESTRATION_MODE", "gemini")).lower()
+    if raw not in ("gemini", "crew"):
+        return "gemini"
+    return raw
+
+
+def get_overpass_urls() -> tuple[str, ...]:
+    """Overpass interpreter URLs: OVERPASS_URL from .env, then built-in fallbacks."""
+    primary = _strip_env_value(os.environ.get("OVERPASS_URL", "")) or OVERPASS_URL
+    urls: list[str] = [primary]
+    for url in OVERPASS_FALLBACK_URLS:
+        if url not in urls:
+            urls.append(url)
+    return tuple(urls)
+
+
+def get_overpass_timeout_sec() -> float:
+    """Overpass queries can be slow on public mirrors; separate from generic HTTP timeout."""
+    raw = _strip_env_value(os.environ.get("OVERPASS_TIMEOUT_SEC", ""))
+    if not raw:
+        return float(OVERPASS_TIMEOUT_SEC_DEFAULT)
+    try:
+        return max(10.0, float(raw))
+    except ValueError:
+        return float(OVERPASS_TIMEOUT_SEC_DEFAULT)
+
+
+def is_gemini_prompt_cache_enabled() -> bool:
+    """Cache GROUNDED_SYSTEM_INSTRUCTION via Gemini CachedContent (user/context stay uncached)."""
+    return _env_bool("GEMINI_PROMPT_CACHE_ENABLED", default=False)
+
+
+def is_semantic_cache_enabled() -> bool:
+    """Reuse retrieved policy chunks for paraphrased queries (LLM answer always fresh)."""
+    return _env_bool("SEMANTIC_CACHE_ENABLED", default=False)
+
+
+def get_semantic_cache_threshold() -> float:
+    raw = _strip_env_value(os.environ.get("SEMANTIC_CACHE_THRESHOLD", ""))
+    if not raw:
+        return SEMANTIC_CACHE_THRESHOLD_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return SEMANTIC_CACHE_THRESHOLD_DEFAULT
+
+
+def get_semantic_cache_max_entries() -> int:
+    raw = _strip_env_value(os.environ.get("SEMANTIC_CACHE_MAX_ENTRIES", ""))
+    if not raw:
+        return SEMANTIC_CACHE_MAX_ENTRIES_DEFAULT
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return SEMANTIC_CACHE_MAX_ENTRIES_DEFAULT
+
+
+def configure_crewai_storage() -> None:
+    """
+    Store CrewAI app data under project ``data/`` (avoids macOS Application Support issues).
+    Call before importing ``crewai``.
+    """
+    xdg = DATA_DIR / "xdg_data"
+    xdg.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("XDG_DATA_HOME", str(xdg))
+    os.environ.setdefault("CREWAI_STORAGE_DIR", "crewai")
 
 
 # Cap Wikipedia photo lookups per itinerary render (speed)

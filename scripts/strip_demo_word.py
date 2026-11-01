@@ -165,7 +165,7 @@ def main() -> None:
     paths = []
     for ext in (".py", ".md", ".json"):
         paths.extend(ROOT.rglob(f"*{ext}"))
-    paths.append(ROOT / ".docs")
+    paths.append(ROOT / "docs" / "capstone" / "capstone-brief.md")
     for path in paths:
         if "scripts/" in str(path) or path.name == "strip_demo_word.py":
             continue

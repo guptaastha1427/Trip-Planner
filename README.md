@@ -1,150 +1,78 @@
-# Trip Planner AI Agent (Capstone)
+# Trip Planner AI Agent
 
-Streamlit app that plans multi-day trips with **Google Gemini** (tool calling), **OpenStreetMap** POIs, optional **Wikivoyage RAG**, maps, feedback-based ranking, and persistence.
+**Streamlit capstone:** multi-day trips via **Gemini + OpenStreetMap**; **demo portal** (bookings/refunds/support); **policy Q&A** via **LangChain + in-memory FAISS**. Not a real travel agency — no real payments.
 
-## Project structure (capstone format)
+## Features (short)
+
+**Trip Planner:** Form (1–14 days, pace, interests) → **Create my itinerary** → itinerary / map / travel tabs; nearby swap; 👍/👎 → `feedback.jsonl`; single-day update; package prefill; policy FAB; export JSON; agent trace; trip history (User sidebar); balloons on generate.
+
+**Portal:** `/bookings`, refund assistant (rules), account, support (FAQ + FAISS bot + tickets), terms, sign-in, admin (`demo_admin`).
+
+**Optional / gaps:** Wikivoyage tool off by default; URL FAISS = scrape test only; no full-itinerary refine button; Document Assistant menu helpers not on a route.
+
+## Stack
+
+Streamlit · Python · `google-genai` · LangChain + **faiss-cpu** · PyDeck · JSON under `data/` (no SQL/Chroma) · no REST server.
+
+## Layout
 
 ```
-trip-planner/
-├── app.py
-├── data/
-│ ├── app_state.json
-│ ├── feedback.jsonl
-│ ├── demo_bookings.json
-│ └── customer_portal_state.json
-└── README.md
+app.py, config.py, pages/{dev.py,portal/}, services/{core,trip,rag,portal,ui}/, data/, tests/, docs/, README.md
 ```
 
-Primary files under `data/`:
-
-| File | Purpose |
-|------|---------|
-| `app_state.json` | Current itinerary, form fields, agent trace, **trip history** (`trip_history` array) |
-| `feedback.jsonl` | One JSON line per 👍/👎 on a POI |
-| `demo_bookings.json` | Static mock flight/train/bus bookings per sample user |
-| `customer_portal_state.json` | Refunds, tickets, package bookings, appeals, audit (see `.example`) |
-
-> **Note:** This repo also includes `config.py`, `services/`, `requirements.txt`, and `.env` so `app.py` can stay modular. For grading/submission, the **required layout** is the tree above; run with `streamlit run app.py` from the project root.
+Runtime (gitignored): `app_state.json`, `feedback.jsonl`, `customer_portal_state.json`, rag auth JSON.
 
 ## Setup
 
-1. Python 3.8+ and a virtual environment:
-
- ```bash
- python -m venv trip-planner-env
- source trip-planner-env/bin/activate
- pip install -r requirements.txt
- ```
-
-2. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` and `OSM_CONTACT_EMAIL`.
-
-3. Run:
-
- ```bash
- streamlit run app.py
- ```
-
-## End-to-end user workflow
-
-### 1. App start
-
-- Streamlit loads `app.py` → `main()`.
-- `_init_session()` reads `data/app_state.json` into `st.session_state` (itinerary, forms, tool state).
-- Sidebar **Trip history** reads the `trip_history` list from the same `app_state.json`.
-- `.env` supplies Gemini key and OSM contact email (User-Agent).
-
-### 2. User enters a trip
-
-- Destination, days (1–14), schedule, interests, constraints.
-- Values stay in session and are saved to `app_state.json` on each run.
-
-### 3. Generate Itinerary
-
-- Validates inputs and API config.
-- **`run_agent`** (Gemini + tools):
- - **`search_pois`** → Nominatim geocode + Overpass POIs (ranked with past **feedback** boosts).
- - **`retrieve_guides`** (optional) → Wikivoyage RAG chunks.
-- Model returns JSON: `days` → `morning` / `afternoon` / `evening` → activities with `poi_id`.
-- **Validation:** every `poi_id` must exist in tool results; retries on API/JSON errors.
-- On success: session updated, new entry appended to `trip_history` in `app_state.json`.
-
-### 4. View results
-
-- Itinerary text, download JSON, refine / single-day regen, PyDeck map.
-- **Travel & stays** tab: destination blurb, best/avoid seasons, **Open-Meteo** forecast (no extra API key), airports, and budget hotels.
-- Agent trace in an expander (debug).
-
-### 5. Feedback (👍 / 👎)
-
-- Each vote appends one line to `data/feedback.jsonl`:
-
- `{"ts", "city_key", "poi_id", "vote": "up"|"down"}`
-
-- Does **not** change the current itinerary.
-- On the **next** `search_pois` for that city: +0.25 per up, −0.35 per down applied to ranking.
-
-### 6. Trip history (sidebar)
-
-- Click a saved trip to reload itinerary + form fields into the main page.
-- **Clear trip history** empties the `trip_history` array in `app_state.json`.
-
-```mermaid
-flowchart TD
- A[Open app] --> B[Load app_state.json]
- B --> C[Fill trip form]
- C --> D[Generate]
- D --> E[Gemini + tools]
- E --> F[OSM POIs]
- E --> G[Itinerary JSON]
- G --> H[UI + map]
- H --> I[Feedback to feedback.jsonl]
- I --> J[Next search uses boosts]
+```bash
+python -m venv trip-planner-env && source trip-planner-env/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # GEMINI_API_KEY + OSM_CONTACT_EMAIL required
+streamlit run app.py   # http://localhost:8501
 ```
 
-## Architecture (how code connects)
+**CrewAI (`ORCHESTRATION_MODE=crew`):** needs Python **3.10–3.13** and `crewai` in the **same** env as Streamlit. Use `trip-planner-env` above — not system Python 3.14.
 
-```mermaid
-flowchart LR
- UI[app.py] --> Agent[services/agent.py]
- Agent --> Gemini[Gemini API]
- Agent --> POI[services/poi_search.py]
- Agent --> RAG[services/wikivoyage_rag.py]
- POI --> OSM[Nominatim + Overpass]
- UI --> State[data/app_state.json]
- UI --> FB[data/feedback.jsonl]
+Optional: `.streamlit/secrets.toml` for Gemini key.
+
+## Policy RAG (summary)
+
+`website_rag.py`: terms strings → chunk 1100/180 → Gemini embed → FAISS in memory → retrieve (≥0.42) → `generate_grounded_answer`. Chat entry: `support_faq.answer_support_query`.
+
+## Trip flow
+
+Load `app_state.json` → validate → `run_agent` (OSM POIs + Gemini JSON) → validate `poi_id`s → UI + persist + history.
+
+## External services
+
+Gemini (key); Nominatim/Overpass (User-Agent email); Wikivoyage (optional); Open-Meteo; Wikipedia. Default model `gemini-3.5-flash-lite`.
+
+## Tests
+
+```bash
+python -m tests.portal.test_refund_eligibility
+python -m tests.trip.test_validation
+python -m tests.trip.test_map_tooltip
+pytest tests/ -q   # needs pytest
 ```
 
-## APIs
+## Troubleshooting
 
-| Service | Key | Notes |
-|--------|-----|--------|
-| Google Gemini | Required (`GEMINI_API_KEY`) | Default model: `gemini-3.5-flash-lite` in `config.py` |
-| Nominatim / Overpass | No | OSM contact email in `.env` |
-| Wikivoyage | No | Optional; `ENABLE_WIKIVOYAGE_RAG` in `.env` |
-| Open-Meteo | No | Current weather + daily forecast on the Travel tab |
+| Issue | Fix |
+|-------|-----|
+| Env warning | Set `.env` keys |
+| Policy search fails | Key + embed model; restart Streamlit |
+| No POIs | OSM email; destination spelling |
+| Admin locked | Admin sidebar or `demo_admin` |
+| Stale terms in search | Restart or bump `EMBEDDING_CACHE_VERSION` (intentional) |
 
-## Customer portal (refunds & support)
+## Docs
 
-Academic prototype — **no real payments or refunds**.
+| File | Role |
+|------|------|
+| `docs/runbooks/using.md` | User/admin steps |
+| `docs/guides/info.md` / `/dev` | Deep guide |
+| `docs/product/`, `docs/architecture/`, … | Product & tech |
+| `docs/meta/AGENTS.md` (symlink at root) | AI edit rules |
 
-| Page | URL path |
-|------|----------|
-| My Bookings & Refunds | `/bookings` |
-| Refund Assistant | `/refund-assistant` |
-| Account Status | `/account` |
-| Help & Support | `/support` |
-| Terms & Policies | `/terms` |
-| Admin | `/admin` (passphrase: `demo_admin`) |
-| Developer docs | `/dev` (renders `info.md`) |
-
-Use the sidebar **account dock** to switch sample users (active, under review, restricted, blacklisted). Use **Dashboard → User / Admin** to flip customer vs back-office navigation.
-
-**Portal highlights:** travel package booking (`BK-PKG-*`), refund rule engine, refund tracking with booking details, support/terms RAG bots, interactive admin console (refunds, tickets, accounts).
-
-Run tests: `python -m tests.test_refund_eligibility` · `python -m tests.test_terms_rag`
-
-Full architecture: `info.md` or in-app **Developer docs**.
-
-## Credits
-
-OpenStreetMap contributors, Wikivoyage, Google Gemini API.
+Credits: OSM, Wikivoyage, Open-Meteo, Wikipedia, Google Gemini.

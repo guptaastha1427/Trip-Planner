@@ -17,6 +17,7 @@ data/trip_history.json
 data/customer_portal_state.json
 data/rag_chat_users.json
 data/rag_chat_sessions.json
+data/rag_retrieval_cache.jsonl
 
 # Test / tool caches
 .pytest_cache/
