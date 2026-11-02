@@ -36,14 +36,13 @@ def render() -> None:
     with tab_bot:
         section_heading("Chat with support bot", variant="plan")
         st.caption(
-            "For signup-gated chat with URL tools, open **Document Assistant** in the sidebar."
+            "For signup-gated chat, open **Document Assistant** in the sidebar."
         )
         render_policy_bot_chat(
             user_id,
             session_key="support",
             show_intro=True,
             escalate_page_hint="the **My tickets** tab on this page",
-            show_url_indexer=True,
         )
 
     with tab_tickets:

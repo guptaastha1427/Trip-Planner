@@ -41,8 +41,7 @@ Do **not** commit `.env`. Live embedding quality is **not** measured by FakeEmbe
 1. **Terms / Policy** — `retrieve_policy_chunks`, `retrieve_from_terms_kb`, `answer_from_terms_document`
 2. **Support FAQ** — `answer_support_query` routing
 3. **Wikivoyage** — `retrieve_guides` (TF-IDF, separate from FAISS)
-4. **URL scrape** — `load_documents_from_url`, `retrieve_from_url` (optional; not chat default)
-5. **Refund** — `evaluate_refund_request` (rules, not RAG)
+4. **Refund** — `evaluate_refund_request` (rules, not RAG)
 
 ## Observability
 

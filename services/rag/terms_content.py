@@ -31,7 +31,6 @@ TERMS_PACKAGES_SECTION_TITLES = (
 RAG_ASSISTANT_SECTION_TITLES = (
     "Document assistant — acceptable use",
     "Chatting, queries & source snippets",
-    "URL input & scraped website data",
     "API keys & automated processing",
 )
 
@@ -76,7 +75,6 @@ This software is provided **as-is** for demonstration, coursework, and UX protot
 | **Website / document RAG chat** | Ask questions in natural language; answers use **semantic search** over indexed policy text, then (when configured) an LLM bound to retrieved chunks. |
 | **Transparent sources** | Each assistant reply includes **inline citations** with hover excerpts (and links when a URL is in metadata). |
 | **Instant document querying** | No manual PDF hunting — ask about refunds, packages, accounts, or assistant rules in one chat thread. |
-| **URL scrape test (optional)** | Validate that a public page can be fetched and chunked (demo pipeline); primary Q&A still uses in-app Terms. |
 | **Signup-gated chat** | **Document Assistant** requires a lightweight local account before chat (session + optional JSON store). |
 | **Trip Planner** | Generate, refine, map, and export itineraries; optional Wikivoyage RAG for guides. |
 | **Book package** | Convert trips or catalog templates into demo **BK-PKG** bookings with live price estimates. |
@@ -84,7 +82,7 @@ This software is provided **as-is** for demonstration, coursework, and UX protot
 | **Help & Support** | FAQs, policy bot, and simulated tickets. |
 | **Admin demo** | Back-office queues for refunds, tickets, and accounts (not production security). |
 
-**Seamless interaction:** Sidebar navigation, tabbed Terms, two-column chat + tools on Document Assistant,
+**Seamless interaction:** Sidebar navigation, tabbed Terms, two-column chat on Document Assistant,
 and consistent pastel UI — without changing underlying Python logic or RAG pipelines.
         """,
     ),
@@ -133,7 +131,6 @@ for documentation and UI copy. **Enforcement is off** unless you implement it in
 
 - **Audience:** Individual learners, try-before-upgrade.
 - **Document Assistant:** Up to **25** grounded chat queries per day (placeholder).
-- **URL indexes:** **1** active scraped URL test index (placeholder).
 - **Trip Planner:** Up to **3** full itinerary generations per day (placeholder).
 - **Support:** FAQ + bot; **no** priority queue.
 - **Benefits:** Full transparency (Sources), standard latency, community/demo data only.
@@ -141,14 +138,14 @@ for documentation and UI copy. **Enforcement is off** unless you implement it in
 ### Voyager Plus (placeholder)
 
 - **Audience:** Frequent planners and power users.
-- **Queries:** **200** assistant queries / day; **5** URL indexes; **15** itinerary runs / day.
+- **Queries:** **200** assistant queries / day; **15** itinerary runs / day.
 - **Benefits:** Priority embedding cache warm-up (placeholder), saved chat export (placeholder),
   email digest of policy changes (placeholder).
 
 ### Team & Agency (placeholder)
 
 - **Audience:** Small teams, classrooms, or demo agencies.
-- **Queries:** **1,000** assistant queries / day; **25** URL indexes; **50** itinerary runs / day.
+- **Queries:** **1,000** assistant queries / day; **50** itinerary runs / day.
 - **Seats:** Up to **10** registered assistant users (placeholder).
 - **Benefits:** Shared Terms index versioning (placeholder), admin audit log export (placeholder),
   dedicated support SLA (placeholder).
@@ -167,14 +164,12 @@ You may use the assistant to:
 
 - Ask questions about **terms, refunds, packages, bookings, accounts, and support** in this demo app.
 - Review **grounded answers** that cite retrieved policy text via **inline citations** in the reply.
-- Optionally **test a public URL** (Help & Support or Document Assistant) to verify that a page can be scraped and chunked.
 
 You must **not**:
 
 - Submit unlawful, harassing, or harmful content in chat.
-- Attempt to scrape sites you do not have permission to access, or bypass robots.txt / rate limits.
 - Treat assistant output as legal, financial, or travel advice for real-world purchases.
-- Enter real payment cards, government IDs, or production API secrets into chat or URL fields.
+- Enter real payment cards, government IDs, or production API secrets into chat.
         """,
     ),
     (
@@ -186,18 +181,6 @@ You must **not**:
 - If the model cannot answer from retrieved text, it should state that the information is **not in the document**.
 - Chat history for registered users is kept in **Streamlit session state** for your current browser session; it is not a permanent support ticket.
 - Switching demo portal users (sidebar profile) does not replace your **Document Assistant** login — those are separate identities.
-        """,
-    ),
-    (
-        "URL input & scraped website data",
-        """
-The optional **URL** tool loads public web pages via HTTP, strips HTML, and splits text into chunks for indexing demos.
-
-- Only use URLs you are allowed to fetch (your own site, public documentation, or coursework examples).
-- Scraped content is processed **on the machine running Streamlit**; it is **not** uploaded to a third-party storage service by this demo.
-- We do not guarantee completeness, accuracy, or freshness of scraped text; layouts and paywalls may block content.
-- **Policy Q&A** in production paths still defaults to the in-app **Terms & Policies** index unless a future feature explicitly queries your URL index.
-- Cached embeddings may persist for the app process lifetime via Streamlit resource caches.
         """,
     ),
     (

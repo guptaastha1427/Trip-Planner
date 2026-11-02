@@ -6,7 +6,7 @@ Embeddings and vector stores are cached with ``@st.cache_resource``.
 
 Efficiency (opt-in via ``.env``, default off): semantic retrieval cache and
 Gemini CachedContent apply only to Terms KB + ``generate_grounded_answer`` —
-never trip agent, URL RAG, or cached LLM / rule-engine outputs.
+never trip agent or cached LLM / rule-engine outputs.
 """
 
 from __future__ import annotations
@@ -20,7 +20,6 @@ from urllib.parse import urlparse
 import streamlit as st
 from google import genai
 from google.genai import types
-from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -206,46 +205,6 @@ def _terms_source_documents() -> List[Document]:
     return docs
 
 
-def load_documents_from_url(url: str) -> Tuple[List[Document], Optional[str]]:
-    """
-    Scrape a public page into documents.
-    Returns (documents, error_message). error_message is set on failure.
-    """
-    ok, normalized = validate_http_url(url)
-    if not ok:
-        return [], normalized
-
-    try:
-        loader = WebBaseLoader(
-            normalized,
-            requests_kwargs={"timeout": 20},
-        )
-        raw_docs = loader.load()
-    except Exception as exc:  # noqa: BLE001
-        return [], f"Could not load URL: {exc}"
-
-    if not raw_docs:
-        return [], "No content was returned from that URL."
-
-    cleaned: List[Document] = []
-    for doc in raw_docs:
-        text = _normalize_whitespace(doc.page_content)
-        if len(text) < 40:
-            continue
-        source = str(doc.metadata.get("source") or normalized)
-        cleaned.append(Document(page_content=text, metadata={"source": source}))
-
-    if not cleaned:
-        return [], "The page loaded but contained no usable text."
-
-    splitter = web_text_splitter()
-    chunks = splitter.split_documents(cleaned)
-    if not chunks:
-        return [], "Could not split page text into chunks."
-
-    return chunks, None
-
-
 def _remember_embedding_error(message: str) -> None:
     st.session_state["_embedding_init_error"] = message
 
@@ -310,24 +269,6 @@ def get_terms_vector_store(_cache_version: int = EMBEDDING_CACHE_VERSION) -> Opt
         return None
     try:
         return build_faiss_index(_terms_source_documents(), embeddings)
-    except Exception as exc:  # noqa: BLE001
-        _remember_embedding_error(str(exc))
-        return None
-
-
-@st.cache_resource(show_spinner=False)
-def get_url_vector_store(
-    url: str,
-    _cache_version: int = EMBEDDING_CACHE_VERSION,
-) -> Optional[FAISS]:
-    embeddings = get_embeddings()
-    if embeddings is None:
-        return None
-    docs, err = load_documents_from_url(url)
-    if err:
-        return None
-    try:
-        return _build_faiss_from_documents(docs, embeddings)
     except Exception as exc:  # noqa: BLE001
         _remember_embedding_error(str(exc))
         return None
@@ -422,28 +363,6 @@ def retrieve_from_terms_kb(
         store(query, top_k=top_k, chunks=chunks)
     _record_cache_meta()
     return chunks, None
-
-
-def retrieve_from_url(
-    query: str,
-    url: str,
-    *,
-    top_k: int = 4,
-) -> Tuple[List[RetrievedChunk], Optional[str]]:
-    ok, msg = validate_http_url(url)
-    if not ok:
-        return [], msg
-
-    store = get_url_vector_store(url.strip())
-    if store is None:
-        docs, err = load_documents_from_url(url.strip())
-        if err:
-            return [], err
-        if not docs:
-            return [], "No content to search from that URL."
-        return [], "Could not build the search index (check GEMINI_API_KEY)."
-
-    return similarity_search(query, vector_store=store, top_k=top_k), None
 
 
 def chunks_to_context(chunks: Sequence[RetrievedChunk]) -> str:

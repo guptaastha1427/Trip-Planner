@@ -12,7 +12,6 @@ from services.rag.rag_citations import assistant_message_uses_html
 from services.rag.support_faq import answer_support_query
 from services.rag.semantic_cache import clear_policy_rag_trace
 from services.ui.ui_copy import polish_ui_copy
-from services.rag.website_rag import load_documents_from_url, validate_http_url
 
 _FAB_KEY = "trip_policy_bot_fab_btn"
 _POLICY_DIALOG_OPEN_KEY = "trip_policy_bot_dialog_open"
@@ -52,10 +51,6 @@ def _message_scroll_height(session_key: str, chat_panel_key: str | None) -> int:
     if chat_panel_key:
         return 400
     return 360
-
-
-def _url_index_key(session_key: str) -> str:
-    return f"policy_bot_url_index_{session_key}"
 
 
 def _pending_query_key(history_user_id: str) -> str:
@@ -382,36 +377,6 @@ def inject_policy_bot_fab_styles() -> None:
     )
 
 
-def render_url_indexer_panel(session_key: str, *, compact: bool = False) -> None:
-    """URL scrape test UI (same logic as in-chat expander)."""
-    if compact:
-        st.caption("Validate a public page for the web RAG pipeline.")
-    else:
-        st.markdown("**URL scrape test**")
-        st.caption(
-            "Checks that a public page can be scraped and chunked. "
-            "Policy answers still use the in-app Terms index."
-        )
-    url = st.text_input(
-        "Website URL",
-        key=f"policy_url_{session_key}",
-        placeholder="https://…",
-    )
-    if st.button("Test URL scrape", key=f"policy_url_btn_{session_key}", type="primary"):
-        ok, normalized = validate_http_url(url)
-        if not ok:
-            st.error(normalized)
-        else:
-            docs, err = load_documents_from_url(normalized)
-            if err:
-                st.warning(err)
-            else:
-                st.session_state[_url_index_key(session_key)] = normalized
-                st.success(
-                    f"Loaded **{len(docs)}** chunks (index with **GEMINI_API_KEY** in `.env`)."
-                )
-
-
 def _render_chat_body(role: str, text: str) -> None:
     body = polish_ui_copy(text)
     if role == "assistant" and assistant_message_uses_html(body):
@@ -436,8 +401,6 @@ def render_policy_bot_chat(
     session_key: str,
     show_intro: bool = True,
     escalate_page_hint: str = "**Help & Support → My tickets**",
-    show_url_indexer: bool = False,
-    url_indexer_in_tools_panel: bool = False,
     require_login: bool = False,
     login_hint: str = "Open **Document Assistant** in the sidebar → **Sign up / Sign in**.",
     chat_panel_key: str | None = None,
@@ -458,10 +421,6 @@ def render_policy_bot_chat(
             "Answers from **Terms & Conditions & Policies** (and your account when relevant). "
             "Retrieved sources appear as **inline citations** in each reply (hover for excerpts)."
         )
-
-    if show_url_indexer and not url_indexer_in_tools_panel:
-        with st.expander("Optional: validate an external policy URL", expanded=False):
-            render_url_indexer_panel(session_key)
 
     history_uid = policy_bot_history_user_id(user_id)
     mk = _messages_key(history_uid)

@@ -8,7 +8,7 @@
 
 **Portal:** `/bookings`, refund assistant (rules), account, support (FAQ + FAISS bot + tickets), terms, sign-in, admin (`demo_admin`).
 
-**Optional / gaps:** Wikivoyage tool off by default; URL FAISS = scrape test only; no full-itinerary refine button; Document Assistant menu helpers not on a route.
+**Optional / gaps:** Wikivoyage tool off by default; no full-itinerary refine button; Document Assistant menu helpers not on a route.
 
 ## Stack
 
