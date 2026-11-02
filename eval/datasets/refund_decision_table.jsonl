@@ -1,0 +1,10 @@
+{"test_id": "F-01", "booking_id": "BK-FLT-1001", "user_id": "user_alex", "account_status": "active", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expected_eligibility": "Eligible", "min_estimated_refund": 1}
+{"test_id": "F-02", "booking_id": "BK-FLT-1102", "user_id": "user_maya", "account_status": "active", "reason": "cancel_travel", "now": "2026-10-01T12:00:00", "expected_eligibility": "Not Eligible", "max_estimated_refund": 0}
+{"test_id": "F-03", "booking_id": "BK-FLT-1101", "user_id": "user_maya", "account_status": "active", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expected_eligibility": "Partially Eligible"}
+{"test_id": "F-04", "booking_id": "BK-BUS-3001", "user_id": "user_alex", "account_status": "active", "reason": "change_plans", "now": "2026-10-25T20:00:00", "expected_eligibility": "Not Eligible"}
+{"test_id": "F-05", "booking_id": "BK-FLT-1201", "user_id": "user_sam", "account_status": "active", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expected_eligibility": "Not Eligible"}
+{"test_id": "F-06", "booking_id": "BK-FLT-1401", "user_id": "user_blacklisted", "account_status": "blacklisted", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expected_eligibility": "Manual Review Required"}
+{"test_id": "F-07", "booking_id": "BK-FLT-1001", "user_id": "user_maya", "account_status": "active", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expected_eligibility": "Not Eligible", "note": "wrong owner"}
+{"test_id": "F-08", "booking_id": "BK-TRN-2001", "user_id": "user_alex", "account_status": "active", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expected_eligibility": "Partially Eligible"}
+{"test_id": "F-09", "booking_id": "BK-FLT-9999", "user_id": "user_alex", "account_status": "active", "reason": "change_plans", "now": "2026-10-01T12:00:00", "expect_error": "missing_booking"}
+{"test_id": "F-10", "booking_id": "BK-FLT-1002", "user_id": "user_alex", "account_status": "active", "reason": "change_plans", "now": "2026-11-01T15:00:00", "expected_eligibility": "Not Eligible", "note": "too close to departure for saver"}

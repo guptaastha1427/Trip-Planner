@@ -11,19 +11,13 @@ import streamlit as st
 from services.trip.agent_trace import AgentTraceStep
 from services.ui.ui_components import section_heading
 from services.trip.planning_progress import GEMINI_PLANNING_STAGES, stage_status_from_trace
+from services.trip.trace_sanitize import sanitize_agent_trace
 from services.trip.trace_timing import effective_duration_ms
 
 # Internal step name -> pipeline phase id
 _NAME_TO_PHASE: Dict[str, str] = {
     "agent_start": "start",
     "fast_fallback": "start",
-    "crew_start": "crew",
-    "crew_kickoff": "crew",
-    "crew_kickoff_complete": "crew",
-    "crew_pipeline": "crew",
-    "poi_researcher": "crew_search",
-    "itinerary_planner": "crew_ai",
-    "grounding_critic": "crew_validate",
     "poi_search_start": "search",
     "search_pois": "search",
     "retrieve_guides": "guides",
@@ -40,26 +34,6 @@ _NAME_TO_PHASE: Dict[str, str] = {
 }
 
 _PHASES: List[Dict[str, str]] = [
-    {
-        "id": "crew",
-        "title": "Crew orchestration",
-        "blurb": "Multi-agent pipeline start and CrewAI kickoff.",
-    },
-    {
-        "id": "crew_search",
-        "title": "POI Researcher (OpenStreetMap)",
-        "blurb": "Agent 1 — collect real places for the catalog.",
-    },
-    {
-        "id": "crew_ai",
-        "title": "Itinerary Planner (Gemini)",
-        "blurb": "Agent 2 — draft grounded day-by-day JSON.",
-    },
-    {
-        "id": "crew_validate",
-        "title": "Grounding Critic",
-        "blurb": "Agent 3 — validate poi_ids and enrich stops.",
-    },
     {
         "id": "start",
         "title": "Starting planner",
@@ -105,13 +79,6 @@ _PHASES: List[Dict[str, str]] = [
 _STEP_EXPLANATIONS = {
     "agent_start": "Planner run started with your trip settings.",
     "fast_fallback": "Fast one-shot plan failed; continuing with the tool agent.",
-    "crew_start": "Multi-agent crew pipeline started for this trip.",
-    "crew_kickoff": "CrewAI sequential orchestration invoked.",
-    "crew_kickoff_complete": "CrewAI kickoff completed.",
-    "crew_pipeline": "Direct agent steps (POI → Planner → Critic).",
-    "poi_researcher": "POI Researcher fetched OpenStreetMap catalog.",
-    "itinerary_planner": "Itinerary Planner drafted JSON with Gemini.",
-    "grounding_critic": "Grounding Critic validated and enriched stops.",
     "poi_search_start": "Starting OpenStreetMap POI search.",
     "search_pois": "Fetched places from OpenStreetMap.",
     "retrieve_guides": "Loaded Wikivoyage excerpts for context.",
@@ -135,82 +102,27 @@ _KIND_LABELS = {
     "validate": "Validate",
     "postprocess": "Post",
     "retry": "Retry",
-    "crew": "Crew agent",
 }
 
-_ORCHESTRATION_TRACE_NAMES = frozenset(
+_SETUP_TRACE_NAMES = frozenset(
     {
         "agent_start",
         "fast_fallback",
-        "crew_start",
-        "crew_kickoff",
-        "crew_kickoff_complete",
-        "crew_pipeline",
         "poi_search_start",
         "complete",
     }
 )
 
-_ORCHESTRATION_DISPLAY_TITLES = {
+_SETUP_DISPLAY_TITLES = {
     "agent_start": "Run started",
     "fast_fallback": "Fallback to tool agent",
-    "crew_start": "Crew pipeline started",
-    "crew_kickoff": "CrewAI kickoff",
-    "crew_kickoff_complete": "CrewAI kickoff finished",
-    "crew_pipeline": "Direct crew steps",
     "poi_search_start": "POI search phase",
     "complete": "Run finished",
 }
 
-_CREW_ROLE_ORDER = (
-    "poi_researcher",
-    "itinerary_planner",
-    "grounding_critic",
-    "travel_hints",
-    "complete",
-)
-
-# Internal trace step name -> user-visible crew agent
-_CREW_AGENT_FOR_STEP: Dict[str, str] = {
-    "crew_start": "Crew orchestrator",
-    "crew_kickoff": "Crew orchestrator",
-    "crew_kickoff_complete": "Crew orchestrator",
-    "crew_pipeline": "Crew orchestrator",
-    "poi_researcher": "POI Researcher",
-    "itinerary_planner": "Itinerary Planner",
-    "grounding_critic": "Grounding Critic",
-    "travel_hints": "Travel hints",
-}
-
 
 def _step_agent_label(name: str) -> str:
-    if name in _CREW_AGENT_FOR_STEP:
-        return _CREW_AGENT_FOR_STEP[name]
     return name.replace("_", " ").title()
-
-
-def _crew_role_duration_ms(trace: List[Any], role_name: str) -> float:
-    """Sum recorded durations for all trace steps with this role name."""
-    total = 0.0
-    for t in trace:
-        _, _, name, _, _ = _normalize_step(t)
-        if name == role_name:
-            total += _step_ms(t)
-    return total
-
-
-def _crew_orchestrator_duration_ms(trace: List[Any]) -> float:
-    total = 0.0
-    for t in trace:
-        _, _, name, _, _ = _normalize_step(t)
-        if name in (
-            "crew_start",
-            "crew_kickoff",
-            "crew_kickoff_complete",
-            "crew_pipeline",
-        ):
-            total += _step_ms(t)
-    return total
 
 
 def _normalize_step(item: Any) -> Tuple[int, str, str, str, float]:
@@ -257,111 +169,38 @@ def _step_ms(item: Any, *, now: Optional[float] = None) -> float:
     return effective_duration_ms(_as_trace_step(item), now=now or time.time())
 
 
-def _trace_has_crew_steps(trace: Optional[List[Any]]) -> bool:
-    for t in trace or []:
-        _, kind, name, _, _ = _normalize_step(t)
-        if kind == "crew" or name in _CREW_ROLE_ORDER:
-            return True
-    return False
+def _display_trace(trace: Optional[List[Any]]) -> List[Any]:
+    return sanitize_agent_trace(trace)
 
-
-def _crew_role_failed(trace: List[Any], role_name: str) -> bool:
-    rows = [_normalize_step(t) for t in trace if _normalize_step(t)[2] == role_name]
-    if not rows:
-        return False
-    _, _, _, detail, _ = rows[-1]
-    low = detail.lower()
-    return "error" in low or "fail" in low or "502" in detail
-
-
-def _crew_step_status(trace: List[Any], role_name: str) -> Tuple[str, str, str]:
-    """Return (status emoji label, detail, duration) for a crew role."""
-    rows = [t for t in trace if _normalize_step(t)[2] == role_name]
-    if not rows:
-        if role_name != "poi_researcher" and _crew_role_failed(trace, "poi_researcher"):
-            return (
-                "⏭ Skipped",
-                "POI Researcher failed — later agents did not run.",
-                "",
-            )
-        return ("⏸ Not run", "—", "")
-    last = rows[-1]
-    _, kind, name, detail, _ = _normalize_step(last)
-    dur = _format_duration(_step_ms(last))
-    if role_name == "grounding_critic":
-        if detail.lower().startswith("passed") or detail == "passed":
-            return ("✅ Passed", detail, dur)
-        if detail and detail != "passed":
-            return ("⚠ Needs revision", detail, dur)
-    if role_name == "itinerary_planner" and len(rows) > 1:
-        return (f"✅ Done ({len(rows)} attempts)", detail, dur)
-    if kind == "postprocess" or name in ("travel_hints", "complete"):
-        return ("✅ Done", detail, dur)
-    if "error" in detail.lower() or "fail" in detail.lower():
-        return ("❌ Failed", detail, dur)
-    return ("✅ Done", detail, dur)
-
-
-def _render_crew_agent_timing_table(items: List[Any]) -> None:
-    """Named crew agents with per-task elapsed time from the trace."""
-    from services.trip.crew_trip import CREW_AGENT_ROLES
-
-    st.markdown("**Crew agents & time per task**")
-    h = st.columns([0.28, 0.14, 0.58])
-    h[0].markdown("**Agent**")
-    h[1].markdown("**Time**")
-    h[2].markdown("**Task**")
-
-    orch_ms = _crew_orchestrator_duration_ms(items)
-    orch_dur = _format_duration(orch_ms) if orch_ms > 0 else "—"
-    r0 = st.columns([0.28, 0.14, 0.58])
-    r0[0].markdown("**Crew orchestrator**")
-    r0[1].markdown(orch_dur if orch_dur else "—")
-    r0[2].markdown(
-        "Pipeline start, CrewAI kickoff (if available), or direct step handoff"
-    )
-
-    for role_id, title, blurb in CREW_AGENT_ROLES:
-        ms = _crew_role_duration_ms(items, role_id)
-        dur = _format_duration(ms) if ms > 0 else "—"
-        c0, c1, c2 = st.columns([0.28, 0.14, 0.58])
-        c0.markdown(f"**{title}**")
-        c1.markdown(dur)
-        c2.markdown(blurb)
 
 def render_planning_summary(
     trace: Optional[List[Any]],
     *,
-    orchestration: Optional[str] = None,
     planning_context: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Checklist of planning steps for crew or default Gemini agent traces."""
-    items = list(trace or [])
+    """Checklist of planning steps for Gemini agent traces."""
+    items = _display_trace(trace)
     if not items:
         return
 
-    is_crew = orchestration == "crew" or _trace_has_crew_steps(items)
-    if is_crew:
-        st.markdown("**Planning steps (CrewAI multi-agent)**")
-        from services.trip.crew_trip import CREWAI_AGENT_NAMES, CREW_AGENT_ROLES
-
-        agents_line = " · ".join(f"**{n}**" for n in CREWAI_AGENT_NAMES)
-        st.caption(
-            f"CrewAI agents: {agents_line} — then **Travel hints**. "
-            "Same roles run via Crew kickoff or direct steps if kickoff is unavailable."
+    st.markdown("**Planning steps (Trip Planner agent)**")
+    st.caption(
+        "OpenStreetMap POIs → Gemini itinerary → validation. "
+        "Hotels, flights, trains & buses load on the **Travel & stays** tab."
+    )
+    stages = [
+        (names, title, blurb) for names, title, blurb in GEMINI_PLANNING_STAGES
+    ]
+    mode = str((planning_context or {}).get("mode") or "generate")
+    if mode in ("refine", "single_day"):
+        stages.insert(
+            -1,
+            (
+                ("surgical_refine",),
+                "Quick local edit",
+                "Change a stop without full replan",
+            ),
         )
-        _render_crew_agent_timing_table(items)
-
-        stages = [(role_id, title, blurb) for role_id, title, blurb in CREW_AGENT_ROLES]
-    else:
-        st.markdown("**Planning steps (Trip Planner agent)**")
-        st.caption(
-            "OpenStreetMap places → Gemini itinerary → validation → travel hints "
-            "(Wikivoyage/tools when enabled)."
-        )
-        stages = [
-            (names, title, blurb) for names, title, blurb in GEMINI_PLANNING_STAGES
-        ]
 
     hdr = st.columns([0.32, 0.18, 0.12, 0.38])
     hdr[0].markdown("**Stage**")
@@ -370,17 +209,10 @@ def render_planning_summary(
     hdr[3].markdown("**What happened**")
 
     for stage in stages:
-        if is_crew:
-            role_id, title, blurb = stage
-            status, detail, dur = _crew_step_status(items, role_id)
-            if not dur:
-                ms = _crew_role_duration_ms(items, role_id)
-                dur = _format_duration(ms) if ms > 0 else ""
-        else:
-            names, title, blurb = stage
-            status, detail, dur = stage_status_from_trace(items, names)
-            if status == "⏸ Not run" and names == ("retrieve_guides",):
-                continue
+        names, title, blurb = stage
+        status, detail, dur = stage_status_from_trace(items, names)
+        if status == "⏸ Not run" and names == ("retrieve_guides",):
+            continue
         time_cell = dur if dur else "—"
         c0, c1, c2, c3 = st.columns([0.32, 0.18, 0.12, 0.38])
         c0.markdown(
@@ -399,37 +231,25 @@ def render_planning_summary(
             )
         )
 
-    _render_orchestration_setup_log(
-        items,
-        orchestration=orchestration,
-        planning_context=planning_context,
-    )
+    _render_run_setup_log(items, planning_context=planning_context)
 
 
-def _render_orchestration_setup_log(
+def _render_run_setup_log(
     items: List[Any],
     *,
-    orchestration: Optional[str],
     planning_context: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """
-    Show how the run was configured (mode, trip) plus setup steps from the trace.
-
-    This is the technical counterpart to the high-level planning checklist above.
-    """
+    """Run configuration plus startup steps from the agent trace."""
     ctx = planning_context or {}
     mode_label = str(ctx.get("mode") or "generate").replace("_", " ")
-    orch = orchestration or ctx.get("orchestration") or "gemini"
-    if orch == "crew":
-        path_label = "CrewAI multi-agent (POI Researcher → Planner → Critic)"
-    elif mode_label != "generate":
+    if mode_label != "generate":
         path_label = f"Gemini agent · {mode_label}"
-    else:
+    elif ctx.get("fast_mode"):
         path_label = "Gemini agent · fast generate (OSM + one Gemini call)"
+    else:
+        path_label = "Gemini agent · tool loop (OSM + tools + Gemini)"
 
-    summary_lines = [
-        f"**Orchestration:** `{orch}` — {path_label}",
-    ]
+    summary_lines = [f"**Planner path:** {path_label}"]
     dest = ctx.get("destination")
     if dest:
         summary_lines.append(
@@ -438,7 +258,7 @@ def _render_orchestration_setup_log(
     model = ctx.get("model")
     if model:
         summary_lines.append(f"**Model:** `{model}`")
-    if ctx.get("fast_mode") is not None and orch != "crew":
+    if ctx.get("fast_mode") is not None:
         summary_lines.append(
             f"**Fast mode:** {'on' if ctx.get('fast_mode') else 'off'}"
             + (" (Wikivoyage tool off in fast path)" if ctx.get("fast_mode") else "")
@@ -449,19 +269,19 @@ def _render_orchestration_setup_log(
     trace_rows = [
         _normalize_step(t)
         for t in items
-        if _normalize_step(t)[2] in _ORCHESTRATION_TRACE_NAMES
+        if _normalize_step(t)[2] in _SETUP_TRACE_NAMES
     ]
 
-    with st.expander("Orchestration & setup log", expanded=False):
+    with st.expander("Run setup log", expanded=False):
         st.caption(
-            "Run configuration and startup events: which path ran (Gemini vs Crew), "
-            "trip settings, and any fallback or crew kickoff steps from the agent trace."
+            "Trip settings and startup events from the agent trace "
+            "(e.g. run started, fast-path fallback)."
         )
         st.markdown("  \n".join(summary_lines))
         if trace_rows:
             st.markdown("**Events from this run**")
             for step_num, kind, name, detail, ms in trace_rows:
-                title = _ORCHESTRATION_DISPLAY_TITLES.get(name, name.replace("_", " "))
+                title = _SETUP_DISPLAY_TITLES.get(name, name.replace("_", " "))
                 agent = _step_agent_label(name)
                 if agent != title and agent not in title:
                     title = f"{agent} — {title}"
@@ -480,22 +300,9 @@ def _render_orchestration_setup_log(
             )
 
 
-def render_crew_planning_summary(trace: Optional[List[Any]]) -> None:
-    """Backward-compatible alias."""
-    render_planning_summary(trace, orchestration="crew")
-
-
 def _phase_for_name(name: str, kind: str) -> str:
     if name in _NAME_TO_PHASE:
         return _NAME_TO_PHASE[name]
-    if kind == "crew":
-        if name in ("poi_researcher",):
-            return "crew_search"
-        if name in ("itinerary_planner",):
-            return "crew_ai"
-        if name in ("grounding_critic",):
-            return "crew_validate"
-        return "crew"
     if kind == "retry":
         return "ai"
     if kind == "tool" and name not in _NAME_TO_PHASE:
@@ -512,17 +319,12 @@ def _explain_step(name: str, kind: str, detail: str) -> str:
             "search_pois",
             "retrieve_guides",
             "poi_search_start",
-            "poi_researcher",
-            "itinerary_planner",
-            "grounding_critic",
         ):
             return f"{base} ({detail})."
         if detail and name in ("surgical_refine", "parse_validate", "parse_retry"):
             return f"{base} {detail}."
         if detail and name == "enrich_itinerary":
             return f"{base} {detail}."
-        if detail and name.startswith("crew_"):
-            return f"{base} ({detail})."
         return base
     if kind == "retry":
         if detail:
@@ -623,12 +425,11 @@ def _execution_phases_html(
 def render_agent_execution_trace(
     trace: Optional[List[Any]],
     *,
-    orchestration: Optional[str] = None,
     agent_mode: Optional[str] = None,
     planning_context: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Bottom-of-page timeline of agent steps (dict or AgentTraceStep items)."""
-    items = list(trace or [])
+    items = _display_trace(trace)
     with st.container(border=True):
         section_heading("Debug & agent execution", "refine")
         if not items:
@@ -659,10 +460,9 @@ def render_agent_execution_trace(
             unsafe_allow_html=True,
         )
 
-        with st.expander("Planning steps summary"):
+        with st.expander("Planning steps summary", expanded=True):
             render_planning_summary(
                 items,
-                orchestration=orchestration,
                 planning_context=planning_context,
             )
 
@@ -684,7 +484,7 @@ def render_agent_execution_trace(
 
 def render_live_trace_markdown(trace: Optional[List[Any]]) -> str:
     """Compact live trace while the agent is running (includes in-flight step times)."""
-    items = list(trace or [])
+    items = _display_trace(trace)
     if not items:
         return ""
     now = time.time()

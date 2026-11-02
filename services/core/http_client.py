@@ -108,7 +108,13 @@ def post_text(
 _OVERPASS_RETRYABLE_STATUS = frozenset({429, 502, 503, 504})
 
 
-def post_overpass(user_agent: str, data: str, *, urls: Optional[Sequence[str]] = None) -> str:
+def post_overpass(
+    user_agent: str,
+    data: str,
+    *,
+    urls: Optional[Sequence[str]] = None,
+    timeout_sec: Optional[float] = None,
+) -> str:
     """
     POST an Overpass QL query; try mirror endpoints and retry transient 5xx/429.
     """
@@ -116,7 +122,7 @@ def post_overpass(user_agent: str, data: str, *, urls: Optional[Sequence[str]] =
     headers["Content-Type"] = "application/x-www-form-urlencoded"
     endpoints = list(urls or get_overpass_urls())
     failures: list[str] = []
-    timeout = get_overpass_timeout_sec()
+    timeout = timeout_sec if timeout_sec is not None else get_overpass_timeout_sec()
 
     for url in endpoints:
         last_error: Optional[Exception] = None

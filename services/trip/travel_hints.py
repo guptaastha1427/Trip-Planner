@@ -14,15 +14,15 @@ from urllib.parse import quote_plus
 
 import streamlit as st
 
+from config import get_overpass_timeout_sec
 from services.trip.geocoding import geocode_city
 from services.core.http_client import post_overpass
 from services.trip.place_images import (
     enrich_itinerary_with_photos,
     enrich_travel_hints_photos,
-    photo_for_place,
-    wikimedia_thumbnail,
 )
 from services.trip.poi_search import _bbox_from_geocode, _osm_poi_id
+from services.trip.travel_examples import merge_illustrative_hints
 from services.ui.ui_components import display_city
 
 _PRICE_DISCLAIMER = (
@@ -103,7 +103,7 @@ def _build_stays_hints_query(south: float, west: float, north: float, east: floa
     """Airports + hotels — kept separate so stays still load if transit query times out."""
     bbox = f"{south},{west},{north},{east}"
     return f"""
-[out:json][timeout:15];
+[out:json][timeout:12];
 (
   node["aeroway"~"aerodrome|airport"]({bbox});
   way["aeroway"~"aerodrome|airport"]({bbox});
@@ -117,8 +117,31 @@ out center tags;
 def _build_transit_hints_query(south: float, west: float, north: float, east: float) -> str:
     bbox = f"{south},{west},{north},{east}"
     return f"""
-[out:json][timeout:15];
+[out:json][timeout:12];
 (
+  node["railway"~"station|halt"]({bbox});
+  way["railway"~"station|halt"]({bbox});
+  node["amenity"="bus_station"]({bbox});
+  way["amenity"="bus_station"]({bbox});
+  node["public_transport"="station"]["train"="yes"]({bbox});
+  node["public_transport"="station"]["bus"="yes"]({bbox});
+);
+out center tags;
+"""
+
+
+def _build_combined_hints_query(south: float, west: float, north: float, east: float) -> str:
+    """Single Overpass round-trip for airports, stays, and transit (faster than two calls)."""
+    bbox = f"{south},{west},{north},{east}"
+    return f"""
+[out:json][timeout:12];
+(
+  node["aeroway"~"aerodrome|airport"]({bbox});
+  way["aeroway"~"aerodrome|airport"]({bbox});
+  node["tourism"~"hotel|hostel|guest_house|motel"]({bbox});
+  way["tourism"~"hotel|hostel|guest_house|motel"]({bbox});
+  node["amenity"="hotel"]({bbox});
+  way["amenity"="hotel"]({bbox});
   node["railway"~"station|halt"]({bbox});
   way["railway"~"station|halt"]({bbox});
   node["amenity"="bus_station"]({bbox});
@@ -147,9 +170,10 @@ def _merge_overpass_elements(user_agent: str, *queries: str) -> List[dict]:
     return out
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def _fetch_hints_raw(query: str, user_agent: str) -> str:
-    return post_overpass(user_agent, query)
+    # Travel hints: one combined query; cap wait below full POI-search timeout.
+    return post_overpass(user_agent, query, timeout_sec=min(20.0, get_overpass_timeout_sec()))
 
 
 def _budget_score(tags: Dict[str, Any], tourism: str) -> int:
@@ -349,17 +373,19 @@ def fetch_travel_hints(
     origin_geo: Optional[Dict[str, Any]] = None,
     origin_label: str = "",
 ) -> Dict[str, Any]:
-    south, west, north, east = _bbox_from_geocode(geo, padding=0.12)
+    south, west, north, east = _bbox_from_geocode(geo, padding=0.16)
     airports: List[dict] = []
     hotels: List[dict] = []
     train_stations: List[dict] = []
     bus_stations: List[dict] = []
 
-    elements = _merge_overpass_elements(
-        user_agent,
-        _build_stays_hints_query(south, west, north, east),
-        _build_transit_hints_query(south, west, north, east),
-    )
+    try:
+        payload = json.loads(
+            _fetch_hints_raw(_build_combined_hints_query(south, west, north, east), user_agent)
+        )
+        elements = payload.get("elements", [])
+    except Exception:
+        elements = []
 
     dest_lat, dest_lon = float(geo["lat"]), float(geo["lon"])
 
@@ -392,7 +418,9 @@ def fetch_travel_hints(
             if iata and len(str(iata).strip()) <= 4:
                 entry["iata"] = str(iata).strip().upper()
             airports.append(entry)
-        elif tourism in ("hotel", "hostel", "guest_house", "motel"):
+        elif tourism in ("hotel", "hostel", "guest_house", "motel") or tags.get("amenity") == "hotel":
+            if not tourism:
+                tourism = "hotel"
             score = _budget_score(tags, tourism)
             entry["tourism"] = tourism
             entry["budget_score"] = score
@@ -434,20 +462,13 @@ def fetch_travel_hints(
     dest_label = display_city(city_label.strip() or geo.get("display_name", "Destination"))
     origin_display = display_city(origin_label.strip()) if origin_label.strip() else ""
     destination = _geo_endpoint(geo, dest_label, "destination")
-    destination["image_url"] = wikimedia_thumbnail(dest_label, user_agent)
 
     source: Optional[Dict[str, Any]] = None
     if origin_geo and origin_display:
         source = _geo_endpoint(origin_geo, origin_display, "source")
-        source["image_url"] = wikimedia_thumbnail(origin_display, user_agent)
         source["price_hint"] = (
             "Travel from your home city: compare trains, buses, and flights for live fares."
         )
-
-    for ap in airports[:2]:
-        ap["image_url"] = photo_for_place(ap["name"], city_label, user_agent)
-    for ht in budget_hotels[:4]:
-        ht["image_url"] = photo_for_place(ht["name"], city_label, user_agent)
 
     intercity_km: Optional[float] = None
     mode_recommendation: Optional[str] = None
@@ -533,7 +554,7 @@ def fetch_travel_hints(
             f"({budget_hotels[0].get('price_hint', '')})."
         )
 
-    return {
+    payload = {
         "city_label": city_label,
         "destination": destination,
         "source": source,
@@ -554,12 +575,20 @@ def fetch_travel_hints(
         "tips": tips,
         "price_disclaimer": _PRICE_DISCLAIMER,
     }
+    merge_illustrative_hints(
+        payload,
+        origin_label=origin_display or origin_label,
+        destination_label=dest_label,
+    )
+    return payload
 
 
 def attach_travel_hints(
     tool_state: Dict[str, Any],
     destination: str,
     user_agent: str,
+    *,
+    fetch_photos: bool = True,
 ) -> None:
     """Mutate tool_state with travel_hints when geodata is available."""
     origin_label = (tool_state.get("origin_city") or "").strip()
@@ -590,6 +619,11 @@ def attach_travel_hints(
             ],
             "price_disclaimer": _PRICE_DISCLAIMER,
         }
+        merge_illustrative_hints(
+            tool_state["travel_hints"],
+            origin_label=origin_label,
+            destination_label=destination,
+        )
         return
 
     label = destination.strip() or geo.get("display_name", "your destination")
@@ -600,7 +634,10 @@ def attach_travel_hints(
         origin_geo=origin_geo,
         origin_label=origin_label,
     )
-    tool_state["travel_hints"] = enrich_travel_hints_photos(hints, user_agent)
+    if fetch_photos:
+        tool_state["travel_hints"] = enrich_travel_hints_photos(hints, user_agent)
+    else:
+        tool_state["travel_hints"] = hints
 
 
 # Re-export for app

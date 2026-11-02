@@ -49,7 +49,6 @@ from services.core.validation import (
     validate_itinerary_unique_pois,
 )
 from services.core.retry_utils import call_with_retries, is_retryable_error
-from services.trip.travel_hints import attach_travel_hints
 from services.rag.wikivoyage_rag import retrieve_guides
 
 
@@ -298,15 +297,7 @@ def _postprocess_success(
     destination: str,
     user_agent: str,
 ) -> None:
-    t0 = time.time()
-    attach_travel_hints(tool_state, destination, user_agent)
-    _trace_step(
-        trace,
-        kind="postprocess",
-        name="travel_hints",
-        duration_ms=(time.time() - t0) * 1000,
-        detail="Airports, hotels, and tips",
-    )
+    """Finalize trace after a valid itinerary (travel hints load on the itinerary page)."""
     _trace_step(trace, kind="agent", name="complete", detail="Itinerary ready")
 
 

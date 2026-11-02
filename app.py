@@ -19,17 +19,13 @@ import streamlit as st
 from config import (
     DEFAULT_MODEL,
     FAST_MODE_MAX_STEPS,
-    configure_crewai_storage,
     get_gemini_api_key,
-    get_orchestration_mode,
     get_user_agent,
     is_wikivoyage_rag_enabled,
 )
 
-configure_crewai_storage()
 from services.trip.agent_trace import AgentTraceStep
 from services.trip.agent import run_agent
-from services.trip.crew_trip import run_crew_trip
 from services.trip.feedback import append_feedback, feedback_stats
 from services.trip.map_viz import (
     build_deck,
@@ -44,6 +40,7 @@ from services.core.persistence import load_app_state, save_app_state
 from services.trip.trip_history import (
     append_trip_record,
     clear_trip_history_for_portal_user,
+    find_history_entry,
     get_trip_history_cached,
     history_button_label,
     list_trip_history_for_portal_user,
@@ -63,6 +60,7 @@ from services.ui.ui_components import (
     render_weather_section,
     section_heading,
 )
+from services.trip.trace_sanitize import sanitize_agent_trace
 from services.trip.trace_view import render_agent_execution_trace, render_live_trace_markdown
 from services.trip.travel_hints import attach_travel_hints
 from services.trip.nearby_pois import nearby_alternatives
@@ -150,7 +148,7 @@ def _flush_persist() -> None:
             "tool_state": st.session_state.get("tool_state"),
             "agent_trace": [
                 t.__dict__ if hasattr(t, "__dict__") else t
-                for t in st.session_state.get("agent_trace", [])[-80:]
+                for t in sanitize_agent_trace(st.session_state.get("agent_trace", []))[-80:]
             ],
             "form_destination": st.session_state.form_destination,
             "form_origin": st.session_state.get("form_origin", ""),
@@ -250,13 +248,13 @@ def _render_trip_idea_suggestions() -> None:
     cols = st.columns(len(_TRIP_IDEA_SUGGESTIONS))
     for col, idea in zip(cols, _TRIP_IDEA_SUGGESTIONS):
         with col:
-            if st.button(
+            st.button(
                 idea["label"],
                 key=f"trip_idea_{idea['destination']}",
                 use_container_width=True,
-            ):
-                _apply_trip_idea(idea)
-                st.rerun()
+                on_click=_apply_trip_idea,
+                args=(idea,),
+            )
 
 
 def _apply_history_entry(entry: dict) -> None:
@@ -278,6 +276,15 @@ def _apply_history_entry(entry: dict) -> None:
     _mark_dirty()
 
 
+def _delete_trip_history_entry(entry_id: str, portal_user_id: str) -> bool:
+    """Remove one sidebar history row (uses public trip_history helpers)."""
+    if not entry_id or not find_history_entry(entry_id, portal_user_id):
+        return False
+    kept = [e for e in get_trip_history_cached() if e.get("id") != entry_id]
+    save_trip_history(kept, persist_disk=True)
+    return True
+
+
 def _render_sidebar_history() -> None:
     """Past trips — click to load on Trip Planner (render inside sidebar expander)."""
     portal_uid = resolve_portal_user_id()
@@ -286,16 +293,29 @@ def _render_sidebar_history() -> None:
         st.caption("No saved trips yet. Create an itinerary on **Trip Planner**.")
         return
 
-    st.caption(f"Trips for **{portal_user_display_name(portal_uid)}** — tap to open")
+    st.caption(f"Trips for **{portal_user_display_name(portal_uid)}** — open or delete")
     with st.container(height=240, border=False, key="trip_history_scroll"):
         for entry in reversed(trips):
             label = history_button_label(entry)
-            if st.button(label, key=f"hist_{entry['id']}", width="stretch"):
-                _apply_history_entry(entry)
-                st.switch_page(TRIP_PLANNER_PAGE)
-                st.rerun()
+            row_open, row_del = st.columns([5, 1])
+            with row_open:
+                if st.button(label, key=f"hist_{entry['id']}", use_container_width=True):
+                    _apply_history_entry(entry)
+                    st.switch_page(TRIP_PLANNER_PAGE)
+                    st.rerun()
+            with row_del:
+                if st.button(
+                    "✕",
+                    key=f"hist_del_{entry['id']}",
+                    help="Delete this saved trip",
+                ):
+                    if _delete_trip_history_entry(entry["id"], portal_uid):
+                        if st.session_state.get("active_history_id") == entry.get("id"):
+                            _clear_active_trip(reset_form=False)
+                        _mark_dirty()
+                    st.rerun()
 
-    if st.button("Clear my trip history", type="secondary", width="stretch"):
+    if st.button("Clear my trip history", type="secondary", use_container_width=True):
         clear_trip_history_for_portal_user(portal_uid, persist_disk=True)
         st.rerun()
 
@@ -312,20 +332,10 @@ def render_global_sidebar() -> None:
     render_sidebar_user_dock()
 
 
-def _resolve_orchestration_mode() -> str:
-    """Session UI override, else ORCHESTRATION_MODE from .env (default gemini)."""
-    mode = st.session_state.get("orchestration_mode")
-    if mode in ("gemini", "crew"):
-        return str(mode)
-    return get_orchestration_mode()
-
-
 def _agent_settings() -> Dict[str, Any]:
     """Model and agent options (from config / .env, not shown in sidebar)."""
     if "map_style" not in st.session_state:
         st.session_state.map_style = "light"
-    if "orchestration_mode" not in st.session_state:
-        st.session_state.orchestration_mode = get_orchestration_mode()
     return {
         "api_key": _resolve_gemini_key(),
         "model": DEFAULT_MODEL,
@@ -333,7 +343,6 @@ def _agent_settings() -> Dict[str, Any]:
         "max_steps": FAST_MODE_MAX_STEPS,
         "rag_enabled": is_wikivoyage_rag_enabled(),
         "map_style": st.session_state.map_style,
-        "orchestration": _resolve_orchestration_mode(),
     }
 
 
@@ -371,8 +380,6 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
 
     progress_bar = st.progress(0, text="Starting agent…")
     live_steps: List[str] = []
-    orchestration = settings.get("orchestration") or get_orchestration_mode()
-    use_crew = orchestration == "crew" and mode == "generate"
 
     def sync_trace(tr: List[AgentTraceStep]) -> None:
         st.session_state.agent_trace = list(tr)
@@ -385,20 +392,16 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
         status.info(line)
         sync_trace(st.session_state.get("agent_trace") or [])
         if live_steps:
-            title = (
-                "**Planning steps (live · CrewAI)**"
-                if use_crew
-                else "**Planning steps (live)**"
-            )
             steps_panel.markdown(
-                title + "  \n" + "\n".join(f"- {s}" for s in live_steps[-14:])
+                "**Planning steps (live)**  \n"
+                + "\n".join(f"- {s}" for s in live_steps[-14:])
             )
         low = line.lower()
         if "retry" in low:
             progress_bar.progress(40, text=line[:80])
         elif "tool" in low or "running" in low:
             progress_bar.progress(65, text=line[:80])
-        elif "gemini" in low or "step" in low or "crew" in low:
+        elif "gemini" in low or "step" in low:
             progress_bar.progress(30, text=line[:80])
         else:
             progress_bar.progress(90, text=line[:80])
@@ -412,18 +415,15 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
         sync_trace([])
         before_itin = None
         initial_tool_state = {"pois": {}, "chunks": []}
+        st.session_state.travel_hints_load_requested = False
 
     spinner_msg = (
         "✨ Applying your refinement…"
         if mode == "refine"
         else (
-            "🤝 Multi-agent crew is planning your trip…"
-            if use_crew
-            else (
-                "✏️ Updating your trip…"
-                if mode == "single_day"
-                else "✈️ Agent is planning your trip…"
-            )
+            "✏️ Updating your trip…"
+            if mode == "single_day"
+            else "✈️ Agent is planning your trip…"
         )
     )
     agent_kwargs = dict(
@@ -439,31 +439,26 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
         on_trace=sync_trace,
     )
     with st.spinner(spinner_msg):
-        if orchestration == "crew" and mode == "generate":
-            result = run_crew_trip(**agent_kwargs)
-        else:
-            result = run_agent(
-                **agent_kwargs,
-                fast_mode=settings.get("fast_mode", False),
-                max_steps=settings.get("max_steps"),
-                rag_enabled=settings.get("rag_enabled", False),
-                mode=mode,
-                existing_itinerary=before_itin,
-                target_day=target_day,
-                user_request=user_request or None,
-                initial_tool_state=initial_tool_state,
-            )
+        result = run_agent(
+            **agent_kwargs,
+            fast_mode=settings.get("fast_mode", False),
+            max_steps=settings.get("max_steps"),
+            rag_enabled=settings.get("rag_enabled", False),
+            mode=mode,
+            existing_itinerary=before_itin,
+            target_day=target_day,
+            user_request=user_request or None,
+            initial_tool_state=initial_tool_state,
+        )
 
     status.empty()
     steps_panel.empty()
     trace_live.empty()
     progress_bar.empty()
-    st.session_state.agent_trace = result.trace
+    st.session_state.agent_trace = sanitize_agent_trace(list(result.trace or []))
     st.session_state.last_planning_live_steps = live_steps
-    st.session_state.last_orchestration_used = orchestration if mode == "generate" else "gemini"
     st.session_state.last_agent_mode = mode
     st.session_state.last_planning_context = {
-        "orchestration": orchestration if mode == "generate" else "gemini",
         "mode": mode,
         "model": settings.get("model", DEFAULT_MODEL),
         "destination": st.session_state.form_destination,
@@ -564,6 +559,15 @@ def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7
         section_heading("Weather at destination", "travel-sub")
         render_weather_section(weather)
     if not hints:
+        st.info(
+            "Travel details (hotels, flights, trains, buses) could not be loaded yet. "
+            "Check **OSM_CONTACT_EMAIL** in `.env`, refresh the page, or try again in a minute "
+            "if OpenStreetMap is slow."
+        )
+        if not (tool_state or {}).get("origin_city"):
+            st.caption(
+                "Tip: fill in **From** on the plan form for train/bus/flight route suggestions."
+            )
         return
     section_heading("Getting there & stays", "travel")
     disclaimer = hints.get("price_disclaimer", "")
@@ -598,6 +602,7 @@ def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7
         render_travel_tips_card(tips)
 
     budget_hotels = hints.get("budget_hotels") or hints.get("hotels") or []
+    illustrative = hints.get("illustrative_stays") or []
     section_heading("Hotels & budget stays", "travel-sub")
     if budget_hotels:
         render_hint_tiles_row(
@@ -608,12 +613,28 @@ def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7
                     f"~{ht.get('distance_km', '?')} km",
                     ht.get("price_hint", "") or ht.get("remark", ""),
                     ht.get("image_url"),
-                    links=hint_card_links(ht, "hotel"),
+                    links=hint_card_links(ht, "hotel") if not ht.get("illustrative") else [],
                 )
                 for ht in budget_hotels[:4]
             ]
         )
-    else:
+    if illustrative:
+        if budget_hotels:
+            st.caption("More ideas (examples — verify before booking):")
+        else:
+            st.caption(hints.get("examples_note", "Examples only — verify before booking."))
+        render_hint_tiles_row(
+            [
+                render_hint_tile(
+                    ex.get("name", "Stay"),
+                    ex.get("tourism", "stay").replace("_", " ").title(),
+                    ex.get("remark", "") or ex.get("price_hint", ""),
+                    ex.get("image_url"),
+                )
+                for ex in illustrative[:4]
+            ]
+        )
+    if not budget_hotels and not illustrative:
         st.caption(
             "No hotels found in OpenStreetMap for this area. "
             "Try Booking.com or Google Maps for stays near your itinerary."
@@ -653,6 +674,21 @@ def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7
         )
     else:
         st.caption("No airport found in OpenStreetMap near this destination.")
+
+    examples = hints.get("transport_examples") or {}
+    if examples:
+        section_heading("Example routes (illustrative)", "travel-sub")
+        st.caption(hints.get("examples_note", "Verify times and fares before booking."))
+        for label, key in (
+            ("Flights", "flights"),
+            ("Trains", "trains"),
+            ("Buses", "buses"),
+        ):
+            lines = examples.get(key) or []
+            if lines:
+                st.markdown(f"**{label}**")
+                for line in lines:
+                    st.markdown(f"- {line}")
 
     mode_rec = hints.get("mode_recommendation")
     if mode_rec:
@@ -961,6 +997,12 @@ def trip_planner_page() -> None:
     portal_uid = resolve_portal_user_id()
     mount_trip_planner_policy_bot_styles()
 
+    if st.session_state.get("agent_trace"):
+        cleaned = sanitize_agent_trace(st.session_state.agent_trace)
+        if len(cleaned) != len(st.session_state.agent_trace or []):
+            st.session_state.agent_trace = cleaned
+            _mark_dirty()
+
     dest_label = display_city(st.session_state.get("form_destination") or "")
     st.title("Trip Planner")
     st.caption(
@@ -1007,13 +1049,6 @@ def trip_planner_page() -> None:
             height=72,
         )
         _render_trip_idea_suggestions()
-        st.selectbox(
-            "Orchestration (generate only)",
-            options=["gemini", "crew"],
-            key="orchestration_mode",
-            help="gemini = default agent; crew = CrewAI multi-agent pipeline. "
-            "Refine / single-day always use gemini agent.",
-        )
         if st.button("Create my itinerary", type="primary", use_container_width=True):
             _run_generation("generate")
 
@@ -1044,10 +1079,6 @@ def trip_planner_page() -> None:
         hints_key = f"v5|{origin}|{dest}"
         weather_key = f"{dest.strip().lower()}|{int(st.session_state.get('form_days') or 7)}"
         guide_key = dest.strip().lower()
-        has_cached_hints = (
-            tool_state.get("_hints_key") == hints_key
-            and bool(tool_state.get("travel_hints"))
-        )
         has_cached_guide = (
             tool_state.get("_guide_key") == guide_key
             and bool(tool_state.get("destination_guide"))
@@ -1056,23 +1087,13 @@ def trip_planner_page() -> None:
             tool_state.get("_weather_key") == weather_key
             and bool(tool_state.get("weather"))
         )
-        if ua and dest.strip() and not has_cached_hints:
-            try:
-                attach_travel_hints(tool_state, dest, ua)
-                tool_state["_hints_key"] = hints_key
-                _mark_dirty()
-            except Exception as exc:
-                st.warning(f"Could not load travel hints: {exc}")
-        hints = tool_state.get("travel_hints") or {}
-        if ua and hints and tool_state.get("_photos_key") != hints_key:
+        if ua and dest.strip() and tool_state.get("_photos_key") != hints_key:
             try:
                 enrich_itinerary_with_photos(
                     itinerary,
-                    hints.get("city_label", dest) or dest,
+                    dest,
                     ua,
                 )
-                enrich_travel_hints_photos(hints, ua)
-                tool_state["travel_hints"] = hints
                 tool_state["_photos_key"] = hints_key
                 _mark_dirty()
             except Exception:
@@ -1100,6 +1121,12 @@ def trip_planner_page() -> None:
                 "Opens **My Bookings & Refunds → Book package** with this trip prefilled. "
                 "No real payment."
             )
+
+        render_agent_execution_trace(
+            st.session_state.get("agent_trace"),
+            agent_mode=st.session_state.get("last_agent_mode"),
+            planning_context=st.session_state.get("last_planning_context"),
+        )
 
         tab_plan, tab_map, tab_travel = st.tabs(
             ["Itinerary", "Map", "Travel & stays"]
@@ -1139,6 +1166,48 @@ def trip_planner_page() -> None:
 
         with tab_travel:
             trip_days = int(st.session_state.get("form_days") or 7)
+            hints = tool_state.get("travel_hints") or {}
+            has_cached_hints = (
+                tool_state.get("_hints_key") == hints_key
+                and bool(
+                    hints.get("budget_hotels")
+                    or hints.get("hotels")
+                    or hints.get("illustrative_stays")
+                    or hints.get("transport_examples")
+                )
+            )
+            if ua and dest.strip() and not has_cached_hints:
+                st.caption(
+                    "Hotels, flights, trains, and buses come from OpenStreetMap. "
+                    "Load once per trip (cached after that)."
+                )
+                if st.session_state.get("travel_hints_load_requested"):
+                    try:
+                        with st.spinner(
+                            "Loading airports, hotels, trains & buses from OpenStreetMap…"
+                        ):
+                            attach_travel_hints(tool_state, dest, ua, fetch_photos=False)
+                        tool_state["_hints_key"] = hints_key
+                        hints = tool_state.get("travel_hints") or {}
+                        enrich_travel_hints_photos(hints, ua)
+                        tool_state["travel_hints"] = hints
+                        st.session_state.travel_hints_load_requested = False
+                        _mark_dirty()
+                    except Exception as exc:
+                        st.session_state.travel_hints_load_requested = False
+                        st.warning(f"Could not load travel hints: {exc}")
+                else:
+                    if st.button(
+                        "Load hotels & transport details",
+                        type="primary",
+                        use_container_width=True,
+                        key="load_travel_hints_btn",
+                    ):
+                        st.session_state.travel_hints_load_requested = True
+                        st.rerun()
+            elif ua and hints:
+                enrich_travel_hints_photos(hints, ua)
+                tool_state["travel_hints"] = hints
             if ua and dest.strip() and not has_cached_guide:
                 try:
                     attach_destination_guide(tool_state, dest, ua)
@@ -1187,14 +1256,6 @@ def trip_planner_page() -> None:
             raw = st.session_state.get("raw_model_output") or ""
             if raw:
                 st.code(raw, language="json")
-
-    render_agent_execution_trace(
-        st.session_state.get("agent_trace") if itinerary else None,
-        orchestration=st.session_state.get("last_orchestration_used")
-        or st.session_state.get("orchestration_mode"),
-        agent_mode=st.session_state.get("last_agent_mode"),
-        planning_context=st.session_state.get("last_planning_context"),
-    )
 
     render_trip_planner_policy_bot_fab(portal_uid)
 

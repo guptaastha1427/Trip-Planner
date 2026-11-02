@@ -1,0 +1,15 @@
+{"test_id": "S-01", "user_id": "user_alex", "message": "", "expected_route": "empty", "expect_escalate": false}
+{"test_id": "S-02", "user_id": "user_alex", "message": "hello", "expected_route": "greeting", "expect_escalate": false}
+{"test_id": "S-03", "user_id": "user_alex", "message": "help", "expected_route": "greeting", "expect_escalate": false}
+{"test_id": "S-04", "user_id": "user_review", "message": "why is my account under review?", "expected_route": "account_status", "expect_escalate": true}
+{"test_id": "S-05", "user_id": "user_blacklisted", "message": "I want to appeal blacklist ban", "expected_route": "account_status", "expect_escalate": true}
+{"test_id": "S-06", "user_id": "user_alex", "message": "what is my refund status?", "expected_route": "refund_status", "expect_escalate": false}
+{"test_id": "S-07", "user_id": "user_sam", "message": "refund status for my requests", "expected_route": "refund_status", "expect_escalate": false}
+{"test_id": "S-08", "user_id": "user_alex", "message": "lookup booking BK-FLT-1001", "expected_route": "booking_lookup", "expect_escalate": false}
+{"test_id": "S-09", "user_id": "user_maya", "message": "details for BK-FLT-1102", "expected_route": "booking_lookup", "expect_escalate": false}
+{"test_id": "S-10", "user_id": "user_alex", "message": "BK-FLT-9999 not mine", "expected_route": "booking_not_found", "expect_escalate": false}
+{"test_id": "S-11", "user_id": "user_alex", "message": "flight saver cancellation policy hours", "expected_route": "terms_rag", "expect_escalate": false}
+{"test_id": "S-12", "user_id": "user_alex", "message": "Standard vs Flex package fare difference", "expected_route": "terms_rag", "expect_escalate": false}
+{"test_id": "S-13", "user_id": "user_alex", "message": "quantum physics syllabus 404", "expected_route": "no_match_or_loose", "expect_escalate": true}
+{"test_id": "S-14", "user_id": "user_alex", "message": "booking", "expected_route": "terms_rag", "expect_escalate": false}
+{"test_id": "S-15", "user_id": "user_alex", "message": "package night add-on 1200 rupees", "expected_route": "terms_rag", "expect_escalate": false}

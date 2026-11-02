@@ -1,0 +1,8 @@
+{"test_id": "W-01", "destination": "Tokyo", "query": "best time to visit", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Tokyo", "visit"]}
+{"test_id": "W-02", "destination": "Paris", "query": "important attractions museums", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Paris"]}
+{"test_id": "W-03", "destination": "London", "query": "local transportation getting around", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["London"]}
+{"test_id": "W-04", "destination": "Singapore", "query": "travel recommendations food", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Singapore"]}
+{"test_id": "W-05", "destination": "Tokyo", "query": "districts and neighborhoods", "expect_ok": true, "min_chunks": 1, "expected_keywords": []}
+{"test_id": "W-06", "destination": "Xyznonexistent999City", "query": "travel guide", "expect_ok": false, "min_chunks": 0, "expected_keywords": []}
+{"test_id": "W-07", "destination": "", "query": "anything", "expect_ok": false, "min_chunks": 0, "expected_keywords": []}
+{"test_id": "W-08", "destination": "Paris", "query": "", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Paris"]}

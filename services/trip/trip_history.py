@@ -22,6 +22,7 @@ __all__ = [
     "save_trip_history",
     "list_trip_history_for_portal_user",
     "clear_trip_history_for_portal_user",
+    "delete_trip_history_entry",
     "append_trip_record",
     "snapshot_history_entry",
     "find_history_entry",
@@ -88,6 +89,28 @@ def clear_trip_history_for_portal_user(portal_user_id: str, *, persist_disk: boo
         if _trip_owner_id(entry) != portal_user_id
     ]
     save_trip_history(kept, persist_disk=persist_disk)
+
+
+def delete_trip_history_entry(
+    entry_id: str,
+    portal_user_id: str,
+    *,
+    persist_disk: bool = True,
+) -> bool:
+    """Remove one saved trip for this portal user. Returns True if a row was removed."""
+    if not entry_id:
+        return False
+    history = get_trip_history_cached()
+    kept: List[dict] = []
+    removed = False
+    for entry in history:
+        if entry.get("id") == entry_id and _trip_owner_id(entry) == portal_user_id:
+            removed = True
+            continue
+        kept.append(entry)
+    if removed:
+        save_trip_history(kept, persist_disk=persist_disk)
+    return removed
 
 
 def save_trip_history(entries: List[dict], *, persist_disk: bool = True) -> None:

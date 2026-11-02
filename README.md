@@ -31,8 +31,6 @@ cp .env.example .env   # GEMINI_API_KEY + OSM_CONTACT_EMAIL required
 streamlit run app.py   # http://localhost:8501
 ```
 
-**CrewAI (`ORCHESTRATION_MODE=crew`):** needs Python **3.10–3.13** and `crewai` in the **same** env as Streamlit. Use `trip-planner-env` above — not system Python 3.14.
-
 Optional: `.streamlit/secrets.toml` for Gemini key.
 
 ## Policy RAG (summary)

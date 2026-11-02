@@ -354,9 +354,10 @@ def search_pois(
     try:
         raw = _fetch_overpass_cached(overpass_q, user_agent)
         elements.extend(json.loads(raw).get("elements", []))
-        landmark_q = _build_landmarks_query(south, west, north, east)
-        raw_lm = _fetch_overpass_cached(landmark_q, user_agent)
-        elements.extend(json.loads(raw_lm).get("elements", []))
+        if not fast:
+            landmark_q = _build_landmarks_query(south, west, north, east)
+            raw_lm = _fetch_overpass_cached(landmark_q, user_agent)
+            elements.extend(json.loads(raw_lm).get("elements", []))
     except Exception as exc:  # noqa: BLE001
         msg = str(exc)
         hint = ""

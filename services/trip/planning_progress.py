@@ -1,8 +1,8 @@
 """
-Shared planning-step labels for Trip Planner transparency (Gemini agent + Crew).
+Shared planning-step labels for Trip Planner transparency (Gemini agent).
 
 What: Uniform "Step N/M · Label — message" progress lines and trace summary stages.
-Why: Users see the same planning transparency for crew and default agent paths.
+Why: Users see planning transparency during trip generation and refinement.
 How: emit() for on_progress callbacks; stage defs for trace_view summaries.
 """
 
@@ -21,12 +21,10 @@ GEMINI_PLANNING_STAGES: List[Tuple[Tuple[str, ...], str, str]] = [
         "Draft or update itinerary JSON",
     ),
     (
-        ("parse_validate", "enrich_itinerary", "parse_retry", "grounding_critic"),
+        ("parse_validate", "enrich_itinerary", "parse_retry"),
         "Validation & grounding",
         "JSON checks, poi_ids, map coordinates",
     ),
-    (("surgical_refine",), "Quick local edit", "Change a stop without full replan"),
-    (("travel_hints",), "Travel hints", "Airports, hotels, and practical tips"),
     (("complete",), "Complete", "Itinerary ready to display"),
 ]
 
@@ -74,12 +72,12 @@ def stage_status_from_trace(
     dur = _format_duration(ms)
     if any(x in detail.lower() for x in ("fail", "error", "invalid")) and "passed" not in detail.lower():
         return ("❌ Failed", detail, dur)
-    if name in ("parse_validate", "enrich_itinerary", "grounding_critic") and detail:
+    if last_name in ("parse_validate", "enrich_itinerary") and detail:
         if "passed" in detail.lower() or "checks passed" in detail.lower():
             return ("✅ Passed", detail, dur)
-    if len(rows) > 1 and name in ("fast_generate", "generate_content", "itinerary_planner"):
+    if len(rows) > 1 and last_name in ("fast_generate", "generate_content"):
         return (f"✅ Done ({len(rows)} steps)", detail, dur)
-    if name == "complete" or kind == "postprocess":
+    if last_name == "complete" or kind == "postprocess":
         return ("✅ Done", detail, dur)
     return ("✅ Done", detail or last_name.replace("_", " "), dur)
 

@@ -1,0 +1,6 @@
+{"test_id": "U-01", "url": "", "query": "refund policy", "expect_load_ok": false, "expect_error_contains": "enter"}
+{"test_id": "U-02", "url": "ftp://example.com/policy", "query": "terms", "expect_load_ok": false, "expect_error_contains": "http"}
+{"test_id": "U-03", "url": "not-a-url", "query": "terms", "expect_load_ok": false, "expect_error_contains": "http"}
+{"test_id": "U-04", "url": "https://example.com", "query": "example domain", "expect_retrieve_callable": true, "note": "retrieve_from_url needs GEMINI_API_KEY for index; load may succeed with network"}
+{"test_id": "U-05", "url": "https://invalid.invalid.test/path", "query": "policy", "expect_load_ok": false, "expect_error_contains": "Could not load"}
+{"test_id": "U-06", "url": "https://example.com", "query": "", "expect_retrieve_empty": true}

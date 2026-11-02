@@ -1,0 +1,3515 @@
+{
+  "generated_at": "2026-11-02T09:33:42.980664+00:00",
+  "summary": {
+    "terms_retrieval": {
+      "count": 27,
+      "hit_at_1": 0.1111,
+      "hit_at_3": 0.2963,
+      "recall_at_3": 0.2222,
+      "mrr": 0.2368,
+      "avg_top1_score": 0.0015,
+      "low_confidence_pct": 1.0,
+      "escalation_accuracy": 0.037,
+      "escalation_accuracy_all_cases": 0.0714,
+      "labeled_cases": 27,
+      "total_cases": 28
+    },
+    "terms_generation": {
+      "total": 28,
+      "passed": 1,
+      "pass_rate": 0.0357,
+      "mode": "markdown_fallback_no_gemini"
+    },
+    "support_faq": {
+      "total": 15,
+      "routing_accuracy": 0.9333,
+      "passed": 10,
+      "pass_rate": 0.6667
+    },
+    "wikivoyage": {
+      "mode": "mocked_wikivoyage_html",
+      "total": 8,
+      "passed": 7,
+      "pass_rate": 0.875
+    },
+    "url_rag": {
+      "total": 6,
+      "passed": 6,
+      "pass_rate": 1.0,
+      "production_chat_uses_url_index": false
+    },
+    "refund_rules": {
+      "total": 10,
+      "passed": 10,
+      "pass_rate": 1.0
+    }
+  },
+  "experiments": {
+    "min_relevance_sweep": {
+      "experiment": "min_relevance_sweep",
+      "rows": [
+        {
+          "min_relevance_score": 0.32,
+          "hit_at_3": 0.1111,
+          "escalation_accuracy": 0.0714,
+          "baseline_production": false
+        },
+        {
+          "min_relevance_score": 0.38,
+          "hit_at_3": 0.2222,
+          "escalation_accuracy": 0.0714,
+          "baseline_production": false
+        },
+        {
+          "min_relevance_score": 0.42,
+          "hit_at_3": 0.4074,
+          "escalation_accuracy": 0.0714,
+          "baseline_production": true
+        },
+        {
+          "min_relevance_score": 0.48,
+          "hit_at_3": 0.4444,
+          "escalation_accuracy": 0.0714,
+          "baseline_production": false
+        }
+      ]
+    }
+  },
+  "details": {
+    "terms_retrieval_rows": [
+      {
+        "test_id": "T-R01",
+        "question": "How is travel package pricing calculated for extra nights?",
+        "expected_sources": [
+          "Terms — Bookings & travel packages",
+          "Travel package catalog"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Refund reasons & Refund Assistant",
+            "score": 0.0017,
+            "passes_min_score": false,
+            "preview": "When submitting a refund or using Refund Assistant , you may select a reason (demo): - Cancellation of travel - Change of plans - Duplicate booking - Operator cancelled service - Other reason Some re…"
+          },
+          {
+            "rank": 2,
+            "source": "FAQ — Where can I read all rules in one place?",
+            "score": 0.0017,
+            "passes_min_score": false,
+            "preview": "Question: Where can I read all rules in one place? Answer: Open Terms & Policies or Document Assistant → Terms & Conditions. Use the tabs: Overview, RAG, Packages, and Legal."
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — URL input & scraped website data",
+            "score": 0.0017,
+            "passes_min_score": false,
+            "preview": "The optional URL tool loads public web pages via HTTP, strips HTML, and splits text into chunks for indexing demos. - Only use URLs you are allowed to fetch (your own site, public documentation, or c…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Admin demo mode (back-office)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "The sidebar Demo dashboard switch ( User / Admin ) is for class demonstrations only : - Admin shows queues for refunds, tickets, appeals, and account overrides. - Admin actions update local demo JSON…"
+          },
+          {
+            "rank": 7,
+            "source": "FAQ — What is the difference between Standard and Flex package fares?",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Question: What is the difference between Standard and Flex package fares? Answer: Standard uses the base catalog price (1.0×) with stricter refunds (package standard: 120+ hours, partial, 25% fee). F…"
+          },
+          {
+            "rank": 8,
+            "source": "FAQ — How do I appeal an account restriction?",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Question: How do I appeal an account restriction? Answer: Open Account Status, review the reason, and submit an appeal. You can also open a support ticket under Account Restriction."
+          },
+          {
+            "rank": 9,
+            "source": "Policy — Bus — Volvo AC",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Premium bus: refundable with moderate fee close to departure (demo). Travel mode: bus. Ticket type: volvo. Refundability: full. Minimum hours before departure: 6. Cancellation fee (demo fraction of f…"
+          },
+          {
+            "rank": 10,
+            "source": "FAQ — How long do demo refunds take?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How long do demo refunds take? Answer: Processing times are illustrative (typically 2–14 business days depending on mode). Status updates are simulated in the app."
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.25,
+        "top1_score": 0.0017,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R02",
+        "question": "What is the difference between Standard and Flex package fares?",
+        "expected_sources": [
+          "FAQ — What is the difference between Standard and Flex package fares",
+          "Travel package catalog"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "FAQ — Are refunds real in this app?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Are refunds real in this app? Answer: No. This is an academic demo. Amounts and statuses are simulated; no payment gateway is connected."
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 3,
+            "source": "FAQ — What is the difference between Standard and Flex package fares?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: What is the difference between Standard and Flex package fares? Answer: Standard uses the base catalog price (1.0×) with stricter refunds (package standard: 120+ hours, partial, 25% fee). F…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Ideal for: First-time visitors to the Pink City with limited time. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: Coastal Bus Getaway ( coastal bus ) Tagline: 1 nig…"
+          },
+          {
+            "rank": 5,
+            "source": "FAQ — Can a rejected refund blacklist my account?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Can a rejected refund blacklist my account? Answer: No. A single rejection does not blacklist you. Restrictions are shown only for documented demo scenarios (e.g. repeated duplicate claims)."
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Introduction",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Document & Policy Assistant — user notice The Document & Policy Assistant is a retrieval-augmented (RAG) chat experience inside this app. It answers from the Terms & Conditions knowledge base (and yo…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Refund Eligibility Policy",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The rule engine (not the chat UI) decides eligibility. Automatic outcomes require all of the following unless a rule sends the case to manual review: - Booking belongs to the signed-in demo user . - …"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ", breakfast, Kolaba Fort or beach time | | custom trip | Custom trip bundle | Your Trip Planner cities | 1 Night / 1 Day | ₹9,999 | 1 night hotel, local transfers, bundle built from your Trip Planner…"
+          },
+          {
+            "rank": 10,
+            "source": "FAQ — Where can I read all rules in one place?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Where can I read all rules in one place? Answer: Open Terms & Policies or Document Assistant → Terms & Conditions. Use the tabs: Overview, RAG, Packages, and Legal."
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "recall_at_3": 1.0,
+        "mrr": 0.5,
+        "top1_score": 0.0014,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R03",
+        "question": "Weekend Escape package base price and included nights",
+        "expected_sources": [
+          "Travel package catalog",
+          "Terms — Travel package catalog"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Refund Eligibility Policy",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "The rule engine (not the chat UI) decides eligibility. Automatic outcomes require all of the following unless a rule sends the case to manual review: - Booking belongs to the signed-in demo user . - …"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Introduction",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Document & Policy Assistant — user notice The Document & Policy Assistant is a retrieval-augmented (RAG) chat experience inside this app. It answers from the Terms & Conditions knowledge base (and yo…"
+          },
+          {
+            "rank": 3,
+            "source": "FAQ — Are refunds real in this app?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: Are refunds real in this app? Answer: No. This is an academic demo. Amounts and statuses are simulated; no payment gateway is connected."
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Transport: Reserved train berths (SL/3A mix in demo data); local auto/cab for tour start point. Meals: Not included except where noted on voucher; cafés on MG Road recommended. Sightseeing: Shaniwa…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Ideal for: First-time visitors to the Pink City with limited time. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: Coastal Bus Getaway ( coastal bus ) Tagline: 1 nig…"
+          },
+          {
+            "rank": 6,
+            "source": "FAQ — How is refund eligibility decided?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How is refund eligibility decided? Answer: A rule-based engine checks booking status, departure time, ticket policy, duplicate requests, and account flags. The Refund Assistant explains the…"
+          },
+          {
+            "rank": 7,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Prices are estimated at booking time (travelers, fare type). No payment gateway is connected. Non-package travel inventory Demo users also have catalog tickets (flights, trains, buses) such as BK-F…"
+          },
+          {
+            "rank": 9,
+            "source": "FAQ — Can a rejected refund blacklist my account?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Can a rejected refund blacklist my account? Answer: No. A single rejection does not blacklist you. Restrictions are shown only for documented demo scenarios (e.g. repeated duplicate claims)."
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Customer support & tickets",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Help & Customer Support provides FAQs, a policy-aware bot , and support tickets (demo). - Create tickets with categories such as Refund Issue, Booking Issue, Cancellation, Account Restriction, Techni…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.25,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R04",
+        "question": "flight saver cancellation hours before departure",
+        "expected_sources": [
+          "Policy — Flight — Saver fare",
+          "Terms — Cancellation"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Policy — Bus — Volvo AC",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Premium bus: refundable with moderate fee close to departure (demo). Travel mode: bus. Ticket type: volvo. Refundability: full. Minimum hours before departure: 6. Cancellation fee (demo fraction of f…"
+          },
+          {
+            "rank": 2,
+            "source": "FAQ — What packages can I book in the demo?",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Question: What packages can I book in the demo? Answer: Weekend Escape, City Explorer, Heritage Trail, Coastal Bus Getaway, and Custom trip bundle — each has itinerary, inclusions, exclusions, and ca…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Admin demo mode (back-office)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "The sidebar Demo dashboard switch ( User / Admin ) is for class demonstrations only : - Admin shows queues for refunds, tickets, appeals, and account overrides. - Admin actions update local demo JSON…"
+          },
+          {
+            "rank": 4,
+            "source": "Policy — Flight — Basic / promo fare",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Promotional basic fare: non-refundable in this demo. Travel mode: flight. Ticket type: basic. Refundability: none. Minimum hours before departure: 0. Cancellation fee (demo fraction of fare): 100%. M…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Refund Processing Procedure",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "1. Open My Bookings & Refunds → select a booking → choose refund reason → Check eligibility & submit (user mode). 2. System validates ownership , booking state , policy , timing , duplicates , and ac…"
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Ideal for: Couples and small groups wanting a quick hill break without driving. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: City Explorer ( city explorer ) Tagli…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → b…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Prices are estimated at booking time (travelers, fare type). No payment gateway is connected. Non-package travel inventory Demo users also have catalog tickets (flights, trains, buses) such as BK-F…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R05",
+        "question": "flight flex cancellation fee percentage demo",
+        "expected_sources": [
+          "Policy — Flight — Flex fare"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Refund request time limits",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Refund requests must be submitted before the configured hours-before-departure threshold for that ticket or package. Late requests are Not Eligible with an explanation (e.g. bus booking inside the 12…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Why choose this platform",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Compared with generic chatbots, static FAQ pages, or unstructured document upload tools, this app emphasizes: - Grounded context retrieval — Answers are driven by similarity search over your Terms kn…"
+          },
+          {
+            "rank": 5,
+            "source": "FAQ — What is the difference between Standard and Flex package fares?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: What is the difference between Standard and Flex package fares? Answer: Standard uses the base catalog price (1.0×) with stricter refunds (package standard: 120+ hours, partial, 25% fee). F…"
+          },
+          {
+            "rank": 6,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — URL input & scraped website data",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The optional URL tool loads public web pages via HTTP, strips HTML, and splits text into chunks for indexing demos. - Only use URLs you are allowed to fetch (your own site, public documentation, or c…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Account status, restrictions & appeals",
+            "score": 0.0013,
+            "passes_min_score": false,
+            "preview": "Statuses: Active , Under Review , Temporarily Restricted , Blacklisted (demo labels). - Restrictions may list codes , summaries , dates , and booking references on Account Status . - You may submit a…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0014,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R06",
+        "question": "BK-FLT-1102 basic fare refundability",
+        "expected_sources": [
+          "Policy — Flight — Basic",
+          "Terms — Refund"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Account status, restrictions & appeals",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Statuses: Active , Under Review , Temporarily Restricted , Blacklisted (demo labels). - Restrictions may list codes , summaries , dates , and booking references on Account Status . - You may submit a…"
+          },
+          {
+            "rank": 2,
+            "source": "FAQ — Can a rejected refund blacklist my account?",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Question: Can a rejected refund blacklist my account? Answer: No. A single rejection does not blacklist you. Restrictions are shown only for documented demo scenarios (e.g. repeated duplicate claims)."
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Trip Planner (AI itineraries)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Trip Planner generates day-by-day itineraries using OpenStreetMap data and an AI agent (Gemini). - Itineraries are suggestions only — not confirmed reservations for flights, hotels, trains, or activi…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Accessing terms & product navigation",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "You can read these Terms without blocking signup or chat: | Location | How to open | |----------|-------------| | Terms & Policies | Sidebar → Terms & Policies → use the four tabs (Overview, RAG, Pac…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 7,
+            "source": "FAQ — Where can I read all rules in one place?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: Where can I read all rules in one place? Answer: Open Terms & Policies or Document Assistant → Terms & Conditions. Use the tabs: Overview, RAG, Packages, and Legal."
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Ideal for: First-time visitors to the Pink City with limited time. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: Coastal Bus Getaway ( coastal bus ) Tagline: 1 nig…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 10,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R07",
+        "question": "How long do refund processing times take in the demo?",
+        "expected_sources": [
+          "FAQ — How long",
+          "Terms — Refund"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Introduction",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Demo disclaimer: This application is a capstone / prototype for education. It simulates trip planning, a grounded RAG policy assistant , package booking, refunds, and support. It is not a licensed tr…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Changes to policies",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Policies, package catalog, and demo data may be updated for coursework or demonstration. - The policy comparison table on this page reflects configured demo rules at runtime. - Continued use after ch…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Customer support & tickets",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Help & Customer Support provides FAQs, a policy-aware bot , and support tickets (demo). - Create tickets with categories such as Refund Issue, Booking Issue, Cancellation, Account Restriction, Techni…"
+          },
+          {
+            "rank": 4,
+            "source": "Policy — Travel package — Flex",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Bundled flight/stay package: refundable with service fee if cancelled 72+ hours before departure (demo). Travel mode: package. Ticket type: flex. Refundability: full. Minimum hours before departure: …"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Package: Weekend Escape ( weekend escape ) Tagline: 1 night hill break — coach, hotel & lake time Typical route: Delhi → Nainital Duration: 1 Night / 1 Day Base price (demo, per traveler, single oc…"
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Chatting, queries & source snippets",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Chat sends your message to a semantic search step over indexed policy text, then (when configured) to an AI model with instructions to stay within retrieved context. - Hover inline citations to see t…"
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ", breakfast, Kolaba Fort or beach time | | custom trip | Custom trip bundle | Your Trip Planner cities | 1 Night / 1 Day | ₹9,999 | 1 night hotel, local transfers, bundle built from your Trip Planner…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Service tiers & subscription models (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "This repository does not bill users . The tiers below describe a placeholder commercial model for documentation and UI copy. Enforcement is off unless you implement it in a fork. Explorer (Free — pla…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Accessing terms & product navigation",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "You can read these Terms without blocking signup or chat: | Location | How to open | |----------|-------------| | Terms & Policies | Sidebar → Terms & Policies → use the four tabs (Overview, RAG, Pac…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0013,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Weather-related ferry cancellations trigger manual review in the refund engine. Ideal for: Beach lovers and short coastal escapes from Mumbai. Contact (demo): Demo Travel Pa…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0014,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R08",
+        "question": "What happens if my account is blacklisted?",
+        "expected_sources": [
+          "Terms — Account",
+          "blacklist"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 2,
+            "source": "Policy — Train — AC 3-tier",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "AC train ticket: partial refund per demo railway-style rules. Travel mode: train. Ticket type: ac 3 tier. Refundability: partial. Minimum hours before departure: 48. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 3,
+            "source": "Policy — Travel package — Flex",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Bundled flight/stay package: refundable with service fee if cancelled 72+ hours before departure (demo). Travel mode: package. Ticket type: flex. Refundability: full. Minimum hours before departure: …"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Refund request time limits",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Refund requests must be submitted before the configured hours-before-departure threshold for that ticket or package. Late requests are Not Eligible with an explanation (e.g. bus booking inside the 12…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Non-refundable bookings",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Example: BK-FLT-1102 (basic international promo fare) uses policy flight basic with refundability none . Promotional and basic fares are common non-refundable examples in real life; here they are sim…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Cancellation charges & amounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Cancellation fees are a percentage of the demo booked amount , set per policy, for example: - Flight flex: ~5% fee; flight saver: ~35% fee with capped refundable fraction. - Package flex: ~8% fee; pa…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Chatting, queries & source snippets",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Chat sends your message to a semantic search step over indexed policy text, then (when configured) to an AI model with instructions to stay within retrieved context. - Hover inline citations to see t…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Admin demo mode (back-office)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The sidebar Demo dashboard switch ( User / Admin ) is for class demonstrations only : - Admin shows queues for refunds, tickets, appeals, and account overrides. - Admin actions update local demo JSON…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R09",
+        "question": "How do I submit a support ticket?",
+        "expected_sources": [
+          "Terms — Support",
+          "FAQ"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Weather-related ferry cancellations trigger manual review in the refund engine. Ideal for: Beach lovers and short coastal escapes from Mumbai. Contact (demo): Demo Travel Pa…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Changes to policies",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Policies, package catalog, and demo data may be updated for coursework or demonstration. - The policy comparison table on this page reflects configured demo rules at runtime. - Continued use after ch…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Bookings & travel packages",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "My Bookings & Refunds shows two kinds of demo records: 1. Catalog bookings — pre-loaded mock flights, trains, and buses (e.g. BK-FLT-1001 ) from demo data. 2. Travel packages you book — created when …"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Service tiers & subscription models (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "This repository does not bill users . The tiers below describe a placeholder commercial model for documentation and UI copy. Enforcement is off unless you implement it in a fork. Explorer (Free — pla…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Packages & booking options on the platform",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Commerce-style flows (simulated): 1. Book package — My Bookings & Refunds → choose catalog or Trip Planner prefill → travelers, nights, Standard/Flex → Confirm creates BK-PKG- . 2. Catalog tickets — …"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Catalog packages (illustrative INR pricing) Duration: every row is 1 Night / 1 Day — depart on Day 1 (morning or afternoon), one overnight stay, return on Day 2 (evening). Base prices are per travele…"
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Service tiers & subscription models (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Team & Agency (placeholder) - Audience: Small teams, classrooms, or demo agencies. - Queries: 1,000 assistant queries / day; 25 URL indexes; 50 itinerary runs / day. - Seats: Up to 10 registered as…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Document assistant — acceptable use",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "You may use the assistant to: - Ask questions about terms, refunds, packages, bookings, accounts, and support in this demo app. - Review grounded answers that cite retrieved policy text via inline ci…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R10",
+        "question": "package_standard cancellation hours before departure",
+        "expected_sources": [
+          "Terms — Travel package",
+          "package_standard"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Accessing terms & product navigation",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "You can read these Terms without blocking signup or chat: | Location | How to open | |----------|-------------| | Terms & Policies | Sidebar → Terms & Policies → use the four tabs (Overview, RAG, Pac…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 4,
+            "source": "FAQ — What is the difference between Standard and Flex package fares?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: What is the difference between Standard and Flex package fares? Answer: Standard uses the base catalog price (1.0×) with stricter refunds (package standard: 120+ hours, partial, 25% fee). F…"
+          },
+          {
+            "rank": 5,
+            "source": "FAQ — Why was my refund partially approved?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Why was my refund partially approved? Answer: Saver fares, trains, and buses often have higher cancellation fees than flex air fares. See Terms & Policies for examples by travel mode."
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 7,
+            "source": "FAQ — What makes the Document Assistant different?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: What makes the Document Assistant different? Answer: It uses semantic search plus grounded LLM replies with inline source citations in each answer (hover for excerpts; URLs open when availa…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Duplicate booking & misuse",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "- Only one refund request per booking is allowed in the demo. - Duplicate booking as a reason may trigger manual review . - Repeated misuse in the demo narrative may lead to Under Review , Temporary …"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "recall_at_3": 0.5,
+        "mrr": 0.5,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R11",
+        "question": "package_flex service fee and refund window",
+        "expected_sources": [
+          "Terms — Travel package",
+          "package_flex"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Catalog packages (illustrative INR pricing) Duration: every row is 1 Night / 1 Day — depart on Day 1 (morning or afternoon), one overnight stay, return on Day 2 (evening). Base prices are per travele…"
+          },
+          {
+            "rank": 2,
+            "source": "Policy — Flight — Saver fare",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Saver air fare: partial refund with higher cancellation charges. Travel mode: flight. Ticket type: saver. Refundability: partial. Minimum hours before departure: 72. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Core features & capabilities",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "| Capability | What you get | |------------|----------------| | Website / document RAG chat | Ask questions in natural language; answers use semantic search over indexed policy text, then (when confi…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Package pricing & confirmation (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "On Book package , the estimated price updates when you change package, travelers , nights, or fare type. Each traveler is single occupancy (private room; no twin sharing). This is illustrative math o…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Privacy & stored data",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "- Demo profiles use fictional names and emails . - Portal activity (refunds, tickets, appeals, user-created package bookings , audit log) may be stored in data/customer portal state.json on the machi…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Changes to policies",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Policies, package catalog, and demo data may be updated for coursework or demonstration. - The policy comparison table on this page reflects configured demo rules at runtime. - Continued use after ch…"
+          },
+          {
+            "rank": 7,
+            "source": "Policy — Train — AC 3-tier",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "AC train ticket: partial refund per demo railway-style rules. Travel mode: train. Ticket type: ac 3 tier. Refundability: partial. Minimum hours before departure: 48. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 8,
+            "source": "Policy — Bus — Volvo AC",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Premium bus: refundable with moderate fee close to departure (demo). Travel mode: bus. Ticket type: volvo. Refundability: full. Minimum hours before departure: 6. Cancellation fee (demo fraction of f…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ", breakfast, Kolaba Fort or beach time | | custom trip | Custom trip bundle | Your Trip Planner cities | 1 Night / 1 Day | ₹9,999 | 1 night hotel, local transfers, bundle built from your Trip Planner…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "recall_at_3": 0.5,
+        "mrr": 1.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R12",
+        "question": "train AC 3-tier cancellation policy demo",
+        "expected_sources": [
+          "Policy — Train — AC 3-tier"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 2,
+            "source": "FAQ — Are refunds real in this app?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: Are refunds real in this app? Answer: No. This is an academic demo. Amounts and statuses are simulated; no payment gateway is connected."
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → b…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Packages & booking options on the platform",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Commerce-style flows (simulated): 1. Book package — My Bookings & Refunds → choose catalog or Trip Planner prefill → travelers, nights, Standard/Flex → Confirm creates BK-PKG- . 2. Catalog tickets — …"
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          },
+          {
+            "rank": 7,
+            "source": "Policy — Train — AC 3-tier",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "AC train ticket: partial refund per demo railway-style rules. Travel mode: train. Ticket type: ac 3 tier. Refundability: partial. Minimum hours before departure: 48. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Account status, restrictions & appeals",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Statuses: Active , Under Review , Temporarily Restricted , Blacklisted (demo labels). - Restrictions may list codes , summaries , dates , and booking references on Account Status . - You may submit a…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.14285714285714285,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R13",
+        "question": "bus semi sleeper minimum hours before departure refund",
+        "expected_sources": [
+          "Policy — Bus"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "FAQ — Can a rejected refund blacklist my account?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: Can a rejected refund blacklist my account? Answer: No. A single rejection does not blacklist you. Restrictions are shown only for documented demo scenarios (e.g. repeated duplicate claims)."
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Privacy & stored data",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "- Demo profiles use fictional names and emails . - Portal activity (refunds, tickets, appeals, user-created package bookings , audit log) may be stored in data/customer portal state.json on the machi…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Service tiers & subscription models (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Team & Agency (placeholder) - Audience: Small teams, classrooms, or demo agencies. - Queries: 1,000 assistant queries / day; 25 URL indexes; 50 itinerary runs / day. - Seats: Up to 10 registered as…"
+          },
+          {
+            "rank": 4,
+            "source": "Policy — Flight — Basic / promo fare",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Promotional basic fare: non-refundable in this demo. Travel mode: flight. Ticket type: basic. Refundability: none. Minimum hours before departure: 0. Cancellation fee (demo fraction of fare): 100%. M…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Package: Weekend Escape ( weekend escape ) Tagline: 1 night hill break — coach, hotel & lake time Typical route: Delhi → Nainital Duration: 1 Night / 1 Day Base price (demo, per traveler, single oc…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Account status, restrictions & appeals",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Statuses: Active , Under Review , Temporarily Restricted , Blacklisted (demo labels). - Restrictions may list codes , summaries , dates , and booking references on Account Status . - You may submit a…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Weather-related ferry cancellations trigger manual review in the refund engine. Ideal for: Beach lovers and short coastal escapes from Mumbai. Contact (demo): Demo Travel Pa…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R14",
+        "question": "Are trip planner itineraries confirmed reservations?",
+        "expected_sources": [
+          "Terms — Trip Planner",
+          "FAQ"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". Ideal for: First-time visitors to the Pink City with limited time. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: Coastal Bus Getaway ( coastal bus ) Tagline: 1 nig…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ", breakfast, Kolaba Fort or beach time | | custom trip | Custom trip bundle | Your Trip Planner cities | 1 Night / 1 Day | ₹9,999 | 1 night hotel, local transfers, bundle built from your Trip Planner…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Refund Processing Procedure",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "1. Open My Bookings & Refunds → select a booking → choose refund reason → Check eligibility & submit (user mode). 2. System validates ownership , booking state , policy , timing , duplicates , and ac…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Prices are estimated at booking time (travelers, fare type). No payment gateway is connected. Non-package travel inventory Demo users also have catalog tickets (flights, trains, buses) such as BK-F…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 7,
+            "source": "Policy — Flight — Saver fare",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Saver air fare: partial refund with higher cancellation charges. Travel mode: flight. Ticket type: saver. Refundability: partial. Minimum hours before departure: 72. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R15",
+        "question": "How do travel package bookings work in the demo app?",
+        "expected_sources": [
+          "FAQ — How do travel package bookings work"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Refund Processing Procedure",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "1. Open My Bookings & Refunds → select a booking → choose refund reason → Check eligibility & submit (user mode). 2. System validates ownership , booking state , policy , timing , duplicates , and ac…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 3,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          },
+          {
+            "rank": 4,
+            "source": "FAQ — Why was my refund partially approved?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Why was my refund partially approved? Answer: Saver fares, trains, and buses often have higher cancellation fees than flex air fares. See Terms & Policies for examples by travel mode."
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ", breakfast, Kolaba Fort or beach time | | custom trip | Custom trip bundle | Your Trip Planner cities | 1 Night / 1 Day | ₹9,999 | 1 night hotel, local transfers, bundle built from your Trip Planner…"
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Chatting, queries & source snippets",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Chat sends your message to a semantic search step over indexed policy text, then (when configured) to an AI model with instructions to stay within retrieved context. - Hover inline citations to see t…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Why choose this platform",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Compared with generic chatbots, static FAQ pages, or unstructured document upload tools, this app emphasizes: - Grounded context retrieval — Answers are driven by similarity search over your Terms kn…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "recall_at_3": 1.0,
+        "mrr": 0.3333333333333333,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R16",
+        "question": "What packages can I book in the demo catalog?",
+        "expected_sources": [
+          "FAQ — What packages can I book"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Document assistant — acceptable use",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "You may use the assistant to: - Ask questions about terms, refunds, packages, bookings, accounts, and support in this demo app. - Review grounded answers that cite retrieved policy text via inline ci…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Refund Processing Procedure",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "1. Open My Bookings & Refunds → select a booking → choose refund reason → Check eligibility & submit (user mode). 2. System validates ownership , booking state , policy , timing , duplicates , and ac…"
+          },
+          {
+            "rank": 4,
+            "source": "Policy — Flight — Flex fare",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Flexible air fare: refundable with a small service fee if cancelled 24+ hours before departure. Travel mode: flight. Ticket type: flex. Refundability: full. Minimum hours before departure: 24. Cancel…"
+          },
+          {
+            "rank": 5,
+            "source": "FAQ — How do I appeal an account restriction?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How do I appeal an account restriction? Answer: Open Account Status, review the reason, and submit an appeal. You can also open a support ticket under Account Restriction."
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → b…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Core features & capabilities",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "| Capability | What you get | |------------|----------------| | Website / document RAG chat | Ask questions in natural language; answers use semantic search over indexed policy text, then (when confi…"
+          },
+          {
+            "rank": 9,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Refund request time limits",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Refund requests must be submitted before the configured hours-before-departure threshold for that ticket or package. Late requests are Not Eligible with an explanation (e.g. bus booking inside the 12…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R17",
+        "question": "Document Assistant RAG grounding rules",
+        "expected_sources": [
+          "Document Assistant"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Customer support & tickets",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Help & Customer Support provides FAQs, a policy-aware bot , and support tickets (demo). - Create tickets with categories such as Refund Issue, Booking Issue, Cancellation, Account Restriction, Techni…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Ideal for: Couples and small groups wanting a quick hill break without driving. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: City Explorer ( city explorer ) Tagli…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Refund Processing Procedure",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "1. Open My Bookings & Refunds → select a booking → choose refund reason → Check eligibility & submit (user mode). 2. System validates ownership , booking state , policy , timing , duplicates , and ac…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Core features & capabilities",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | | Refund Assistant | Rule-engine eligibility plus explanatory chat per booking. | | Help & Support | FAQs, policy bot, and simulated tickets. | | Admin demo | Back-office queues for refunds, tick…"
+          },
+          {
+            "rank": 6,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Prices are estimated at booking time (travelers, fare type). No payment gateway is connected. Non-package travel inventory Demo users also have catalog tickets (flights, trains, buses) such as BK-F…"
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Transport: Reserved train berths (SL/3A mix in demo data); local auto/cab for tour start point. Meals: Not included except where noted on voucher; cafés on MG Road recommended. Sightseeing: Shaniwa…"
+          },
+          {
+            "rank": 8,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Changes to policies",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Policies, package catalog, and demo data may be updated for coursework or demonstration. - The policy comparison table on this page reflects configured demo rules at runtime. - Continued use after ch…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Package pricing & confirmation (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". - Confirm package booking creates a confirmed demo record with the shown total — no payment gateway is used. - The final amount stored on the booking is the estimate at confirmation time; it is not…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "recall_at_3": 1.0,
+        "mrr": 1.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R18",
+        "question": "cancellation fee rates for saver versus flex air fares",
+        "expected_sources": [
+          "Terms — Cancellation",
+          "Policy — Flight"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "FAQ — How is refund eligibility decided?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How is refund eligibility decided? Answer: A rule-based engine checks booking status, departure time, ticket policy, duplicate requests, and account flags. The Refund Assistant explains the…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Ideal for: First-time visitors to the Pink City with limited time. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: Coastal Bus Getaway ( coastal bus ) Tagline: 1 nig…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Service tiers & subscription models (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "This repository does not bill users . The tiers below describe a placeholder commercial model for documentation and UI copy. Enforcement is off unless you implement it in a fork. Explorer (Free — pla…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Weather-related ferry cancellations trigger manual review in the refund engine. Ideal for: Beach lovers and short coastal escapes from Mumbai. Contact (demo): Demo Travel Pa…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Refund Processing Procedure",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "1. Open My Bookings & Refunds → select a booking → choose refund reason → Check eligibility & submit (user mode). 2. System validates ownership , booking state , policy , timing , duplicates , and ac…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → b…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Why choose this platform",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Not a claim of commercial superiority — in production you would add formal SLAs, compliance, billing, and human review. This prototype highlights design patterns for accurate, user-visible RAG in a…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Catalog packages (illustrative INR pricing) Duration: every row is 1 Night / 1 Day — depart on Day 1 (morning or afternoon), one overnight stay, return on Day 2 (evening). Base prices are per travele…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R19",
+        "question": "where is customer portal state stored locally",
+        "expected_sources": [
+          "Terms — Data",
+          "customer_portal_state"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Cancellation charges & amounts",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Cancellation fees are a percentage of the demo booked amount , set per policy, for example: - Flight flex: ~5% fee; flight saver: ~35% fee with capped refundable fraction. - Package flex: ~8% fee; pa…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Cancellation Policy",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Cancellation windows depend on travel mode , ticket type , or package fare . You must cancel (request a refund) before the minimum hours shown for that policy before scheduled departure/journey start…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Introduction",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Document & Policy Assistant — user notice The Document & Policy Assistant is a retrieval-augmented (RAG) chat experience inside this app. It answers from the Terms & Conditions knowledge base (and yo…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Admin demo mode (back-office)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "The sidebar Demo dashboard switch ( User / Admin ) is for class demonstrations only : - Admin shows queues for refunds, tickets, appeals, and account overrides. - Admin actions update local demo JSON…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — API keys & automated processing",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Gemini API key ( GEMINI API KEY ) - Configured in .env on the server (or Streamlit secrets in deployment) — not entered in the chat UI. - Used for text embeddings (semantic search) and grounded answe…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Duplicate booking & misuse",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "- Only one refund request per booking is allowed in the demo. - Duplicate booking as a reason may trigger manual review . - Repeated misuse in the demo narrative may lead to Under Review , Temporary …"
+          },
+          {
+            "rank": 7,
+            "source": "Policy — Bus — Volvo AC",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Premium bus: refundable with moderate fee close to departure (demo). Travel mode: bus. Ticket type: volvo. Refundability: full. Minimum hours before departure: 6. Cancellation fee (demo fraction of f…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Accessing terms & product navigation",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "You can read these Terms without blocking signup or chat: | Location | How to open | |----------|-------------| | Terms & Policies | Sidebar → Terms & Policies → use the four tabs (Overview, RAG, Pac…"
+          },
+          {
+            "rank": 9,
+            "source": "FAQ — How is refund eligibility decided?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How is refund eligibility decided? Answer: A rule-based engine checks booking status, departure time, ticket policy, duplicate requests, and account flags. The Refund Assistant explains the…"
+          },
+          {
+            "rank": 10,
+            "source": "Policy — Flight — Saver fare",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Saver air fare: partial refund with higher cancellation charges. Travel mode: flight. Ticket type: saver. Refundability: partial. Minimum hours before departure: 72. Cancellation fee (demo fraction o…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R20",
+        "question": "appeal account restriction temporarily restricted",
+        "expected_sources": [
+          "Terms — Account",
+          "appeal"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Cancellation charges & amounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Cancellation fees are a percentage of the demo booked amount , set per policy, for example: - Flight flex: ~5% fee; flight saver: ~35% fee with capped refundable fraction. - Package flex: ~8% fee; pa…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Duplicate booking & misuse",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "- Only one refund request per booking is allowed in the demo. - Duplicate booking as a reason may trigger manual review . - Repeated misuse in the demo narrative may lead to Under Review , Temporary …"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          },
+          {
+            "rank": 4,
+            "source": "Policy — Travel package — Standard",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Standard package fare: partial refund with higher cancellation charges (demo). Travel mode: package. Ticket type: standard. Refundability: partial. Minimum hours before departure: 120. Cancellation f…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Changes to policies",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Policies, package catalog, and demo data may be updated for coursework or demonstration. - The policy comparison table on this page reflects configured demo rules at runtime. - Continued use after ch…"
+          },
+          {
+            "rank": 6,
+            "source": "FAQ — How do I appeal an account restriction?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How do I appeal an account restriction? Answer: Open Account Status, review the reason, and submit an appeal. You can also open a support ticket under Account Restriction."
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Transport: Reserved train berths (SL/3A mix in demo data); local auto/cab for tour start point. Meals: Not included except where noted on voucher; cafés on MG Road recommended. Sightseeing: Shaniwa…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 9,
+            "source": "Policy — Flight — Saver fare",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Saver air fare: partial refund with higher cancellation charges. Travel mode: flight. Ticket type: saver. Refundability: partial. Minimum hours before departure: 72. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 10,
+            "source": "FAQ — What makes the Document Assistant different?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: What makes the Document Assistant different? Answer: It uses semantic search plus grounded LLM replies with inline source citations in each answer (hover for excerpts; URLs open when availa…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.16666666666666666,
+        "top1_score": 0.0014,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R21",
+        "question": "What is ENABLE_WIKIVOYAGE_RAG optional feature?",
+        "expected_sources": [
+          "Terms — Trip Planner",
+          "Wikivoyage"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ", breakfast, Kolaba Fort or beach time | | custom trip | Custom trip bundle | Your Trip Planner cities | 1 Night / 1 Day | ₹9,999 | 1 night hotel, local transfers, bundle built from your Trip Planner…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Ideal for: Couples and small groups wanting a quick hill break without driving. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: City Explorer ( city explorer ) Tagli…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Trip Planner (AI itineraries)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Trip Planner generates day-by-day itineraries using OpenStreetMap data and an AI agent (Gemini). - Itineraries are suggestions only — not confirmed reservations for flights, hotels, trains, or activi…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Cancellation Policy",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Cancellation windows depend on travel mode , ticket type , or package fare . You must cancel (request a refund) before the minimum hours shown for that policy before scheduled departure/journey start…"
+          },
+          {
+            "rank": 6,
+            "source": "FAQ — How long do demo refunds take?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How long do demo refunds take? Answer: Processing times are illustrative (typically 2–14 business days depending on mode). Status updates are simulated in the app."
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Package pricing & confirmation (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "On Book package , the estimated price updates when you change package, travelers , nights, or fare type. Each traveler is single occupancy (private room; no twin sharing). This is illustrative math o…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Ideal for: First-time visitors to the Pink City with limited time. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: Coastal Bus Getaway ( coastal bus ) Tagline: 1 nig…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.25,
+        "top1_score": 0.0014,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R22",
+        "question": "refund request before departure threshold",
+        "expected_sources": [
+          "Terms — Refund",
+          "hours-before-departure"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0017,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Package: Weekend Escape ( weekend escape ) Tagline: 1 night hill break — coach, hotel & lake time Typical route: Delhi → Nainital Duration: 1 Night / 1 Day Base price (demo, per traveler, single oc…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Day 2: Departure — Use Trip Planner to design stops, then book this bundle. Accommodation: 3★ or equivalent at Trip Planner destination — category illustrative only. Transport: Local transfers airp…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Bookings & travel packages",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "My Bookings & Refunds shows two kinds of demo records: 1. Catalog bookings — pre-loaded mock flights, trains, and buses (e.g. BK-FLT-1001 ) from demo data. 2. Travel packages you book — created when …"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Cancellation charges & amounts",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Cancellation fees are a percentage of the demo booked amount , set per policy, for example: - Flight flex: ~5% fee; flight saver: ~35% fee with capped refundable fraction. - Package flex: ~8% fee; pa…"
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          },
+          {
+            "rank": 8,
+            "source": "Policy — Train — AC 3-tier",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "AC train ticket: partial refund per demo railway-style rules. Travel mode: train. Ticket type: ac 3 tier. Refundability: partial. Minimum hours before departure: 48. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Chatting, queries & source snippets",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Chat sends your message to a semantic search step over indexed policy text, then (when configured) to an AI model with instructions to stay within retrieved context. - Hover inline citations to see t…"
+          },
+          {
+            "rank": 10,
+            "source": "Policy — Bus — Semi-sleeper",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Intercity bus semi-sleeper: partial refund if cancelled 12+ hours before departure. Travel mode: bus. Ticket type: semi sleeper. Refundability: partial. Minimum hours before departure: 12. Cancellati…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0017,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R23",
+        "question": "catalog booking BK-FLT demo flights trains buses",
+        "expected_sources": [
+          "Terms — Bookings",
+          "catalog bookings"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Document Assistant — Core features & capabilities",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "| Capability | What you get | |------------|----------------| | Website / document RAG chat | Ask questions in natural language; answers use semantic search over indexed policy text, then (when confi…"
+          },
+          {
+            "rank": 2,
+            "source": "FAQ — What makes the Document Assistant different?",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Question: What makes the Document Assistant different? Answer: It uses semantic search plus grounded LLM replies with inline source citations in each answer (hover for excerpts; URLs open when availa…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Package: Weekend Escape ( weekend escape ) Tagline: 1 night hill break — coach, hotel & lake time Typical route: Delhi → Nainital Duration: 1 Night / 1 Day Base price (demo, per traveler, single oc…"
+          },
+          {
+            "rank": 4,
+            "source": "FAQ — How is refund eligibility decided?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How is refund eligibility decided? Answer: A rule-based engine checks booking status, departure time, ticket policy, duplicate requests, and account flags. The Refund Assistant explains the…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | Package ID | Name | Typical route | Duration | Base / person (demo) | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend es…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → b…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Privacy & stored data",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "- Demo profiles use fictional names and emails . - Portal activity (refunds, tickets, appeals, user-created package bookings , audit log) may be stored in data/customer portal state.json on the machi…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact (demo): Demo Travel Packages…"
+          },
+          {
+            "rank": 9,
+            "source": "Policy — Flight — Flex fare",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Flexible air fare: refundable with a small service fee if cancelled 24+ hours before departure. Travel mode: flight. Ticket type: flex. Refundability: full. Minimum hours before departure: 24. Cancel…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Why choose this platform",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Not a claim of commercial superiority — in production you would add formal SLAs, compliance, billing, and human review. This prototype highlights design patterns for accurate, user-visible RAG in a…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R24",
+        "question": "What is the weather forecast API used for?",
+        "expected_sources": [
+          "Terms —"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Cancellation / refunds: Weather-related ferry cancellations trigger manual review in the refund engine. Ideal for: Beach lovers and short coastal escapes from Mumbai. Contact (demo): Demo Travel Pa…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding (demo). Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lak…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Refund request time limits",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Refund requests must be submitted before the configured hours-before-departure threshold for that ticket or package. Late requests are Not Eligible with an explanation (e.g. bus booking inside the 12…"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — API keys & automated processing",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Gemini API key ( GEMINI API KEY ) - Configured in .env on the server (or Streamlit secrets in deployment) — not entered in the chat UI. - Used for text embeddings (semantic search) and grounded answe…"
+          },
+          {
+            "rank": 6,
+            "source": "FAQ — Why was my refund partially approved?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: Why was my refund partially approved? Answer: Saver fares, trains, and buses often have higher cancellation fees than flex air fares. See Terms & Policies for examples by travel mode."
+          },
+          {
+            "rank": 7,
+            "source": "Policy — Flight — Basic / promo fare",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Promotional basic fare: non-refundable in this demo. Travel mode: flight. Ticket type: basic. Refundability: none. Minimum hours before departure: 0. Cancellation fee (demo fraction of fare): 100%. M…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Introduction",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Document & Policy Assistant — user notice The Document & Policy Assistant is a retrieval-augmented (RAG) chat experience inside this app. It answers from the Terms & Conditions knowledge base (and yo…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Document assistant — acceptable use",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "You may use the assistant to: - Ask questions about terms, refunds, packages, bookings, accounts, and support in this demo app. - Review grounded answers that cite retrieved policy text via inline ci…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Ideal for: Couples and small groups wanting a quick hill break without driving. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: City Explorer ( city explorer ) Tagli…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "recall_at_3": 1.0,
+        "mrr": 1.0,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": true,
+        "predicted_escalate": true,
+        "escalation_match": true,
+        "retrieve_error": null,
+        "pass": true
+      },
+      {
+        "test_id": "T-R25",
+        "question": "Stock market investment advice for airlines",
+        "expected_sources": [],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Changes to policies",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Policies, package catalog, and demo data may be updated for coursework or demonstration. - The policy comparison table on this page reflects configured demo rules at runtime. - Continued use after ch…"
+          },
+          {
+            "rank": 2,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Ideal for: Couples and small groups wanting a quick hill break without driving. Contact (demo): Demo Travel Packages · support@demo-trip-planner.local Package: City Explorer ( city explorer ) Tagli…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Why choose this platform",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Compared with generic chatbots, static FAQ pages, or unstructured document upload tools, this app emphasizes: - Grounded context retrieval — Answers are driven by similarity search over your Terms kn…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Privacy & stored data",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "- Demo profiles use fictional names and emails . - Portal activity (refunds, tickets, appeals, user-created package bookings , audit log) may be stored in data/customer portal state.json on the machi…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 7,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Accommodation: Beach resort — garden or sea-facing category assigned at check-in (demo). Transport: Ferry tickets + resort shuttle from jetty; no private car included. Meals: Breakfast included; se…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Core features & capabilities",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | | Refund Assistant | Rule-engine eligibility plus explanatory chat per booking. | | Help & Support | FAQs, policy bot, and simulated tickets. | | Admin demo | Back-office queues for refunds, tick…"
+          },
+          {
+            "rank": 9,
+            "source": "Document Assistant — Chatting, queries & source snippets",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Chat sends your message to a semantic search step over indexed policy text, then (when configured) to an AI model with instructions to stay within retrieved context. - Hover inline citations to see t…"
+          },
+          {
+            "rank": 10,
+            "source": "Document Assistant — Service tiers & subscription models (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "This repository does not bill users . The tiers below describe a placeholder commercial model for documentation and UI copy. Enforcement is off unless you implement it in a fork. Explorer (Free — pla…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": null,
+        "hit_at_3": null,
+        "recall_at_3": null,
+        "mrr": null,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": true,
+        "predicted_escalate": true,
+        "escalation_match": true,
+        "retrieve_error": null,
+        "pass": true
+      },
+      {
+        "test_id": "T-R26",
+        "question": "₹1200 night add-on multiplied by travelers formula",
+        "expected_sources": [
+          "Terms — Bookings & travel packages",
+          "1200"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Transport: Reserved train berths (SL/3A mix in demo data); local auto/cab for tour start point. Meals: Not included except where noted on voucher; cafés on MG Road recommended. Sightseeing: Shaniwa…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Duplicate booking & misuse",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "- Only one refund request per booking is allowed in the demo. - Duplicate booking as a reason may trigger manual review . - Repeated misuse in the demo narrative may lead to Under Review , Temporary …"
+          },
+          {
+            "rank": 4,
+            "source": "Policy — Bus — Semi-sleeper",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Intercity bus semi-sleeper: partial refund if cancelled 12+ hours before departure. Travel mode: bus. Ticket type: semi sleeper. Refundability: partial. Minimum hours before departure: 12. Cancellati…"
+          },
+          {
+            "rank": 5,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 6,
+            "source": "Policy — Train — AC 3-tier",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "AC train ticket: partial refund per demo railway-style rules. Travel mode: train. Ticket type: ac 3 tier. Refundability: partial. Minimum hours before departure: 48. Cancellation fee (demo fraction o…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Introduction",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Demo disclaimer: This application is a capstone / prototype for education. It simulates trip planning, a grounded RAG policy assistant , package booking, refunds, and support. It is not a licensed tr…"
+          },
+          {
+            "rank": 8,
+            "source": "FAQ — How long do demo refunds take?",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "Question: How long do demo refunds take? Answer: Processing times are illustrative (typically 2–14 business days depending on mode). Status updates are simulated in the app."
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 10,
+            "source": "Policy — Flight — Saver fare",
+            "score": 0.0013,
+            "passes_min_score": false,
+            "preview": "Saver air fare: partial refund with higher cancellation charges. Travel mode: flight. Ticket type: saver. Refundability: partial. Minimum hours before departure: 72. Cancellation fee (demo fraction o…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "recall_at_3": 0.0,
+        "mrr": 0.0,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R27",
+        "question": "Flex fare multiplier 1.12 package total calculation",
+        "expected_sources": [
+          "Travel package catalog",
+          "1.12"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "Terms — Account status, restrictions & appeals",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Statuses: Active , Under Review , Temporarily Restricted , Blacklisted (demo labels). - Restrictions may list codes , summaries , dates , and booking references on Account Status . - You may submit a…"
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": ". Day 2: Jaipur → Delhi — Morning fort circuit; return coach to Delhi. Accommodation: 3★ hotel near MI Road — heritage décor; single occupancy. Transport: AC coach with scheduled rest stop; local gui…"
+          },
+          {
+            "rank": 3,
+            "source": "Document Assistant — Chatting, queries & source snippets",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Chat sends your message to a semantic search step over indexed policy text, then (when configured) to an AI model with instructions to stay within retrieved context. - Hover inline citations to see t…"
+          },
+          {
+            "rank": 4,
+            "source": "Terms — Trip Planner (AI itineraries)",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Trip Planner generates day-by-day itineraries using OpenStreetMap data and an AI agent (Gemini). - Itineraries are suggestions only — not confirmed reservations for flights, hotels, trains, or activi…"
+          },
+          {
+            "rank": 5,
+            "source": "FAQ — What makes the Document Assistant different?",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "Question: What makes the Document Assistant different? Answer: It uses semantic search plus grounded LLM replies with inline source citations in each answer (hover for excerpts; URLs open when availa…"
+          },
+          {
+            "rank": 6,
+            "source": "Terms — Privacy & stored data",
+            "score": 0.0016,
+            "passes_min_score": false,
+            "preview": "- Demo profiles use fictional names and emails . - Portal activity (refunds, tickets, appeals, user-created package bookings , audit log) may be stored in data/customer portal state.json on the machi…"
+          },
+          {
+            "rank": 7,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". Transport: Reserved train berths (SL/3A mix in demo data); local auto/cab for tour start point. Meals: Not included except where noted on voucher; cafés on MG Road recommended. Sightseeing: Shaniwa…"
+          },
+          {
+            "rank": 8,
+            "source": "Document Assistant — Document assistant — acceptable use",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "You may use the assistant to: - Ask questions about terms, refunds, packages, bookings, accounts, and support in this demo app. - Review grounded answers that cite retrieved policy text via inline ci…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → b…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Cancellation charges & amounts",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Cancellation fees are a percentage of the demo booked amount , set per policy, for example: - Flight flex: ~5% fee; flight saver: ~35% fee with capped refundable fraction. - Package flex: ~8% fee; pa…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "recall_at_3": 0.5,
+        "mrr": 0.5,
+        "top1_score": 0.0016,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      },
+      {
+        "test_id": "T-R28",
+        "question": "inline citations hover excerpts policy assistant",
+        "expected_sources": [
+          "Document Assistant",
+          "FAQ — inline"
+        ],
+        "retrieved": [
+          {
+            "rank": 1,
+            "source": "FAQ — Where can I read all rules in one place?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: Where can I read all rules in one place? Answer: Open Terms & Policies or Document Assistant → Terms & Conditions. Use the tabs: Overview, RAG, Packages, and Legal."
+          },
+          {
+            "rank": 2,
+            "source": "Document Assistant — Application overview & purpose",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Trip Planner AI Agent is an integrated Streamlit platform that combines: 1. AI trip planning — Multi-day itineraries grounded in OpenStreetMap points of interest (Gemini agent). 2. Customer portal (d…"
+          },
+          {
+            "rank": 3,
+            "source": "Terms — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Catalog packages (illustrative INR pricing) Duration: every row is 1 Night / 1 Day — depart on Day 1 (morning or afternoon), one overnight stay, return on Day 2 (evening). Base prices are per travele…"
+          },
+          {
+            "rank": 4,
+            "source": "Document Assistant — Packages & booking options on the platform",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Commerce-style flows (simulated): 1. Book package — My Bookings & Refunds → choose catalog or Trip Planner prefill → travelers, nights, Standard/Flex → Confirm creates BK-PKG- . 2. Catalog tickets — …"
+          },
+          {
+            "rank": 5,
+            "source": "Document Assistant — Travel package catalog & fare types (demo)",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": ". | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (…"
+          },
+          {
+            "rank": 6,
+            "source": "FAQ — Why was my refund partially approved?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: Why was my refund partially approved? Answer: Saver fares, trains, and buses often have higher cancellation fees than flex air fares. See Terms & Policies for examples by travel mode."
+          },
+          {
+            "rank": 7,
+            "source": "FAQ — How do travel package bookings work?",
+            "score": 0.0015,
+            "passes_min_score": false,
+            "preview": "Question: How do travel package bookings work? Answer: On My Bookings & Refunds → Book package, pick a bundle, travelers, nights, and fare type. The estimate updates live; Confirm creates a demo BK-P…"
+          },
+          {
+            "rank": 8,
+            "source": "Terms — General Terms & Conditions",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "By using this application you acknowledge that: - All bookings , package purchases , refunds , support tickets , and account actions are simulated for education and testing. - Trip Planner features (…"
+          },
+          {
+            "rank": 9,
+            "source": "Terms — Demo user accounts",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": "The customer portal uses prototype login (no real authentication). - Choose a demo account from the profile control at the bottom of the sidebar (hover to see other accounts; click to switch). - Each…"
+          },
+          {
+            "rank": 10,
+            "source": "Terms — Package pricing & confirmation (demo)",
+            "score": 0.0014,
+            "passes_min_score": false,
+            "preview": ". - Confirm package booking creates a confirmed demo record with the shown total — no payment gateway is used. - The final amount stored on the booking is the estimate at confirmation time; it is not…"
+          }
+        ],
+        "filtered_sources": [],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "recall_at_3": 0.5,
+        "mrr": 0.5,
+        "top1_score": 0.0015,
+        "low_confidence": true,
+        "expect_escalate": false,
+        "predicted_escalate": true,
+        "escalation_match": false,
+        "retrieve_error": null,
+        "pass": false
+      }
+    ],
+    "terms_generation_rows": [
+      {
+        "test_id": "T-R01",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nStandard package fare: partial refund with higher cancellation charges. Travel mode: package. Ticket type: standard. Refundability: partial. Minimum hours before departure: 120. Cancellation fee (configured fraction of fare): 25%. Max refundable fraction after fee: 70%. Processing: 10–21 business days.\n\n<span class=\"rag-inline-cite\" title=\"Stan",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R02",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nAC train ticket: partial refund per railway-style rules. Travel mode: train. Ticket type: ac 3 tier. Refundability: partial. Minimum hours before departure: 48. Cancellation fee (configured fraction of fare): 15%. Max refundable fraction after fee: 85%. Processing: 3–7 business days.\n\n<span class=\"rag-inline-cite\" title=\"AC train ticket: partia",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R03",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nOn Book package , the estimated price updates when you change package, travelers , nights, or fare type. Each traveler is single occupancy (private room; no twin sharing). This is illustrative math only : - Base subtotal = package base price per traveler × number of travelers. - Standard fare — multiplier 1.0× (no premium on base). Refund polic",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R04",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nQuestion: Where can I read all rules in one place? Answer: Open Terms & Policies or Document Assistant → Terms & Conditions. Use the tabs: Overview, RAG, Packages, and Legal.\n\n<span class=\"rag-inline-cite\" title=\"Question: Where can I read all rules in one place? Answer: Open Terms &amp; Policies or Document Assistant → Terms &amp; Conditions. ",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R05",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. | Package ID | Name | Typical route | Duration | Base / person | Includes (summary) | |------------|------|---------------|----------|----------------------|-------------------| | weekend escape | Weekend Escape | Delhi → Nainital | 1 Night / 1 Day | ₹4,899 | AC coach round-trip, 1 night 3★ hill hotel, breakfast, Nainital Lake & Mall Road lei",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R06",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. Not a claim of commercial superiority — in production you would add formal SLAs, compliance, billing, and human review. This prototype highlights design patterns for accurate, user-visible RAG in a travel context.\n\n<span class=\"rag-inline-cite\" title=\". Not a claim of commercial superiority — in production you would add formal SLAs, complianc",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R07",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nCancellation windows depend on travel mode , ticket type , or package fare. You must cancel (request a refund) before the minimum hours shown for that policy before scheduled departure/journey start (app clock). Flights - Flex: cancel 24+ hours before departure. - Saver: cancel 72+ hours before; partial refund with higher fees. - Basic / promo:",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R08",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nYou may use the assistant to: - Ask questions about terms, refunds, packages, bookings, accounts, and support in this app app. - Review grounded answers that cite retrieved policy text via inline citations in the reply. - Optionally test a public URL (Help & Support or Document Assistant) to verify that a page can be scraped and chunked. You mu",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R09",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nQuestion: What packages can I book in the app? Answer: Weekend Escape, City Explorer, Heritage Trail, Coastal Bus Getaway, and Custom trip bundle — each has itinerary, inclusions, exclusions, and cancellation hints in Terms → Travel package catalog (detailed descriptions) and on My Bookings → Book package → Available packages.\n\n<span class=\"rag",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R10",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. Prices are estimated at booking time (travelers, fare type). No payment gateway is connected. Non-package travel inventory users also have catalog tickets (flights, trains, buses) such as BK-FLT- , BK-TRN- , BK-BUS- with mode-specific refund policies — see Bookings, refunds & legal tab and the policy comparison table.\n\n<span class=\"rag-inline",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R11",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. | | Standard | Flex | |---|--------------|----------| | UI label | Standard — lower base price | Flex — easier refunds | | Policy ID | package standard | package flex | | Price multiplier | 1.00× (base catalog rate) | 1.12× (+12% vs Standard) | | Refundability | Partial | Full | | Cancel at least | 120 hours (5 days) before departure | 72 hou",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": true,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": true
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R12",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nQuestion: What is the difference between Standard and Flex package fares? Answer: Standard uses the base catalog price (1.0×) with stricter refunds (package standard: 120+ hours, partial, 25% fee). Flex costs about 12% more (1.12×) but uses package flex: cancel 72+ hours before departure for full refundability with an 8% service fee. See Terms ",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R13",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nSaver air fare: partial refund with higher cancellation charges. Travel mode: flight. Ticket type: saver. Refundability: partial. Minimum hours before departure: 72. Cancellation fee (configured fraction of fare): 35%. Max refundable fraction after fee: 65%. Processing: 7–14 business days.\n\n<span class=\"rag-inline-cite\" title=\"Saver air fare: p",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": true,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": true
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R14",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. Package: Weekend Escape ( weekend escape ) Tagline: 1 night hill break — coach, hotel & lake time Typical route: Delhi → Nainital Duration: 1 Night / 1 Day Base price (, per traveler, single occupancy): ₹4,899 Operator: Travel Packages Includes (summary): AC coach round-trip, 1 night 3★ hill hotel, breakfast, Nainital Lake & Mall Road leisure",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R15",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nQuestion: Can a rejected refund blacklist my account? Answer: No. A single rejection does not blacklist you. Restrictions are shown only for documented sample scenarios (e.g. repeated duplicate claims).\n\n<span class=\"rag-inline-cite\" title=\"Question: Can a rejected refund blacklist my account? Answer: No. A single rejection does not blacklist y",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R16",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nIntercity bus semi-sleeper: partial refund if cancelled 12+ hours before departure. Travel mode: bus. Ticket type: semi sleeper. Refundability: partial. Minimum hours before departure: 12. Cancellation fee (configured fraction of fare): 20%. Max refundable fraction after fee: 80%. Processing: 2–5 business days.\n\n<span class=\"rag-inline-cite\" ti",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R17",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nQuestion: Where can I read all rules in one place? Answer: Open Terms & Policies or Document Assistant → Terms & Conditions. Use the tabs: Overview, RAG, Packages, and Legal.\n\n<span class=\"rag-inline-cite\" title=\"Question: Where can I read all rules in one place? Answer: Open Terms &amp; Policies or Document Assistant → Terms &amp; Conditions. ",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R18",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. Not a claim of commercial superiority — in production you would add formal SLAs, compliance, billing, and human review. This prototype highlights design patterns for accurate, user-visible RAG in a travel context.\n\n<span class=\"rag-inline-cite\" title=\". Not a claim of commercial superiority — in production you would add formal SLAs, complianc",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R19",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. | | Refund Assistant | Rule-engine eligibility plus explanatory chat per booking. | | Help & Support | FAQs, policy bot, and simulated tickets. | | Admin | Back-office queues for refunds, tickets, and accounts (not production security). | Seamless interaction: Sidebar navigation, tabbed Terms, two-column chat + tools on Document Assistant, an",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R20",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nCatalog packages (illustrative INR pricing) Duration: every row is 1 Night / 1 Day — depart on Day 1 (morning or afternoon), one overnight stay, return on Day 2 (evening). Base prices are per traveler (single occupancy, private room) in INR\n\n<span class=\"rag-inline-cite\" title=\"Catalog packages (illustrative INR pricing) Duration: every row is ",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R21",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. - Confirm package booking creates a confirmed record with the shown total — no payment gateway is used. - The final amount stored on the booking is the estimate at confirmation time; it is not a contract with any real operator.\n\n<span class=\"rag-inline-cite\" title=\". - Confirm package booking creates a confirmed record with the shown total — ",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R22",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. 4. Total = base subtotal × multiplier + night add-on. Per traveler = total ÷ travelers. Worked example — Weekend Escape ( weekend escape ), 2 travelers, 1 night: - Catalog base: ₹4,899 / person → base subtotal ₹9,798. - Standard total: ₹9,798 (₹4,899 / person). - Flex total: ₹10,974 (₹5,487 / person) — includes ₹1,176 fare premium. When to ch",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": true,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R23",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. - Confirm package booking creates a confirmed record with the shown total — no payment gateway is used. - The final amount stored on the booking is the estimate at confirmation time; it is not a contract with any real operator.\n\n<span class=\"rag-inline-cite\" title=\". - Confirm package booking creates a confirmed record with the shown total — ",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R24",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. Transport: Round-trip AC coach (approx. 7–8 h each way); seat numbers assigned at boarding. Meals: Breakfast on Day 2; other meals on your own unless added at booking. Sightseeing: Naini Lake promenade, Mall Road cafes, optional Snow View point (entry fees extra). Exclusions: Monument entry, personal insurance, tips, meals except breakfast, o",
+        "escalate": true,
+        "expect_escalate": true,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R25",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nPremium bus: refundable with moderate fee close to departure. Travel mode: bus. Ticket type: volvo. Refundability: full. Minimum hours before departure: 6. Cancellation fee (configured fraction of fare): 10%. Max refundable fraction after fee: 100%. Processing: 2–5 business days.\n\n<span class=\"rag-inline-cite\" title=\"Premium bus: refundable wit",
+        "escalate": true,
+        "expect_escalate": true,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": true,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": true
+        },
+        "context_preview": "",
+        "pass": true
+      },
+      {
+        "test_id": "T-R26",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\n. Cancellation / refunds: Package policies apply; Flex tier recommended for date changes within 72 h window. Ideal for: Weekend urban explorers and history buffs. Contact: Travel Packages · support@-trip-planner.local Package: Heritage Trail ( heritage trail ) Tagline: 1 night Pink City — coach, hotel & fort circuit Typical route: Delhi → Jaipu",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R27",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nTrip Planner generates day-by-day itineraries using OpenStreetMap data and an AI agent (Gemini). - Itineraries are suggestions only — not confirmed reservations for flights, hotels, trains, or activities. - Places, times, and tips may be incomplete or outdated; verify before real travel. - Trip history in the sidebar saves plans locally for you",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": false,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [
+            "night_add_on_rate"
+          ],
+          "passed": false
+        },
+        "context_preview": "",
+        "pass": false
+      },
+      {
+        "test_id": "T-R28",
+        "reply_preview": "From the **Terms & Conditions & Policies** document:\n\nQuestion: How is refund eligibility decided? Answer: A rule-based engine checks booking status, departure time, ticket policy, duplicate requests, and account flags. The Refund Assistant explains the result but cannot override the rules.\n\n<span class=\"rag-inline-cite\" title=\"Question: How is refund eligibility decided? Answer: A rule-based engi",
+        "escalate": true,
+        "expect_escalate": false,
+        "sources_count": 3,
+        "code_checks": {
+          "keywords_ok": true,
+          "citation_ok": true,
+          "terms_attribution_ok": true,
+          "package_math_gaps": [],
+          "passed": true
+        },
+        "context_preview": "",
+        "pass": false
+      }
+    ],
+    "support_faq_rows": [
+      {
+        "test_id": "S-01",
+        "expected_route": "empty",
+        "actual_route": "empty",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "Please ask about bookings, refunds, packages, or account rules. I answer from the **Terms & Policies** document."
+      },
+      {
+        "test_id": "S-02",
+        "expected_route": "greeting",
+        "actual_route": "greeting",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "Hello! I answer using the **Terms & Conditions & Policies** text plus your account data. Try: package cancellation rules, refund eligibility, support tickets, or your refund status."
+      },
+      {
+        "test_id": "S-03",
+        "expected_route": "greeting",
+        "actual_route": "greeting",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "Hello! I answer using the **Terms & Conditions & Policies** text plus your account data. Try: package cancellation rules, refund eligibility, support tickets, or your refund status."
+      },
+      {
+        "test_id": "S-04",
+        "expected_route": "account_status",
+        "actual_route": "terms_rag_loose",
+        "escalate": true,
+        "expect_escalate": true,
+        "route_match": false,
+        "escalate_match": true,
+        "pass": false,
+        "reply_preview": "I could not find a clear match in **Terms & Policies**. Please rephrase, open **Terms & Policies** in the sidebar, or create a support ticket."
+      },
+      {
+        "test_id": "S-05",
+        "expected_route": "account_status",
+        "actual_route": "account_status",
+        "escalate": true,
+        "expect_escalate": true,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "Your account status is **Blacklisted**. See **Account Status** for restriction details. You can submit an appeal or open a ticket under Account Restriction."
+      },
+      {
+        "test_id": "S-06",
+        "expected_route": "refund_status",
+        "actual_route": "refund_status",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "Latest request **RR-8D0511A3** for booking **BK-PKG-6F321B7C**: workflow **Completed** (Manual Review Required)."
+      },
+      {
+        "test_id": "S-07",
+        "expected_route": "refund_status",
+        "actual_route": "refund_status",
+        "escalate": true,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": false,
+        "pass": true,
+        "reply_preview": "Latest request **RR-SEED-0001** for booking **BK-FLT-1201**: workflow **Rejected** (Not Eligible)."
+      },
+      {
+        "test_id": "S-08",
+        "expected_route": "booking_lookup",
+        "actual_route": "booking_lookup",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "**BK-FLT-1001**: Delhi (DEL) → Goa (GOI), status **confirmed**, policy **Flight — Flex fare**."
+      },
+      {
+        "test_id": "S-09",
+        "expected_route": "booking_lookup",
+        "actual_route": "booking_lookup",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "**BK-FLT-1102**: Hyderabad (HYD) → Dubai (DXB), status **confirmed**, policy **Flight — Basic / promo fare**."
+      },
+      {
+        "test_id": "S-10",
+        "expected_route": "booking_not_found",
+        "actual_route": "booking_not_found",
+        "escalate": false,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "That booking was not found for your account."
+      },
+      {
+        "test_id": "S-11",
+        "expected_route": "terms_rag",
+        "actual_route": "terms_rag_loose",
+        "escalate": true,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": false,
+        "pass": false,
+        "reply_preview": "I could not find a clear match in **Terms & Policies**. Please rephrase, open **Terms & Policies** in the sidebar, or create a support ticket."
+      },
+      {
+        "test_id": "S-12",
+        "expected_route": "terms_rag",
+        "actual_route": "terms_rag_loose",
+        "escalate": true,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": false,
+        "pass": false,
+        "reply_preview": "I could not find a clear match in **Terms & Policies**. Please rephrase, open **Terms & Policies** in the sidebar, or create a support ticket."
+      },
+      {
+        "test_id": "S-13",
+        "expected_route": "no_match_or_loose",
+        "actual_route": "terms_rag_loose",
+        "escalate": true,
+        "expect_escalate": true,
+        "route_match": true,
+        "escalate_match": true,
+        "pass": true,
+        "reply_preview": "I could not find a clear match in **Terms & Policies**. Please rephrase, open **Terms & Policies** in the sidebar, or create a support ticket."
+      },
+      {
+        "test_id": "S-14",
+        "expected_route": "terms_rag",
+        "actual_route": "terms_rag_loose",
+        "escalate": true,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": false,
+        "pass": false,
+        "reply_preview": "I could not find a clear match in **Terms & Policies**. Please rephrase, open **Terms & Policies** in the sidebar, or create a support ticket."
+      },
+      {
+        "test_id": "S-15",
+        "expected_route": "terms_rag",
+        "actual_route": "terms_rag_loose",
+        "escalate": true,
+        "expect_escalate": false,
+        "route_match": true,
+        "escalate_match": false,
+        "pass": false,
+        "reply_preview": "I could not find a clear match in **Terms & Policies**. Please rephrase, open **Terms & Policies** in the sidebar, or create a support ticket."
+      }
+    ],
+    "wikivoyage_rows": [
+      {
+        "test_id": "W-01",
+        "destination": "Tokyo",
+        "query": "best time to visit",
+        "enabled_chunk_count": 1,
+        "disabled_empty": true,
+        "top_scores": [
+          0.2182
+        ],
+        "retrieve_guides_executed": true,
+        "pass": true
+      },
+      {
+        "test_id": "W-02",
+        "destination": "Paris",
+        "query": "important attractions museums",
+        "enabled_chunk_count": 1,
+        "disabled_empty": true,
+        "top_scores": [
+          0.3086
+        ],
+        "retrieve_guides_executed": true,
+        "pass": true
+      },
+      {
+        "test_id": "W-03",
+        "destination": "London",
+        "query": "local transportation getting around",
+        "enabled_chunk_count": 1,
+        "disabled_empty": true,
+        "top_scores": [
+          0.3086
+        ],
+        "retrieve_guides_executed": true,
+        "pass": true
+      },
+      {
+        "test_id": "W-04",
+        "destination": "Singapore",
+        "query": "travel recommendations food",
+        "enabled_chunk_count": 1,
+        "disabled_empty": true,
+        "top_scores": [
+          0.2182
+        ],
+        "retrieve_guides_executed": true,
+        "pass": true
+      },
+      {
+        "test_id": "W-05",
+        "destination": "Tokyo",
+        "query": "districts and neighborhoods",
+        "enabled_chunk_count": 0,
+        "disabled_empty": true,
+        "top_scores": [],
+        "retrieve_guides_executed": true,
+        "pass": false
+      },
+      {
+        "test_id": "W-06",
+        "destination": "Xyznonexistent999City",
+        "query": "travel guide",
+        "enabled_chunk_count": 0,
+        "disabled_empty": true,
+        "top_scores": [],
+        "retrieve_guides_executed": true,
+        "pass": true
+      },
+      {
+        "test_id": "W-07",
+        "destination": "",
+        "query": "anything",
+        "enabled_chunk_count": 0,
+        "disabled_empty": true,
+        "top_scores": [],
+        "retrieve_guides_executed": true,
+        "pass": true
+      },
+      {
+        "test_id": "W-08",
+        "destination": "Paris",
+        "query": "",
+        "enabled_chunk_count": 1,
+        "disabled_empty": true,
+        "top_scores": [
+          0.4364
+        ],
+        "retrieve_guides_executed": true,
+        "pass": true
+      }
+    ],
+    "url_rag_rows": [
+      {
+        "test_id": "U-01",
+        "url": "",
+        "validate_ok": false,
+        "validate_msg": "Please enter a URL.",
+        "pass": true,
+        "note": "validate_http_url rejected input"
+      },
+      {
+        "test_id": "U-02",
+        "url": "ftp://example.com/policy",
+        "validate_ok": false,
+        "validate_msg": "URL must start with http:// or https://.",
+        "pass": true,
+        "note": "validate_http_url rejected input"
+      },
+      {
+        "test_id": "U-03",
+        "url": "not-a-url",
+        "validate_ok": false,
+        "validate_msg": "URL must start with http:// or https://.",
+        "pass": true,
+        "note": "validate_http_url rejected input"
+      },
+      {
+        "test_id": "U-04",
+        "url": "https://example.com",
+        "validate_ok": true,
+        "validate_msg": "https://example.com",
+        "retrieve_count": 0,
+        "retrieve_error": null,
+        "pass": true,
+        "note": "retrieve_from_url tested with FakeEmbeddings — not live chat path"
+      },
+      {
+        "test_id": "U-05",
+        "url": "https://invalid.invalid.test/path",
+        "validate_ok": true,
+        "validate_msg": "https://invalid.invalid.test/path",
+        "load_error": "Could not load URL: HTTPSConnectionPool(host='invalid.invalid.test', port=443): Max retries exceeded with url: /path (Caused by NameResolutionError(\"HTTPSConnection(host='invalid.invalid.test', port=443): Failed to resolve 'invalid.invalid.test' ([Errno 8] nodename nor servname provided, or not known)\"))",
+        "pass": true
+      },
+      {
+        "test_id": "U-06",
+        "url": "https://example.com",
+        "validate_ok": true,
+        "validate_msg": "https://example.com",
+        "pass": true
+      }
+    ],
+    "refund_rules_rows": [
+      {
+        "test_id": "F-01",
+        "booking_id": "BK-FLT-1001",
+        "expected_eligibility": "Eligible",
+        "actual_eligibility": "Eligible",
+        "estimated_refund": 11827.5,
+        "pass": true
+      },
+      {
+        "test_id": "F-02",
+        "booking_id": "BK-FLT-1102",
+        "expected_eligibility": "Not Eligible",
+        "actual_eligibility": "Not Eligible",
+        "estimated_refund": 0.0,
+        "pass": true
+      },
+      {
+        "test_id": "F-03",
+        "booking_id": "BK-FLT-1101",
+        "expected_eligibility": "Partially Eligible",
+        "actual_eligibility": "Partially Eligible",
+        "estimated_refund": 2197.0,
+        "pass": true
+      },
+      {
+        "test_id": "F-04",
+        "booking_id": "BK-BUS-3001",
+        "expected_eligibility": "Not Eligible",
+        "actual_eligibility": "Not Eligible",
+        "estimated_refund": 0.0,
+        "pass": true
+      },
+      {
+        "test_id": "F-05",
+        "booking_id": "BK-FLT-1201",
+        "expected_eligibility": "Not Eligible",
+        "actual_eligibility": "Not Eligible",
+        "estimated_refund": 0.0,
+        "pass": true
+      },
+      {
+        "test_id": "F-06",
+        "booking_id": "BK-FLT-1401",
+        "expected_eligibility": "Manual Review Required",
+        "actual_eligibility": "Manual Review Required",
+        "estimated_refund": 0.0,
+        "pass": true
+      },
+      {
+        "test_id": "F-07",
+        "booking_id": "BK-FLT-1001",
+        "expected_eligibility": "Not Eligible",
+        "actual_eligibility": "Not Eligible",
+        "estimated_refund": 0.0,
+        "pass": true
+      },
+      {
+        "test_id": "F-08",
+        "booking_id": "BK-TRN-2001",
+        "expected_eligibility": "Partially Eligible",
+        "actual_eligibility": "Partially Eligible",
+        "estimated_refund": 1025.95,
+        "pass": true
+      },
+      {
+        "test_id": "F-09",
+        "pass": true,
+        "error": "missing_booking"
+      },
+      {
+        "test_id": "F-10",
+        "booking_id": "BK-FLT-1002",
+        "expected_eligibility": "Not Eligible",
+        "actual_eligibility": "Not Eligible",
+        "estimated_refund": 0.0,
+        "pass": true
+      }
+    ]
+  }
+}

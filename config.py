@@ -162,14 +162,6 @@ def is_destination_guide_ai_enabled() -> bool:
     return _env_bool("DESTINATION_GUIDE_AI", default=False)
 
 
-def get_orchestration_mode() -> str:
-    """Trip generate orchestration: gemini (default) or crew (CrewAI multi-agent)."""
-    raw = _strip_env_value(os.environ.get("ORCHESTRATION_MODE", "gemini")).lower()
-    if raw not in ("gemini", "crew"):
-        return "gemini"
-    return raw
-
-
 def get_overpass_urls() -> tuple[str, ...]:
     """Overpass interpreter URLs: OVERPASS_URL from .env, then built-in fallbacks."""
     primary = _strip_env_value(os.environ.get("OVERPASS_URL", "")) or OVERPASS_URL
@@ -219,18 +211,6 @@ def get_semantic_cache_max_entries() -> int:
         return max(1, int(raw))
     except ValueError:
         return SEMANTIC_CACHE_MAX_ENTRIES_DEFAULT
-
-
-def configure_crewai_storage() -> None:
-    """
-    Store CrewAI app data under project ``data/`` (avoids macOS Application Support issues).
-    Call before importing ``crewai``.
-    """
-    xdg = DATA_DIR / "xdg_data"
-    xdg.mkdir(parents=True, exist_ok=True)
-    os.environ.setdefault("XDG_DATA_HOME", str(xdg))
-    os.environ.setdefault("CREWAI_STORAGE_DIR", "crewai")
-
 
 # Cap Wikipedia photo lookups per itinerary render (speed)
 MAX_ITINERARY_PHOTO_STOPS = 12
