@@ -45,11 +45,11 @@ def _load_env_file() -> None:
 _load_env_file()
 
 # Persistence paths required by the capstone instructions
-DATA_DIR = PROJECT_ROOT / "data"
-APP_STATE_PATH = DATA_DIR / "app_state.json"
-FEEDBACK_PATH = DATA_DIR / "feedback.jsonl"
-DEMO_BOOKINGS_PATH = DATA_DIR / "demo_bookings.json"
-CUSTOMER_PORTAL_STATE_PATH = DATA_DIR / "customer_portal_state.json"
+DATA_DIR = PROJECT_ROOT / "data" # Path to the data directory
+APP_STATE_PATH = DATA_DIR / "app_state.json" #Stores general application state in JSON.
+FEEDBACK_PATH = DATA_DIR / "feedback.jsonl" #Stores feedback in JSONL format.
+DEMO_BOOKINGS_PATH = DATA_DIR / "demo_bookings.json" #Stores demo bookings in JSON.
+CUSTOMER_PORTAL_STATE_PATH = DATA_DIR / "customer_portal_state.json" #Stores customer portal information.
 
 # OpenStreetMap endpoints (free, no API key)
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -89,12 +89,12 @@ PROMPT_CACHE_VERSION = 1
 
 # Semantic retrieval cache (Terms KB chunks only — not LLM replies)
 SEMANTIC_CACHE_THRESHOLD_DEFAULT = 0.91
-SEMANTIC_CACHE_MAX_ENTRIES_DEFAULT = 200
+SEMANTIC_CACHE_MAX_ENTRIES_DEFAULT = 200 #Maximum number of entries in the semantic cache.
 
 # Agent loop limits
-DEFAULT_MAX_STEPS = 6
-FAST_MODE_MAX_STEPS = 4
-FAST_POI_LIMIT = 45
+DEFAULT_MAX_STEPS = 6 #Maximum number of steps in the agent loop.
+FAST_MODE_MAX_STEPS = 4 #Maximum number of steps in the agent loop in fast mode.
+FAST_POI_LIMIT = 45 #Maximum number of POIs in the agent loop in fast mode.
 
 # Feedback boost weights from instructions
 UPVOTE_BOOST = 0.25
@@ -127,7 +127,7 @@ def get_gemini_api_key() -> Optional[str]:
     key = _strip_env_value(os.environ.get("GEMINI_API_KEY", ""))
     return key or None
 
-
+# default embedding model used is gemini-embedding-001
 def get_gemini_embedding_model_candidates() -> tuple[str, ...]:
     """Ordered embedding model ids to try for FAISS indexing."""
     override = _strip_env_value(os.environ.get("GEMINI_EMBEDDING_MODEL", ""))
@@ -161,7 +161,8 @@ def is_destination_guide_ai_enabled() -> bool:
     """Extra Gemini call for season copy (DESTINATION_GUIDE_AI in .env, default off)."""
     return _env_bool("DESTINATION_GUIDE_AI", default=False)
 
-
+#default overpass url is https://overpass-api.de/api/interpreter
+#fallback urls are https://lz4.overpass-api.de/api/interpreter, https://z.overpass-api.de/api/interpreter, https://overpass.kumi.systems/api/interpreter, https://overpass.openstreetmap.fr/api/interpreter, https://overpass.osm.ch/api/interpreter
 def get_overpass_urls() -> tuple[str, ...]:
     """Overpass interpreter URLs: OVERPASS_URL from .env, then built-in fallbacks."""
     primary = _strip_env_value(os.environ.get("OVERPASS_URL", "")) or OVERPASS_URL
@@ -214,3 +215,4 @@ def get_semantic_cache_max_entries() -> int:
 
 # Cap Wikipedia photo lookups per itinerary render (speed)
 MAX_ITINERARY_PHOTO_STOPS = 12
+#Limits Wikipedia photo lookups to 12 stops per itinerary render to improve speed.

@@ -1,0 +1,12 @@
+flowchart LR
+  A[Trip agent<br/>calls retrieve_guides] --> B{ENABLE_<br/>WIKIVOYAGE_RAG?}
+  B -->|false| Z[Empty chunks<br/>tool skipped]
+  B -->|true| C{Destination in<br/>_RAG_CACHE?}
+  C -->|no| D[MediaWiki API<br/>fetch article HTML]
+  D --> E[Strip HTML<br/>chunks ~800–1000 chars]
+  E --> F[Build TF‑IDF index<br/>for that city]
+  F --> G[Save in<br/>_RAG_CACHE]
+  C -->|yes| G
+  G --> H[Score query vs chunks<br/>cosine similarity]
+  H --> I[Return top‑k chunks<br/>to agent]
+  I --> J[Gemini uses chunks<br/>while planning itinerary]

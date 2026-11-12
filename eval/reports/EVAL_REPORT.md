@@ -10,6 +10,61 @@ _Generated: 2026-11-02T09:33:42.980664+00:00_
 ## 1. Architecture (verified)
 Separate stacks: Terms FAISS+Gemini, Support FAQ rules+RAG, Wikivoyage TF-IDF, URL FAISS (optional), Refund rules engine.
 
+### High-level eval flow
+
+```mermaid
+flowchart TB
+  subgraph datasets["Golden data"]
+    D1[terms_rag_golden.jsonl]
+    D2[support_faq_routing.jsonl]
+    D3[wikivoyage_golden.jsonl]
+    D4[refund_decision_table.jsonl]
+  end
+
+  subgraph entry["Entry points"]
+    PY[pytest tests/eval/]
+    MOD[python -m eval → run_baseline.py]
+  end
+
+  subgraph runners["runners/"]
+    TR[terms_retrieval]
+    TG[terms_generation]
+    SF[support_faq]
+    WV[wikivoyage]
+    RF[refund_rules]
+  end
+
+  subgraph evaluators["evaluators/"]
+    RM[retrieval_metrics]
+    CC[code_checks]
+    LJ[llm_judge optional]
+  end
+
+  subgraph prod["Production services (unchanged)"]
+    WR[website_rag / terms_rag FAISS]
+    SUP[support_faq routing]
+    WVR[wikivoyage_rag TF-IDF]
+    REF[evaluate_refund_request]
+  end
+
+  subgraph out["Outputs"]
+    ART[artifacts/baseline_*.json]
+    RPT[reports/EVAL_REPORT.md]
+    TRA[tracing/eval_*.jsonl]
+    SWP[experiments min_relevance sweep]
+  end
+
+  datasets --> runners
+  PY --> runners
+  MOD --> runners
+  runners --> evaluators
+  runners --> prod
+  MOD --> SWP
+  MOD --> ART
+  MOD --> RPT
+  runners -.-> TRA
+```
+
 ## 2. Terms / Policy RAG — retrieval (FakeEmbeddings CI)
 - Cases: 28
 - Hit@1: 0.1111

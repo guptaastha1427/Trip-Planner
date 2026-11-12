@@ -87,20 +87,20 @@ from services.core.validation import (
     verify_single_day_unchanged,
 )
 
-
+#hint_card_links: Returns a list of tuples containing the link and the name of the place.
 def hint_card_links(place: Dict[str, Any], kind: str = "hotel") -> List[tuple]:
     """Lazy import — avoids Streamlit hot-reload ImportError on hint_links."""
     from services.trip.hint_links import hint_card_links as _links
 
     return _links(place, kind)
 
-
+#_show_refinement_diff: Shows the refinement diff between the before and after itineraries.
 def _show_refinement_diff(before: Optional[Dict], after: Optional[Dict]) -> None:
     """Human-readable before/after stop names after refine."""
     if not before or not after:
         st.caption("Itinerary was updated.")
         return
-
+    #_stop_names: Returns a list of the names of the stops in the itinerary.
     def _stop_names(itin: Dict) -> List[str]:
         names: List[str] = []
         for day in itin.get("days", []):
@@ -120,13 +120,13 @@ def _show_refinement_diff(before: Optional[Dict], after: Optional[Dict]) -> None
         st.markdown("**Before:** " + " → ".join(old_names[:12]))
         st.markdown("**After:** " + " → ".join(new_names[:12]))
 
-
+#_init_session: Initializes the session state.
 def _init_session() -> None:
     """Load trip history once per browser session; planner starts with no active itinerary."""
     if "bootstrapped" in st.session_state:
         return
-    disk = load_app_state()
-    get_trip_history_cached()
+    disk = load_app_state() #loads the app state from the data/app_state.json file.
+    get_trip_history_cached() #gets the trip history from the session cache.
     st.session_state.bootstrapped = True
     _clear_active_trip(reset_form=True)
     st.session_state.last_error = None
@@ -135,20 +135,22 @@ def _init_session() -> None:
         _mark_dirty()
 
 
+#_mark_dirty: Marks the session state as dirty so that the itinerary and form fields are written to the data/app_state.json file.
 def _mark_dirty() -> None:
     """Coalesce disk writes — one flush per rerun at end of main()."""
     st.session_state["_persist_dirty"] = True
 
 
+#_flush_persist: Writes the itinerary and form fields to the data/app_state.json file.
 def _flush_persist() -> None:
     """Write itinerary + form fields to data/app_state.json (trip_history from session cache)."""
-    save_app_state(
+    save_app_state(#saves the itinerary and form fields to the data/app_state.json file.
         {
             "itinerary": st.session_state.get("itinerary"),
             "tool_state": st.session_state.get("tool_state"),
             "agent_trace": [
                 t.__dict__ if hasattr(t, "__dict__") else t
-                for t in sanitize_agent_trace(st.session_state.get("agent_trace", []))[-80:]
+                for t in sanitize_agent_trace(st.session_state.get("agent_trace", []))[-80:] #sanitizes the agent trace to a maximum of 80 steps.
             ],
             "form_destination": st.session_state.form_destination,
             "form_origin": st.session_state.get("form_origin", ""),
@@ -156,18 +158,18 @@ def _flush_persist() -> None:
             "form_pace": st.session_state.form_pace,
             "form_interests": st.session_state.form_interests,
             "form_constraints": st.session_state.form_constraints,
-            "trip_history": get_trip_history_cached(),
+            "trip_history": get_trip_history_cached(), #gets the trip history from the session cache.
         }
     )
     st.session_state["_persist_dirty"] = False
 
 
-def _persist_if_dirty() -> None:
+def _persist_if_dirty() -> None: #writes the itinerary and form fields to the data/app_state.json file if the session state is dirty.
     if st.session_state.get("_persist_dirty"):
         _flush_persist()
 
 
-def _resolve_gemini_key() -> Optional[str]:
+def _resolve_gemini_key() -> Optional[str]: #resolves the Gemini API key from the .env file or the Streamlit secrets.
     """Gemini key from `.env` or Streamlit secrets."""
     key = get_gemini_api_key()
     if key:
@@ -179,12 +181,12 @@ def _resolve_gemini_key() -> Optional[str]:
         return None
 
 
-def _parse_interests(text: str) -> List[str]:
+def _parse_interests(text: str) -> List[str]: #parses the interests from the user's request.
     return [p.strip() for p in text.split(",") if p.strip()]
 
 
 # Tap-to-fill examples only — does not load saved itineraries.
-_TRIP_IDEA_SUGGESTIONS: List[Dict[str, Any]] = [
+_TRIP_IDEA_SUGGESTIONS: List[Dict[str, Any]] = [ #a list of trip ideas.
     {
         "label": "Goa · 2 days",
         "origin": "Mumbai",
@@ -212,7 +214,7 @@ _TRIP_IDEA_SUGGESTIONS: List[Dict[str, Any]] = [
 ]
 
 
-def _clear_active_trip(*, reset_form: bool = False) -> None:
+def _clear_active_trip(*, reset_form: bool = False) -> None: #clears the active trip.
     """Drop in-memory itinerary so the planner opens fresh (history sidebar unchanged)."""
     st.session_state.itinerary = None
     st.session_state.tool_state = {"pois": {}, "chunks": []}
@@ -230,7 +232,7 @@ def _clear_active_trip(*, reset_form: bool = False) -> None:
         st.session_state.form_constraints = ""
 
 
-def _apply_trip_idea(idea: Dict[str, Any]) -> None:
+def _apply_trip_idea(idea: Dict[str, Any]) -> None: #applies the trip idea to the session state.
     _clear_active_trip(reset_form=False)
     st.session_state.form_origin = idea.get("origin", "")
     st.session_state.form_destination = idea.get("destination", "")
@@ -241,7 +243,7 @@ def _apply_trip_idea(idea: Dict[str, Any]) -> None:
     _mark_dirty()
 
 
-def _render_trip_idea_suggestions() -> None:
+def _render_trip_idea_suggestions() -> None: #renders the trip idea suggestions.
     if st.session_state.get("itinerary"):
         return
     st.caption("**Trip ideas** — tap to fill the form (then **Create my itinerary**).")
@@ -257,7 +259,7 @@ def _render_trip_idea_suggestions() -> None:
             )
 
 
-def _apply_history_entry(entry: dict) -> None:
+def _apply_history_entry(entry: dict) -> None: #restores a saved trip into the active session.
     """Restore a saved trip into the active session (no disk write — instant rerun)."""
     st.session_state.itinerary = copy.deepcopy(entry.get("itinerary"))
     st.session_state.tool_state = copy.deepcopy(
@@ -276,16 +278,16 @@ def _apply_history_entry(entry: dict) -> None:
     _mark_dirty()
 
 
-def _delete_trip_history_entry(entry_id: str, portal_user_id: str) -> bool:
+def _delete_trip_history_entry(entry_id: str, portal_user_id: str) -> bool: #deletes a trip from the trip history.
     """Remove one sidebar history row (uses public trip_history helpers)."""
-    if not entry_id or not find_history_entry(entry_id, portal_user_id):
+    if not entry_id or not find_history_entry(entry_id, portal_user_id): #checks if the entry id is valid and if the entry exists in the trip history.
         return False
     kept = [e for e in get_trip_history_cached() if e.get("id") != entry_id]
-    save_trip_history(kept, persist_disk=True)
+    save_trip_history(kept, persist_disk=True) #saves the trip history to the data/app_state.json file.
     return True
 
 
-def _render_sidebar_history() -> None:
+def _render_sidebar_history() -> None: #renders the trip history in the sidebar.
     """Past trips — click to load on Trip Planner (render inside sidebar expander)."""
     portal_uid = resolve_portal_user_id()
     trips = list_trip_history_for_portal_user(portal_uid)
@@ -316,11 +318,11 @@ def _render_sidebar_history() -> None:
                     st.rerun()
 
     if st.button("Clear my trip history", type="secondary", use_container_width=True):
-        clear_trip_history_for_portal_user(portal_uid, persist_disk=True)
+        clear_trip_history_for_portal_user(portal_uid, persist_disk=True) #clears the trip history for the portal user.
         st.rerun()
 
 
-def render_global_sidebar() -> None:
+def render_global_sidebar() -> None: #renders the global sidebar.
     """Shared sidebar below app navigation — history, tools, account."""
     st.sidebar.divider()
     if is_admin_dashboard_mode():
@@ -332,7 +334,7 @@ def render_global_sidebar() -> None:
     render_sidebar_user_dock()
 
 
-def _agent_settings() -> Dict[str, Any]:
+def _agent_settings() -> Dict[str, Any]: #agent will use these settings to plan the trip.
     """Model and agent options (from config / .env, not shown in sidebar)."""
     if "map_style" not in st.session_state:
         st.session_state.map_style = "light"
@@ -346,7 +348,7 @@ def _agent_settings() -> Dict[str, Any]:
     }
 
 
-def _run_generation(mode: str, user_request: str = "", target_day: Optional[int] = None) -> None:
+def _run_generation(mode: str, user_request: str = "", target_day: Optional[int] = None) -> None: #It executes the core trip-planning or text-generation loop (often asynchronously) to build itineraries, handle agent steps, or compile outputs.
     """Shared path for generate / refine / single-day flows."""
     settings = st.session_state.get("_sidebar_settings", {})
     api_key = settings.get("api_key") or _resolve_gemini_key()
@@ -438,8 +440,9 @@ def _run_generation(mode: str, user_request: str = "", target_day: Optional[int]
         on_progress=progress,
         on_trace=sync_trace,
     )
+    #******************************************************************************************************************#
     with st.spinner(spinner_msg):
-        result = run_agent(
+        result = run_agent( # here the agent is actually called to plan the trip.
             **agent_kwargs,
             fast_mode=settings.get("fast_mode", False),
             max_steps=settings.get("max_steps"),
@@ -547,7 +550,7 @@ def _save_trip_for_portal_user(
     append_trip_record(**common)
 
 
-def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7) -> None:
+def _render_beginner_travel_guide(tool_state: Dict[str, Any], trip_days: int = 7) -> None: 
     """Source/destination, weather, guide, airports, budget hotels, and map tips."""
     hints = (tool_state or {}).get("travel_hints") or {}
     guide = (tool_state or {}).get("destination_guide")
@@ -741,7 +744,7 @@ BLOCK_HEADINGS = {
 }
 
 
-def _apply_stop_swap(
+def _apply_stop_swap( #replaces one itinerary stop with a nearby catalog POI.
     day_num: int,
     block: str,
     idx: int,
@@ -774,7 +777,7 @@ def _apply_stop_swap(
     _mark_dirty()
 
 
-def _streamlit_accepts(param: str, func: Any) -> bool:
+def _streamlit_accepts(param: str, func: Any) -> bool: 
     try:
         return param in inspect.signature(func).parameters
     except (TypeError, ValueError):
@@ -782,7 +785,7 @@ def _streamlit_accepts(param: str, func: Any) -> bool:
 
 
 @contextmanager
-def _nearby_alternatives_row(row_key: str) -> Iterator[None]:
+def _nearby_alternatives_row(row_key: str) -> Iterator[None]: 
     """Horizontal button row — omit kwargs this Streamlit build does not support."""
     kwargs: Dict[str, Any] = {}
     if _streamlit_accepts("horizontal", st.container):
@@ -854,7 +857,7 @@ def _render_nearby_alternatives(
                 st.rerun()
 
 
-def _render_poi_feedback(
+def _render_poi_feedback( 
     city_key: str,
     day_num: int,
     block: str,
@@ -979,7 +982,7 @@ def _render_route_map(
 def trip_planner_page() -> None:
     inject_ui_animations()
     _init_session()
-    sync_portal_user_context()
+    sync_portal_user_context() 
     if st.session_state.get("show_celebration"):
         st.balloons()
         st.session_state.show_celebration = False

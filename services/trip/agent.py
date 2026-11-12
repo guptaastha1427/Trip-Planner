@@ -605,10 +605,15 @@ def _run_fast_refine(
     _trace_step(trace, kind="agent", name="agent_start", detail=f"fast {mode} · {destination} · day {target_day or 'all'}")
     step_total = SINGLE_DAY_STEP_TOTAL if mode == "single_day" else REFINE_STEP_TOTAL
     plan_step(on_progress, 1, step_total, "Planner", f"starting {mode.replace('_', ' ')}")
+    #_seed_pois_from_itinerary: Seeds the POI catalog with the existing itinerary.
     _seed_pois_from_itinerary(tool_state, existing_itinerary)
+    #_refine_search_phrase: Refines the search phrase for the user's request.
     phrase = _refine_search_phrase(user_request)
+    #extra_interests: Adds the extra interests to the search phrase.
     extra_interests = list(dict.fromkeys(interests + [w for w in phrase.split() if len(w) > 3]))
 
+    #is_add_only_request: Checks if the user's request is only adding a single place (no change to existing itinerary).
+    #try_surgical_refine: Attempts to refine the itinerary using a surgical approach (adding a single place).
     if is_add_only_request(user_request):
         plan_step(on_progress, 2, step_total, "Quick edit", "adding place locally…")
         quick = try_surgical_refine(
@@ -620,6 +625,11 @@ def _run_fast_refine(
             destination=destination,
             user_agent=user_agent,
         )
+
+        #_trace_step: Records execution steps and events for debugging/tracking.
+        #plan_step: Updates the user's progress indicator in the UI.
+        #_postprocess_success: Performs final processing and cleanup after successful itinerary refinement.
+
         if quick:
             _trace_step(
                 trace,
@@ -654,11 +664,13 @@ def _run_fast_refine(
         query_text=None,
         fast=True,
     )
+
     if broad.get("ok") and broad.get("pois"):
         _merge_pois(tool_state, broad["pois"])
         if broad.get("city_meta"):
             tool_state["city_meta"] = broad["city_meta"]
 
+    #search_pois: Searches for POIs based on the user's request.
     poi_result = search_pois(
         city=destination,
         interests=extra_interests,
@@ -667,6 +679,7 @@ def _run_fast_refine(
         query_text=phrase,
         fast=True,
     )
+    #_merge_pois: Merges the new POIs with existing POIs in tool_state.
     if poi_result.get("ok") and poi_result.get("pois"):
         _merge_pois(tool_state, poi_result["pois"])
         if poi_result.get("city_meta"):
@@ -680,8 +693,13 @@ def _run_fast_refine(
         detail=f"{len(tool_state.get('pois', {}))} POIs in catalog",
     )
 
+    #1. _add_geocoded_place() finds the actual geographic location (coordinates) of the extracted phrase or place name and adds it to the POI catalog.
+
+    #_quoted_phrase: Checks if the user's request is a quoted phrase or place name.
+    #extract_place_phrase: Extracts the place name from the user's request.
     _add_geocoded_place(tool_state, phrase, destination, user_agent)
     quoted = _quoted_phrase(user_request)
+    #IF a quoted phrase or place name exists, it searches with the destination and without it to find the correct location even if the destination context is missing.
     if quoted:
         _add_geocoded_place(tool_state, quoted, destination, user_agent)
         _add_geocoded_place(tool_state, quoted, "", user_agent)
@@ -690,6 +708,7 @@ def _run_fast_refine(
         _add_geocoded_place(tool_state, place_name, destination, user_agent)
         _add_geocoded_place(tool_state, place_name, "", user_agent)
 
+    #IF no POIs are available to refine this trip, returns an error.
     if not tool_state.get("pois"):
         return AgentResult(
             ok=False,
@@ -706,6 +725,7 @@ def _run_fast_refine(
         "Gemini",
         "applying your change (other days unchanged)…",
     )
+
     surgical = try_surgical_refine(
         existing_itinerary,
         tool_state["pois"],
@@ -715,6 +735,7 @@ def _run_fast_refine(
         destination=destination,
         user_agent=user_agent,
     )
+    #IF the surgical refinement is successful, returns the refined itinerary.
     if surgical:
         _trace_step(
             trace,
@@ -733,16 +754,18 @@ def _run_fast_refine(
         )
 
     if is_add_only_request(user_request):
+        #IF the user's request is only adding a single place (no change to existing itinerary), returns the refined itinerary.
         itin, change_error = ensure_refinement_changed(
             existing_itinerary,
             None,
             tool_state["pois"],
             user_request,
-            phrase,
+            phrase, 
             target_day=target_day,
             destination=destination,
             user_agent=user_agent,
         )
+        #IF the refinement has actually changed the itinerary, returns the refined itinerary.
         if itin:
             _trace_step(
                 trace,
@@ -766,7 +789,9 @@ def _run_fast_refine(
             error=change_error or "Could not add that place.",
         )
 
+    #_compact_poi_catalog: Compacts the POI catalog to a maximum of 60 POIs.
     catalog = _compact_poi_catalog(tool_state["pois"], min(60, len(tool_state["pois"])))
+    #IF the user's request is only adding a single place (no change to existing itinerary), returns the refined itinerary.
     if mode == "single_day" and target_day:
         task = (
             f"ONLY change day {target_day}. All other days must stay exactly the same.\n"
@@ -775,6 +800,7 @@ def _run_fast_refine(
     else:
         task = f"Refine the full itinerary. Request: {user_request}"
 
+    #_build_system_instructions: Builds the system instruction for the Gemini API.
     system_instruction = (
         "You are a trip planning assistant. Reply with ONLY a JSON object — no markdown. "
         "Use only poi_id values from the POI catalog. Each poi_id at most once in the trip. "
@@ -811,6 +837,7 @@ def _run_fast_refine(
                 else "Fixing refinement JSON…"
             )
         t1 = time.time()
+        #Calls Gemini API to generate the refined itinerary; IF an API error or empty response occurs, returns an error, ELSE extracts the generated text into final_text.
         try:
             _, response = generate_content_with_fallback(
                 client,
@@ -843,6 +870,8 @@ def _run_fast_refine(
             duration_ms=(time.time() - t1) * 1000,
             detail=task[:80],
         )
+
+        # _finalize_itinerary() validates and converts Gemini's JSON into an itinerary; IF valid → breaks the retry loop, ELSE → sends the parsing error back to Gemini to generate corrected JSON.
         itin, parse_error = _finalize_itinerary(
             final_text,
             tool_state,
@@ -1013,9 +1042,9 @@ def run_agent(
     if fast_mode:
         rag_enabled = False
     steps_limit = max_steps or (FAST_MODE_MAX_STEPS if fast_mode else DEFAULT_MAX_STEPS)
-    tool_state = _copy_tool_state(initial_tool_state)
+    tool_state = _copy_tool_state(initial_tool_state) #copies the tool state from the initial tool state.
     if existing_itinerary:
-        _seed_pois_from_itinerary(tool_state, existing_itinerary)
+        _seed_pois_from_itinerary(tool_state, existing_itinerary) #seeds the POIs from the existing itinerary.
     trace: List[AgentTraceStep] = []
 
     if mode in ("refine", "single_day") and existing_itinerary and user_request:

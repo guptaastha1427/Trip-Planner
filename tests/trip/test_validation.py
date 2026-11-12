@@ -10,13 +10,13 @@ from services.core.validation import (
 
 
 def main() -> None:
-    raw = (
+    raw = ( #extract the JSON from the raw text.
         'Here is the plan:\n```json\n'
         '{"days":[{"day":1,"morning":[{"poi_id":"a","name":"x","why":"y"}],'
         '"afternoon":[],"evening":[]}]}\n```'
     )
-    j = extract_json(raw)
-    validate_itinerary_poi_ids(j, {"a": {}})
+    j = extract_json(raw) #extract the JSON from the raw text.
+    validate_itinerary_poi_ids(j, {"a": {}}) #validate the itinerary POIs.
 
     before = {
         "days": [
@@ -35,7 +35,7 @@ def main() -> None:
             },
         ]
     }
-    verify_single_day_unchanged(before, after, 2)
+    verify_single_day_unchanged(before, after, 2) #verify the single day unchanged.
 
     dup = {
         "days": [
@@ -47,13 +47,14 @@ def main() -> None:
             }
         ]
     }
+    #try to validate the itinerary with duplicate POIs, should raise an error.
     try:
         validate_itinerary_unique_pois(dup)
         raise AssertionError("expected duplicate validation error")
     except ValueError:
         pass
-    dedupe_itinerary_pois(dup)
-    validate_itinerary_unique_pois(dup)
+    dedupe_itinerary_pois(dup) #dedupe the itinerary POIs.
+    validate_itinerary_unique_pois(dup) #validate the itinerary POIs again, should not raise an error.
     print("validation ok")
 
 

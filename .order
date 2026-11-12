@@ -1,0 +1,28 @@
+# Explorer sidebar order (workspace root). Requires extension: MeydanOzeri.explorer-sorter
+# Reload window after install. Does not rename anything; extension uses sort-by-modified trick.
+# Listed entries sort in this order; folders and files are sorted separately in the Explorer.
+
+app
+assets
+docs
+scripts
+static
+trip-planner-env
+.streamlit
+data
+eval
+pages
+services
+tests
+.env
+.env.example
+.gitignore
+AGENTS.md
+info.md
+dev.md
+pytest.ini
+README.md
+requirements.txt
+using.md
+app.py
+config.py

@@ -1,0 +1,29 @@
+flowchart TD
+  U1[User asks Policy Question] --> PA[Policy Assistant]
+  U2[User asks a question] --> ASQ["answer_support_query()"]
+  ASQ --> QT{Question Type?}
+  QT -->|Booking / Refund| FUD[Fetch User Data]
+  FUD --> PREP[Prepare Answer]
+  PREP --> DA[Display Answer]
+  PA --> TR[Terms RAG]
+  QT -->|Policy Question| TR
+  TR --> EMB[Convert Question to Embedding]
+  EMB --> SCL[Semantic Cache Lookup]
+  SCL --> SQ{Similar Query Found?}
+  SQ -->|Yes: Cache Hit| RCC[Return Cached Chunks]
+  SQ -->|No: Cache Miss| FAISS[FAISS Similarity Search]
+  RCC --> RRPP[Retrieve Relevant Policy Chunks]
+  FAISS --> RRPP
+  FAISS --> RPC[Relevant Policy Chunks]
+  FAISS --> RRC[Retrieve Relevant Chunks]
+  RRPP --> RSF[Relevance Score Filter]
+  RPC --> G2["Gemini + User Question"]
+  RRC --> SIC[Save Chunks in Cache]
+  SIC --> G3["Gemini + User Question + Chunks"]
+  RSF --> G1["Gemini + Question + Chunks"]
+  G1 --> GPA[Grounded Policy Answer]
+  G2 --> GA[Grounded Answer]
+  G3 --> FGA[Final Grounded Answer]
+  GPA --> SAC[Show Answer + Citations]
+  GA --> DA
+  FGA --> DA

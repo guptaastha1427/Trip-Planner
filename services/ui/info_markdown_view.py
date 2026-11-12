@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import html
 import json
-from typing import List, Tuple
+import re
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -14,7 +16,106 @@ import streamlit.components.v1 as components
 from config import PROJECT_ROOT
 from services.ui.ui_copy import polish_ui_copy
 
-INFO_MD_PATH = PROJECT_ROOT / "docs" / "guides" / "info.md"
+INFO_MD_PATH = PROJECT_ROOT / "info.md"
+ARCHITECTURE_MD_PATH = PROJECT_ROOT / "docs" / "ARCHITECTURE.md"
+
+_MARKDOWN_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+_ARCH_FLOW_DIAGRAM_RE = re.compile(
+    r'<div\s+class="arch-flow-diagram"[^>]*>[\s\S]*?</div>',
+    re.IGNORECASE,
+)
+_IMAGE_PAYLOAD_SEP = "\x1f"
+
+
+def _alt_path_from_img_tag(tag: str) -> Tuple[str, str]:
+    src_m = re.search(r'\bsrc=["\']([^"\']+)["\']', tag, re.IGNORECASE)
+    path = src_m.group(1).strip() if src_m else ""
+    alt_m = re.search(r'\balt=["\']([^"\']*)["\']', tag, re.IGNORECASE)
+    alt = alt_m.group(1) if alt_m else ""
+    return alt, path
+
+
+def _image_match_spans(text: str) -> List[Tuple[int, int, str, str]]:
+    """Return sorted (start, end, alt, path) for flow blocks, markdown, and HTML images."""
+    spans: List[Tuple[int, int, str, str]] = []
+    for match in _ARCH_FLOW_DIAGRAM_RE.finditer(text):
+        img_m = re.search(r"<img\s+[^>]*>", match.group(0), re.IGNORECASE)
+        if img_m:
+            alt, path = _alt_path_from_img_tag(img_m.group(0))
+            if path:
+                spans.append((match.start(), match.end(), alt, path))
+    for match in _MARKDOWN_IMAGE_RE.finditer(text):
+        spans.append(
+            (match.start(), match.end(), match.group(1), match.group(2).strip())
+        )
+    html_img = re.compile(
+        r'<img\s+[^>]*\bsrc=["\']([^"\']+)["\'][^>]*>',
+        re.IGNORECASE,
+    )
+    for match in html_img.finditer(text):
+        tag = match.group(0)
+        alt, path = _alt_path_from_img_tag(tag)
+        if path:
+            spans.append((match.start(), match.end(), alt, path))
+    spans.sort(key=lambda t: t[0])
+    merged: List[Tuple[int, int, str, str]] = []
+    last_end = -1
+    for start, end, alt, path in spans:
+        if start < last_end:
+            continue
+        merged.append((start, end, alt, path))
+        last_end = end
+    return merged
+
+
+def _split_md_images(text: str) -> List[Tuple[str, str]]:
+    """Split a markdown fragment into ``md`` / ``image`` segments (image payload: alt\\x1fpath)."""
+    segments: List[Tuple[str, str]] = []
+    spans = _image_match_spans(text)
+    if not spans:
+        if text:
+            segments.append(("md", text))
+        return segments
+    pos = 0
+    for start, end, alt, path in spans:
+        if start > pos:
+            segments.append(("md", text[pos:start]))
+        segments.append(("image", f"{alt}{_IMAGE_PAYLOAD_SEP}{path}"))
+        pos = end
+    if pos < len(text):
+        segments.append(("md", text[pos:]))
+    return segments
+
+
+def _parse_image_payload(payload: str) -> Tuple[str, str]:
+    if _IMAGE_PAYLOAD_SEP in payload:
+        alt, path = payload.split(_IMAGE_PAYLOAD_SEP, 1)
+        return alt, path
+    return "", payload
+
+
+def _resolve_markdown_image(md_path: Path, rel_path: str) -> Optional[Path]:
+    raw = (rel_path or "").strip()
+    if not raw or raw.startswith(("http://", "https://", "data:")):
+        return None
+    candidate = (md_path.parent / raw).resolve()
+    return candidate if candidate.is_file() else None
+
+
+def _render_markdown_image(
+    md_path: Path,
+    alt: str,
+    rel_path: str,
+    *,
+    use_streamlit_expand: bool,
+) -> None:
+    if use_streamlit_expand:
+        resolved = _resolve_markdown_image(md_path, rel_path)
+        if resolved is not None:
+            caption = alt.strip() or None
+            st.image(str(resolved), width="stretch", caption=caption)
+            return
+    st.markdown(f"![{alt}]({rel_path})", unsafe_allow_html=False)
 
 
 def _split_markdown_and_mermaid(text: str) -> List[Tuple[str, str]]:
@@ -161,14 +262,20 @@ def _inject_docs_styles() -> None:
 
 def _mermaid_iframe_height(diagram: str) -> int:
     lines = diagram.count("\n") + 1
-    extra = diagram.count("subgraph") * 36 + diagram.count("flowchart TD") * 20
-    return min(920, max(240, 110 + lines * 30 + extra))
+    edges = diagram.count("-->")
+    decisions = diagram.count("{")
+    extra = diagram.count("subgraph") * 36
+    td_bonus = 24 if "flowchart TD" in diagram else 0
+    return min(
+        1100,
+        max(260, 100 + lines * 26 + edges * 14 + decisions * 50 + extra + td_bonus),
+    )
 
 
-def _render_mermaid(diagram: str, key: str) -> None:
+def _render_mermaid(diagram: str, key: str, *, height: Optional[int] = None) -> None:
     diagram_js = json.dumps(diagram)
     element_id = f"mm_{key}"
-    height = _mermaid_iframe_height(diagram)
+    frame_height = height if height is not None else _mermaid_iframe_height(diagram)
     components.html(
         f"""
         <div class="info-mermaid-card">
@@ -185,7 +292,11 @@ def _render_mermaid(diagram: str, key: str) -> None:
                 securityLevel: "loose",
                 flowchart: {{ htmlLabels: true, curve: "basis" }}
               }});
-              mermaid.run({{ nodes: [el] }}).catch(function (err) {{
+              mermaid.run({{ nodes: [el] }}).then(function () {{
+                try {{
+                  window.dispatchEvent(new Event("resize"));
+                }} catch (e) {{}}
+              }}).catch(function (err) {{
                 el.textContent = String(err);
               }});
             }}
@@ -203,9 +314,92 @@ def _render_mermaid(diagram: str, key: str) -> None:
           }})();
         </script>
         """,
-        height=height,
+        height=frame_height,
         scrolling=True,
     )
+
+
+def _strip_trailing_section_heading(md_chunk: str) -> tuple[str, Optional[str]]:
+    """If the chunk ends with ``## Title``, return body without that line and the title."""
+    lines = md_chunk.rstrip().split("\n")
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if lines and lines[-1].strip().startswith("## "):
+        title = lines[-1].strip()[3:].strip()
+        body = "\n".join(lines[:-1])
+        return body, title
+    return md_chunk, None
+
+
+def render_markdown_from_path(
+    md_path,
+    *,
+    mermaid_key_prefix: str = "mermaid",
+    apply_polish: bool = True,
+    mermaid_in_expander: bool = False,
+    mermaid_expander_first_open: bool = False,
+    mermaid_expander_label: str = "View flowchart",
+    strip_leading_h1: bool = False,
+    streamlit_image_expand: bool = False,
+) -> bool:
+    """Render a markdown file with interleaved ```mermaid blocks. Returns False if missing."""
+    md_file = Path(md_path)
+    if not md_file.is_file():
+        return False
+    raw = md_file.read_text(encoding="utf-8")
+    if strip_leading_h1 and raw.startswith("#"):
+        raw = _body_text_without_title(raw)
+    segments = _split_markdown_and_mermaid(raw)
+    mermaid_idx = 0
+    i = 0
+    while i < len(segments):
+        kind, chunk = segments[i]
+        if kind == "md":
+            body = chunk
+            expander_title: Optional[str] = None
+            if (
+                mermaid_in_expander
+                and i + 1 < len(segments)
+                and segments[i + 1][0] == "mermaid"
+            ):
+                body, expander_title = _strip_trailing_section_heading(chunk)
+            text = polish_ui_copy(body) if apply_polish else body
+            md_parts = (
+                _split_md_images(text)
+                if streamlit_image_expand
+                else [("md", text)]
+            )
+            for part_kind, part in md_parts:
+                if part_kind == "md":
+                    if part.strip():
+                        allow_html = streamlit_image_expand and (
+                            "<div" in part or "<style" in part
+                        )
+                        st.markdown(part, unsafe_allow_html=allow_html)
+                else:
+                    alt, rel = _parse_image_payload(part)
+                    _render_markdown_image(
+                        md_file,
+                        alt,
+                        rel,
+                        use_streamlit_expand=streamlit_image_expand,
+                    )
+            if expander_title is not None:
+                st.markdown(f"## {expander_title}")
+                expanded = mermaid_expander_first_open and mermaid_idx == 0
+                with st.expander(mermaid_expander_label, expanded=expanded):
+                    _render_mermaid(
+                        segments[i + 1][1],
+                        key=f"{mermaid_key_prefix}_{mermaid_idx}",
+                    )
+                mermaid_idx += 1
+                i += 2
+                continue
+        else:
+            _render_mermaid(chunk, key=f"{mermaid_key_prefix}_{mermaid_idx}")
+            mermaid_idx += 1
+        i += 1
+    return True
 
 
 def _body_text_without_title(raw: str) -> str:
