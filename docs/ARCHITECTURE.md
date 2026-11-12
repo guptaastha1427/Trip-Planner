@@ -170,7 +170,7 @@ Broad `except` + user strings; RAG layered fallbacks; corrupt JSON → empty def
 
 ## Tests
 
-`test_terms_rag` (FakeEmbeddings FAISS), `test_rag_citations`, `test_refund_eligibility`, `test_validation`, others — **CI unknown**.
+`test_terms_rag` (HuggingFace FAISS), `test_rag_citations`, `test_refund_eligibility`, `test_validation`, others — **CI unknown**.
 
 ## Known debt (code-verified)
 

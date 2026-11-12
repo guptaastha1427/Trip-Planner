@@ -13,3 +13,14 @@
 {"test_id": "S-13", "user_id": "user_alex", "message": "quantum physics syllabus 404", "expected_route": "no_match_or_loose", "expect_escalate": true}
 {"test_id": "S-14", "user_id": "user_alex", "message": "booking", "expected_route": "terms_rag", "expect_escalate": false}
 {"test_id": "S-15", "user_id": "user_alex", "message": "package night add-on 1200 rupees", "expected_route": "terms_rag", "expect_escalate": false}
+{"test_id": "S-16", "user_id": "user_alex", "message": "hey", "expected_route": "greeting", "expect_escalate": false}
+{"test_id": "S-17", "user_id": "user_sam", "message": "what is my refund status", "expected_route": "refund_status", "expect_escalate": false}
+{"test_id": "S-18", "user_id": "user_alex", "message": "lookup booking BK-FLT-1001", "expected_route": "booking_lookup", "expect_escalate": false}
+{"test_id": "S-19", "user_id": "user_blacklisted", "message": "submit appeal for blacklist ban", "expected_route": "account_status", "expect_escalate": true}
+{"test_id": "S-20", "user_id": "user_alex", "message": "Heritage Trail package cancellation rules", "expected_route": "terms_rag", "expect_escalate": true}
+{"test_id": "S-21", "user_id": "user_alex", "message": "duplicate booking misuse policy terms", "expected_route": "terms_rag", "expect_escalate": true}
+{"test_id": "S-22", "user_id": "user_alex", "message": "kubernetes helm chart tutorial", "expected_route": "no_match_or_loose", "expect_escalate": true}
+{"test_id": "S-23", "user_id": "user_alex", "message": "BK-FLT-1001 booking and flex cancellation policy", "expected_route": "booking_lookup", "expect_escalate": false}
+{"test_id": "S-24", "user_id": "user_alex", "message": "details for BK-FLT-1101", "expected_route": "booking_not_found", "expect_escalate": false}
+{"test_id": "S-25", "user_id": "user_restricted", "message": "my account is temporarily restricted", "expected_route": "account_status", "expect_escalate": true}
+{"test_id": "S-26", "user_id": "user_alex", "message": "refund status and flex package fare rules", "expected_route": "refund_status", "expect_escalate": false}

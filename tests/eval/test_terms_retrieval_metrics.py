@@ -1,4 +1,4 @@
-"""Terms RAG retrieval metrics (FakeEmbeddings)."""
+"""Terms RAG retrieval metrics (HuggingFace embeddings)."""
 
 from eval.runners.terms_retrieval import run_terms_retrieval_eval
 
@@ -12,6 +12,6 @@ def test_terms_retrieval_baseline_runs():
 
 def test_terms_retrieval_metrics_present():
     out = run_terms_retrieval_eval()
-    assert out["summary"]["mrr"] is not None
+    assert out["summary"]["mrr"] is not None 
     assert out["summary"]["hit_at_3"] is not None
-    # FakeEmbeddings do not reflect production semantic quality — see EVAL_LIVE mode.
+    # Eval harness uses HuggingFace MiniLM; production Terms KB uses Gemini embeddings.

@@ -21,132 +21,16 @@ from eval.runners.terms_retrieval import (  # noqa: E402
     run_terms_retrieval_eval,
 )
 from eval.runners.wikivoyage import run_wikivoyage_eval  # noqa: E402
+from eval.helpers.eval_report import write_legacy_baseline_report  # noqa: E402
 
-REPORTS_DIR = ROOT / "reports"
 ARTIFACTS_DIR = ROOT / "artifacts"
 
-EVAL_FLOWCHART_LINES = [
-    "",
-    "### High-level eval flow",
-    "",
-    "```mermaid",
-    "flowchart TB",
-    '  subgraph datasets["Golden data"]',
-    "    D1[terms_rag_golden.jsonl]",
-    "    D2[support_faq_routing.jsonl]",
-    "    D3[wikivoyage_golden.jsonl]",
-    "    D4[refund_decision_table.jsonl]",
-    "  end",
-    "",
-    '  subgraph entry["Entry points"]',
-    "    PY[pytest tests/eval/]",
-    "    MOD[python -m eval → run_baseline.py]",
-    "  end",
-    "",
-    '  subgraph runners["runners/"]',
-    "    TR[terms_retrieval]",
-    "    TG[terms_generation]",
-    "    SF[support_faq]",
-    "    WV[wikivoyage]",
-    "    RF[refund_rules]",
-    "  end",
-    "",
-    '  subgraph evaluators["evaluators/"]',
-    "    RM[retrieval_metrics]",
-    "    CC[code_checks]",
-    "    LJ[llm_judge optional]",
-    "  end",
-    "",
-    '  subgraph prod["Production services (unchanged)"]',
-    "    WR[website_rag / terms_rag FAISS]",
-    "    SUP[support_faq routing]",
-    "    WVR[wikivoyage_rag TF-IDF]",
-    "    REF[evaluate_refund_request]",
-    "  end",
-    "",
-    '  subgraph out["Outputs"]',
-    "    ART[artifacts/baseline_*.json]",
-    "    RPT[reports/EVAL_REPORT.md]",
-    "    TRA[tracing/eval_*.jsonl]",
-    "    SWP[experiments min_relevance sweep]",
-    "  end",
-    "",
-    "  datasets --> runners",
-    "  PY --> runners",
-    "  MOD --> runners",
-    "  runners --> evaluators",
-    "  runners --> prod",
-    "  MOD --> SWP",
-    "  MOD --> ART",
-    "  MOD --> RPT",
-    "  runners -.-> TRA",
-    "```",
-    "",
-]
 
-
-def _write_report(payload: dict) -> Path:
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+def _write_report(payload: dict, json_path: Path) -> Path:
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    json_path = ARTIFACTS_DIR / f"baseline_{stamp}.json"
-    json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    md_path = REPORTS_DIR / "EVAL_REPORT.md"
-    s = payload["summary"]
-    lines = [
-        "# Travel Planner — Evaluation Report",
-        "",
-        f"_Generated: {payload['generated_at']}_",
-        "",
-        "## Status legend",
-        "- **Passed** / **Failed** — automated eval result",
-        "- **Requires API credentials** — set `EVAL_LIVE=1` and `GEMINI_API_KEY` for live embed/judge",
-        "- **Requires human review** — complex policy interpretation",
-        "",
-        "## 1. Architecture (verified)",
-        "Separate stacks: Terms FAISS+Gemini, Support FAQ rules+RAG, Wikivoyage TF-IDF, Refund rules engine.",
-        *EVAL_FLOWCHART_LINES,
-        "## 2. Terms / Policy RAG — retrieval (FakeEmbeddings CI)",
-        f"- Cases: {s['terms_retrieval']['total_cases']}",
-        f"- Hit@1: {s['terms_retrieval'].get('hit_at_1')}",
-        f"- Hit@3: {s['terms_retrieval'].get('hit_at_3')}",
-        f"- Recall@3: {s['terms_retrieval'].get('recall_at_3')}",
-        f"- MRR: {s['terms_retrieval'].get('mrr')}",
-        f"- Avg top-1 score: {s['terms_retrieval'].get('avg_top1_score')}",
-        f"- Low-confidence %: {s['terms_retrieval'].get('low_confidence_pct')}",
-        f"- Escalation accuracy: {s['terms_retrieval'].get('escalation_accuracy')}",
-        "",
-        "## 3. Terms / Policy RAG — generation (markdown fallback, no Gemini)",
-        f"- Pass rate: {s['terms_generation']['pass_rate']} ({s['terms_generation']['passed']}/{s['terms_generation']['total']})",
-        "",
-        "## 4. Support FAQ routing",
-        f"- Routing accuracy: {s['support_faq']['routing_accuracy']}",
-        f"- Pass rate: {s['support_faq']['pass_rate']}",
-        "",
-        "## 5. Wikivoyage RAG",
-        f"- Mode: {s['wikivoyage']['mode']}",
-        f"- Pass rate: {s['wikivoyage']['pass_rate']}",
-        "",
-        "## 6. Refund rules engine",
-        f"- Pass rate: {s['refund_rules']['pass_rate']}",
-        "",
-        "## 7. Threshold experiment (eval harness)",
-        "See artifact JSON `experiments.min_relevance_sweep`.",
-        "",
-        "## 8. LLM-as-Judge",
-        "**Not tested** in baseline (requires `EVAL_LIVE=1`). Prompt: `eval/evaluators/llm_judge.py`.",
-        "",
-        "## 9. Live Gemini embeddings",
-        "**Not tested** in default baseline — FakeEmbeddings used. Run with `EVAL_LIVE=1` for real embed quality (future runner flag).",
-        "",
-        f"Full JSON artifact: `{json_path.relative_to(PROJECT)}`",
-        "",
-        "## Failure analysis",
-        "Inspect `eval/artifacts/baseline_*.json` `details.*_rows` where `pass` is false.",
-    ]
-    md_path.write_text("\n".join(lines), encoding="utf-8")
-    return md_path
+    return write_legacy_baseline_report(
+        payload, project_root=PROJECT, artifact_path=json_path
+    )
 
 
 def main() -> int:
@@ -175,8 +59,16 @@ def main() -> int:
             "refund_rules_rows": refund["rows"],
         },
     }
-    report_path = _write_report(payload)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    json_path = ARTIFACTS_DIR / f"baseline_{stamp}.json"
+    json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    report_path = _write_report(payload, json_path)
+    print(f"Wrote {json_path}")
     print(f"Wrote {report_path}")
+    print(
+        "Tip: for Ragas pipeline + synced report use "
+        "python3 -m eval.run_pipeline --refresh-baseline --report"
+    )
     return 0
 
 

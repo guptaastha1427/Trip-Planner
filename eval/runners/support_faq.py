@@ -50,10 +50,13 @@ def evaluate_support_row(case: Dict[str, Any]) -> Dict[str, Any]:
         call_count["n"] += 1
         if kwargs.get("min_score", 0.42) < 0.4:
             call_count["loose"] = True
-        from eval.runners.terms_retrieval import fake_terms_store
+        from eval.helpers.real_embeddings import build_terms_vector_store_with_huggingface
         from services.rag.terms_rag import answer_from_terms_document as real
 
-        with patch("services.rag.website_rag.get_terms_vector_store", return_value=fake_terms_store()), patch(
+        with patch(
+            "services.rag.website_rag.get_terms_vector_store",
+            return_value=build_terms_vector_store_with_huggingface(),
+        ), patch(
             "services.rag.website_rag.MIN_RELEVANCE_SCORE", 0.0
         ):
             return real(query, **kwargs)

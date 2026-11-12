@@ -1,10 +1,102 @@
-Three things which is not persist in the app_state.json
+## Session persistence note
+
+Three things which are not persisted in `app_state.json`:
 
 1. Chat history
 2. Chunks
 3. Votes
 
-**pytest** is a popular third-party Python testing framework that simplifies writing and executing these tests.
+**pytest** is a popular third-party Python testing framework that simplifies writing and executing automated tests.
+
+---
+
+## Terms RAG evaluation metrics (offline harness)
+
+Sample means below are from post–hybrid-retrieval baseline `eval/artifacts/baseline_20261112T105743Z.csv` (`python3 -m eval.run_pipeline --refresh-baseline`, `evaluation_mode: heuristic_offline`). Implemented in `eval/evaluators/retrieval_metrics.py`, `eval/evaluators/answer_quality.py`, and `eval/runners/ragas_pipeline.py`.
+
+### 1. Retrieval ranking metrics
+
+- **Mean Reciprocal Rank** (`mrr_mean`: **0.7311**)
+  - **What it measures:** Average position of the first relevant document across queries. First hit at rank 1 → contribution 1.0; rank 2 → 0.5; and so on.
+  - **Formula:**
+
+    $$\text{MRR} = \frac{1}{|Q|} \sum_{i=1}^{|Q|} \frac{1}{\text{rank}_i}$$
+
+  - $|Q|$ = number of queries; $\text{rank}_i$ = rank of the first relevant doc for query $i$.
+- **Hit rate @ 3** (`hit_rate_at_3`: **0.8684**)
+  - **What it measures:** Share of queries with at least one relevant document in the top 3 (86.84% in the sample run).
+  - **Formula:**
+
+    $$\text{Hit Rate@K} = \frac{1}{|Q|} \sum_{i=1}^{|Q|} \mathbb{I}(\text{at least one relevant doc in top } K)$$
+
+  - $\mathbb{I}$ = 1 when true, else 0.
+- **Normalized Discounted Cumulative Gain @ 3** (`ndcg_at_3_mean`: **0.7348**)
+  - **What it measures:** Ranking quality with higher weight on relevant items near the top of the list.
+  - **Formula:**
+
+    $$\text{NDCG@K} = \frac{\text{DCG@K}}{\text{IDCG@K}}$$
+
+    $$\text{DCG@K} = \sum_{i=1}^{K} \frac{\text{rel}_i}{\log_2(i + 1)}$$
+
+  - $\text{rel}_i$ = relevance at rank $i$; **IDCG** = DCG for the ideal ordering.
+
+---
+
+### 2. Generation & semantic quality metrics
+
+- **Answer correctness** (`answer_correctness_mean`: **0.8712**)
+  - **What it measures:** Alignment of the generated answer with the golden reference (semantic similarity plus factual overlap in the harness).
+  - **Formula:**
+
+    $$\text{Answer Correctness} = w \cdot s_{sim}(\text{Response}, \text{Reference}) + (1 - w) \cdot f_{fact}(\text{Response}, \text{Reference})$$
+- **Context utilization** (`context_utilization_mean`: **0.8917**)
+  - **What it measures:** How much of the answer is supported by retrieved context.
+  - **Formula:**
+
+    $$\text{Context Utilization} = \frac{|\text{Statements in Response supported by Context}|}{|\text{Total Statements in Response}|}$$
+- **Hallucination rate** (`hallucination_rate_mean`: **0.1917**)
+  - **What it measures:** Fraction of answer content not supported by context (lower is better; ~19% unsupported in the sample).
+  - **Formula:**
+
+    $$\text{Hallucination Rate} = 1 - \text{Groundedness}$$
+
+  - Same as unsupported claims ÷ total claims in the heuristic scorer.
+- **Groundedness** (`groundedness_mean`: **0.8083**)
+  - **What it measures:** Inverse of hallucination—how anchored the answer is to retrieved facts.
+  - **Formula:**
+
+    $$\text{Groundedness} = \frac{|\text{Claims in Response directly supported by Context}|}{|\text{Total Claims in Response}|}$$
+
+---
+
+### 3. Ragas-aligned canonical metrics
+
+Offline runs map harness fields to Ragas names; with `EVAL_LIVE=1` and `pip install ragas`, the library can replace heuristics (see `eval/README.md`).
+
+- **Faithfulness** (`faithfulness`: **0.8083**)
+  - **What it measures:** Whether the answer can be inferred from context (matches `groundedness_mean` in offline mapping).
+  - **Formula:**
+
+    $$\text{Faithfulness} = \frac{|\text{Vetted/Supported Claims}|}{|\text{Total Extracted Claims in Answer}|}$$
+- **Answer relevance** (`answer_relevance`: **0.8712**)
+  - **What it measures:** Whether the answer directly addresses the query (offline maps from `answer_correctness_mean`). Full Ragas uses reverse-question similarity.
+  - **Formula:**
+
+    $$\text{Answer Relevance} = \frac{1}{N} \sum_{i=1}^{N} \text{sim}(\text{Embedding}(G), \text{Embedding}(g_i))$$
+- **Context precision** (`context_precision`: **0.8917**)
+  - **What it measures:** Whether relevant chunks rank high (offline maps from `context_utilization_mean`).
+  - **Formula:**
+
+    $$\text{Context Precision@K} = \frac{\sum_{i=1}^{K} (\text{Precision@i} \times v(i))}{\text{Total number of relevant items in top } K}$$
+
+  - $v(i) = 1$ if rank $i$ is relevant, else $0$.
+- **Context recall** (`context_recall`: **0.6842**)
+  - **What it measures:** Whether retrieval returned enough context to cover the reference answer (golden labels in the harness).
+  - **Formula:**
+
+    $$\text{Context Recall} = \frac{|\text{GT statements attributable to Retrieved Context}|}{|\text{Total statements in Ground-Truth Reference}|}$$
+
+---
 
 # Application flows
 
@@ -21,11 +113,7 @@ Developer docs (`/dev`) show architecture flowcharts (PNG + fullscreen). Trip an
 | 2) Wikivoyage TF-IDF RAG (`wikivoyage_rag.py`)          | sklearn TF-IDF + cosine (agent tool)               | Yes (itinerary)        |
 
 
-
-
 ## Trip Planner Agent
-
-
 
 ### Trip routing (`run_agent`)
 
@@ -56,8 +144,6 @@ flowchart TD
   K --> P["Parse + Validate + Enrich"]
   P --> Q[Final Itinerary + Map]
 ```
-
-
 
 
 
@@ -93,8 +179,6 @@ flowchart TB
 
 
 
-
-
 ## Destination Guide(Retrival 1) Wikivoyage
 
 ```mermaid
@@ -109,8 +193,6 @@ flowchart TD
   H --> I["Send Question + Chunks to Gemini"]
   I --> J[Destination Guide Answer]
 ```
-
-
 
 
 
@@ -144,8 +226,6 @@ flowchart TD
 
 
 
-
-
 ## Customer Portal → Refund (Rule Based)
 
 Separate rule engine — not merged with Terms / FAISS hub.
@@ -165,8 +245,6 @@ flowchart TD
 
 
 
-
-
 ## 1) Policy / Terms RAG (Support bot, Document Assistant)
 
 Support bot (policy path), Document Assistant chat, and Trip policy FAB share **Terms FAISS + optional semantic cache + Gemini**. Booking/refund shortcuts in Support use live portal data without FAISS.
@@ -181,8 +259,6 @@ flowchart LR
   D --> F[Gemini writes answer<br/>from those paragraphs]
   F --> G[Show answer<br/>+ source links]
 ```
-
-
 
 
 

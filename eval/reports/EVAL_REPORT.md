@@ -1,6 +1,7 @@
 # Travel Planner — Evaluation Report
 
-_Generated: 2026-11-02T09:33:42.980664+00:00_
+_Generated: 2026-11-12T10:56:54.616198+00:00_
+_Source: `eval.run_pipeline` · `evaluation_mode`: **heuristic_offline**_
 
 ## Status legend
 - **Passed** / **Failed** — automated eval result
@@ -8,7 +9,7 @@ _Generated: 2026-11-02T09:33:42.980664+00:00_
 - **Requires human review** — complex policy interpretation
 
 ## 1. Architecture (verified)
-Separate stacks: Terms FAISS+Gemini, Support FAQ rules+RAG, Wikivoyage TF-IDF, URL FAISS (optional), Refund rules engine.
+Separate stacks: Terms FAISS+Gemini, Support FAQ rules+RAG, Wikivoyage TF-IDF, Refund rules engine.
 
 ### High-level eval flow
 
@@ -21,12 +22,14 @@ flowchart TB
     D4[refund_decision_table.jsonl]
   end
 
-  subgraph entry["Entry points"]
+  subgraph entry["Entry points (use one refresh path)"]
     PY[pytest tests/eval/]
-    MOD[python -m eval → run_baseline.py]
+    PL[python3 -m eval.run_pipeline --refresh-baseline --report]
+    LEG[python -m eval — sweep + legacy JSON only]
   end
 
   subgraph runners["runners/"]
+    RP[ragas_pipeline Terms RAG]
     TR[terms_retrieval]
     TG[terms_generation]
     SF[support_faq]
@@ -34,75 +37,66 @@ flowchart TB
     RF[refund_rules]
   end
 
-  subgraph evaluators["evaluators/"]
-    RM[retrieval_metrics]
-    CC[code_checks]
-    LJ[llm_judge optional]
-  end
-
-  subgraph prod["Production services (unchanged)"]
-    WR[website_rag / terms_rag FAISS]
-    SUP[support_faq routing]
-    WVR[wikivoyage_rag TF-IDF]
-    REF[evaluate_refund_request]
-  end
-
   subgraph out["Outputs"]
-    ART[artifacts/baseline_*.json]
+    ART[artifacts/baseline_*.json + .csv]
     RPT[reports/EVAL_REPORT.md]
-    TRA[tracing/eval_*.jsonl]
-    SWP[experiments min_relevance sweep]
   end
 
   datasets --> runners
   PY --> runners
-  MOD --> runners
-  runners --> evaluators
-  runners --> prod
-  MOD --> SWP
-  MOD --> ART
-  MOD --> RPT
-  runners -.-> TRA
+  PL --> RP
+  PL --> ART
+  PL --> RPT
+  LEG --> TR
+  LEG --> TG
+  LEG --> ART
+  RP --> SF
+  RP --> WV
+  RP --> RF
 ```
 
-## 2. Terms / Policy RAG — retrieval (FakeEmbeddings CI)
-- Cases: 28
-- Hit@1: 0.1111
-- Hit@3: 0.2963
-- Recall@3: 0.2222
-- MRR: 0.2368
-- Avg top-1 score: 0.0015
-- Low-confidence %: 1.0
-- Escalation accuracy: 0.037
+## 2. Terms / Policy RAG (pipeline — retrieval + generation)
+- Retrieval profile: **hybrid_rerank_v1** (hybrid=True)
+- Embedding (eval): HuggingFace:sentence-transformers/all-MiniLM-L6-v2
+- Cases: 40 · passed: 38/40 (rate 0.95)
+- MRR: 0.7311
+- Hit@3: 0.8684
+- NDCG@3: 0.7348
+- Answer correctness (mean): 0.8712
+- Context utilization (mean): 0.8917
+- Groundedness (mean): 0.8083
+- Hallucination rate (mean): 0.1917
 
-## 3. Terms / Policy RAG — generation (markdown fallback, no Gemini)
-- Pass rate: 0.0357 (1/28)
+### Ragas-aligned means (offline mapping unless `EVAL_LIVE` + ragas)
+- Faithfulness: 0.8083
+- Answer relevance: 0.8712
+- Context precision: 0.8917
+- Context recall: 0.6842
 
-## 4. Support FAQ routing
-- Routing accuracy: 0.9333
-- Pass rate: 0.6667
+## 3. Support FAQ routing
+- Routing accuracy: 0.9615
+- Pass rate: 0.8846 (23/26)
 
-## 5. Wikivoyage RAG
+## 4. Wikivoyage RAG
 - Mode: mocked_wikivoyage_html
-- Pass rate: 0.875
+- Pass rate: 0.9375 (15/16)
 
-## 6. URL scrape RAG (optional)
-- Pass rate: 1.0
-- Used in production chat: **No** (`retrieve_from_url` not wired to UI chat)
+## 5. Refund rules engine
+- Pass rate: 1.0 (16/16)
 
-## 7. Refund rules engine
-- Pass rate: 1.0
+## 6. Threshold experiment (legacy baseline only)
+Run `python3 -m eval` (`run_baseline.py`) for `experiments.min_relevance_sweep` in a separate JSON artifact.
 
-## 8. Threshold experiment (eval harness)
-See artifact JSON `experiments.min_relevance_sweep`.
+## 7. LLM-as-Judge / official Ragas
+- `official_ragas_requested`: False
+- Live: `EVAL_LIVE=1`, `pip install -r eval/requirements-eval.txt`, optional `EVAL_RAGAS=0` for judge-only.
 
-## 9. LLM-as-Judge
-**Not tested** in baseline (requires `EVAL_LIVE=1`). Prompt: `eval/evaluators/llm_judge.py`.
+## 8. Production vs eval embeddings
+Eval defaults to HuggingFace MiniLM; production Terms path uses Gemini embeddings unless `EVAL_EMBEDDINGS=gemini`.
 
-## 10. Live Gemini embeddings
-**Not tested** in default baseline — FakeEmbeddings used. Run with `EVAL_LIVE=1` for real embed quality (future runner flag).
-
-Full JSON artifact: `eval/artifacts/baseline_20261102T093342Z.json`
+Full JSON artifact: `eval/artifacts/baseline_20261112T105743Z.json`
 
 ## Failure analysis
-Inspect `eval/artifacts/baseline_*.json` `details.*_rows` where `pass` is false.
+- Failed Terms cases: T-R25, T-R40
+- Inspect per-case `failure_analysis` in the JSON artifact.
+- Per-case detail: `cases.terms_rag[]` in the artifact JSON.

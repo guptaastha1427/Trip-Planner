@@ -6,14 +6,14 @@
 
 | Q | A |
 |---|---|
-| Where? | `services/website_rag.py` only (+ `FakeEmbeddings` in tests) |
+| Where? | `services/website_rag.py` (Gemini); tests/eval use HuggingFace via `eval/helpers/real_embeddings.py` |
 | Build | `FAISS.from_documents` after split; index type **not named** (likely IndexFlatL2 via LangChain default) |
 | Retrieval | `similarity_search_with_score` only — **no LCEL chains** |
 | `TERMS_STORE_ID` | Constant unused elsewhere |
 
 ## Embeddings
 
-`GoogleGenerativeAIEmbeddings`; candidates from `config.get_gemini_embedding_model_candidates()`; optional `GEMINI_EMBEDDING_MODEL`; probe `healthcheck`; cache key `EMBEDDING_CACHE_VERSION=4`; errors in `_embedding_init_error`. **Dimension not in code** (tests use 384 fake).
+`GoogleGenerativeAIEmbeddings`; candidates from `config.get_gemini_embedding_model_candidates()`; optional `GEMINI_EMBEDDING_MODEL`; probe `healthcheck`; cache key `EMBEDDING_CACHE_VERSION=4`; errors in `_embedding_init_error`. **Dimension not in code** (MiniLM eval uses 384-d vectors via `sentence-transformers`).
 
 ## Terms pipeline
 

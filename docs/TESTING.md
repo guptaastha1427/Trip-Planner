@@ -13,7 +13,7 @@ Test without unnecessary Gemini calls or wiping FAISS/user `data/`. FAISS is **i
 |--------|--------|---------|-----------------|
 | `test_validation` | `-m` | No | No |
 | `test_refund_eligibility` | `-m` | No | Reads `demo_bookings.json` |
-| `test_terms_rag` | pytest | No — FakeEmbeddings | No |
+| `test_terms_rag` | pytest | HuggingFace MiniLM FAISS | No |
 | `test_rag_citations` | pytest | No | No |
 | `test_package_details` | pytest | No | No |
 | `test_info_markdown_view` | pytest | No | Reads `info.md` |
@@ -49,7 +49,18 @@ Default agent: `fast_mode=True`, Wikivoyage off.
 
 ## Pipeline checks (automated where noted)
 
-Terms docs → split → FakeEmbeddings FAISS in tests; live embed needs key; retrieval `test_retrieve_package_policy`; LLM mocked via `get_gemini_api_key=None` → markdown fallback; citations in `test_rag_citations`.
+Terms docs → split → HuggingFace FAISS in tests/eval; production embed uses Gemini key; retrieval `test_retrieve_package_policy`; LLM mocked via `get_gemini_api_key=None` → markdown fallback; citations in `test_rag_citations`.
+
+### Ragas / eval harness
+
+```bash
+pytest tests/eval/ -q -m "not eval_regression"
+pytest tests/eval/test_regression_thresholds.py -q
+python3 -m eval.run_pipeline --refresh-baseline   # JSON + CSV + EVAL_REPORT.md
+python3 -m eval.report                            # refresh report from latest artifact
+```
+
+**Official Ragas (live):** `pip install -r eval/requirements-eval.txt`, set `EVAL_LIVE=1` and `GEMINI_API_KEY`. Artifacts record `evaluation_mode` (`heuristic_offline`, `ragas_library`, `llm_judge_live`, etc.). See `eval/README.md` and `eval/ARTIFACTS.md`.
 
 **Not default path:** `retrieve_from_url`.
 

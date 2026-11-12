@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Sequence
 
@@ -40,6 +41,47 @@ def recall_at_k(
     top = list(retrieved_sources)[:k]
     hits = sum(1 for exp in expected_sources if any(matcher([exp], s) for s in top))
     return hits / len(expected_sources)
+
+
+def _dcg(relevances: Sequence[float]) -> float:
+    return sum(rel / math.log2(i + 2) for i, rel in enumerate(relevances))
+
+
+def ndcg_at_k(
+    expected_sources: Sequence[str],
+    retrieved_sources: Sequence[str],
+    k: int,
+    *,
+    matcher=None,
+) -> float:
+    """Binary-relevance NDCG@K (one relevant doc counts per matching rank)."""
+    if not expected_sources or not retrieved_sources:
+        return 0.0
+    if matcher is None:
+        from eval.helpers.terms_retrieval import source_matches
+
+        matcher = source_matches
+    top = list(retrieved_sources)[:k]
+    relevances = [1.0 if matcher(expected_sources, src) else 0.0 for src in top]
+    dcg = _dcg(relevances)
+    ideal_len = min(len(expected_sources), k)
+    idcg = _dcg([1.0] * ideal_len)
+    if idcg <= 0:
+        return 0.0
+    return dcg / idcg
+
+
+def hit_rate_at_k(
+    expected_sources: Sequence[str],
+    retrieved_sources: Sequence[str],
+    k: int,
+    *,
+    matcher=None,
+) -> float:
+    """Per-query hit indicator as 0.0 or 1.0 (aggregate mean = hit rate)."""
+    if not expected_sources:
+        return 1.0
+    return 1.0 if hit_at_k(expected_sources, retrieved_sources, k, matcher=matcher) else 0.0
 
 
 def mean_reciprocal_rank(

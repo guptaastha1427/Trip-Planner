@@ -31,8 +31,12 @@ from config import (
     PROMPT_CACHE_VERSION,
     get_gemini_api_key,
     get_gemini_embedding_model_candidates,
+    get_grounded_generation_temperature,
+    get_terms_retrieval_candidate_multiplier,
     is_gemini_prompt_cache_enabled,
+    is_hybrid_terms_retrieval_enabled,
 )
+from services.rag.hybrid_retrieval import fetch_ranked_chunks
 from services.trip.agent import generate_content_with_fallback
 from services.portal.refund_policy_config import POLICIES
 from services.rag.terms_content import (
@@ -44,8 +48,8 @@ from services.rag.terms_content import (
 )
 
 # Tuned for HTML / markdown web pages: favor paragraph and sentence boundaries.
-WEB_CHUNK_SIZE = 1100
-WEB_CHUNK_OVERLAP = 180
+WEB_CHUNK_SIZE = 1000
+WEB_CHUNK_OVERLAP = 200
 WEB_SPLIT_SEPARATORS = ["\n\n", "\n", ". ", "? ", "! ", "; ", ", ", " ", ""]
 
 TERMS_STORE_ID = "terms_policies_kb"
@@ -289,19 +293,25 @@ def similarity_search(
     if not q:
         return []
 
-    pairs = vector_store.similarity_search_with_score(q, k=top_k)
+    mult = get_terms_retrieval_candidate_multiplier()
+    candidate_k = max(top_k * mult, 12)
+    ranked = fetch_ranked_chunks(
+        q,
+        vector_store,
+        top_k=top_k,
+        candidate_k=candidate_k,
+        use_hybrid=is_hybrid_terms_retrieval_enabled(),
+    )
     out: List[RetrievedChunk] = []
-    for doc, dist in pairs:
-        sim = _distance_to_similarity(float(dist))
-        if sim < MIN_RELEVANCE_SCORE:
+    for ch in ranked:
+        if ch.score < MIN_RELEVANCE_SCORE:
             continue
-        meta = dict(doc.metadata or {})
-        source = str(meta.get("source") or "Document")
+        meta = dict(ch.metadata) if ch.metadata else {}
         out.append(
             RetrievedChunk(
-                source=source,
-                text=doc.page_content.strip(),
-                score=sim,
+                source=ch.source,
+                text=ch.text,
+                score=ch.score,
                 metadata=MappingProxyType(meta),
             )
         )
@@ -458,8 +468,9 @@ def generate_grounded_answer(
             parts=[types.Part(text=prompt)],
         )
     ]
+    grounded_temp = get_grounded_generation_temperature()
     inline_config = types.GenerateContentConfig(
-        temperature=0.1,
+        temperature=grounded_temp,
         system_instruction=GROUNDED_SYSTEM_INSTRUCTION,
     )
 
@@ -478,7 +489,7 @@ def generate_grounded_answer(
             try:
                 _, response = _call_gemini(
                     types.GenerateContentConfig(
-                        temperature=0.1,
+                        temperature=grounded_temp,
                         cached_content=cached_name,
                     )
                 )

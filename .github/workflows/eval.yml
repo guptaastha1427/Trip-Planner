@@ -1,0 +1,46 @@
+name: Eval harness
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  eval-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Fast eval tests (excludes slow regression)
+        run: pytest tests/eval/ -q -m "not eval_regression"
+
+  eval-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: eval-fast
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Cache sentence-transformers model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-minilm-${{ runner.os }}-v1
+      - name: Regression vs regression_thresholds.json
+        run: pytest tests/eval/test_regression_thresholds.py -q

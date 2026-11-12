@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from unittest.mock import patch
 
-from eval.runners.terms_retrieval import evaluate_terms_retrieval_row, fake_terms_store
+from eval.runners.terms_retrieval import evaluate_terms_retrieval_row
 from eval.helpers.io import load_jsonl
 from services.rag.website_rag import MIN_RELEVANCE_SCORE
 

@@ -2,18 +2,12 @@
 
 from unittest.mock import patch
 
-from langchain_community.embeddings import FakeEmbeddings
-
 from services.rag.terms_rag import answer_from_terms_document, retrieve_policy_chunks
-from services.rag.website_rag import _terms_source_documents, build_faiss_index
-
-
-def _fake_terms_store():
-    return build_faiss_index(_terms_source_documents(), FakeEmbeddings(size=384))
+from tests.helpers.embeddings import build_terms_vector_store_with_huggingface
 
 
 def test_retrieve_package_policy():
-    store = _fake_terms_store()
+    store = build_terms_vector_store_with_huggingface()
     with patch("services.rag.website_rag.get_terms_vector_store", return_value=store), patch(
         "services.rag.website_rag.MIN_RELEVANCE_SCORE", 0.0
     ):
@@ -28,7 +22,7 @@ def test_retrieve_package_policy():
 
 
 def test_answer_cancellation_from_terms():
-    store = _fake_terms_store()
+    store = build_terms_vector_store_with_huggingface()
     with patch("services.rag.website_rag.get_terms_vector_store", return_value=store), patch(
         "services.rag.website_rag.MIN_RELEVANCE_SCORE", 0.0
     ):

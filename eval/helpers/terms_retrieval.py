@@ -6,7 +6,9 @@ from typing import Any, List, Sequence, Tuple
 
 from langchain_community.vectorstores import FAISS
 
-from services.rag.website_rag import MIN_RELEVANCE_SCORE, RetrievedChunk, _distance_to_similarity
+from config import get_terms_retrieval_candidate_multiplier, is_hybrid_terms_retrieval_enabled
+from services.rag.hybrid_retrieval import fetch_ranked_chunks
+from services.rag.website_rag import MIN_RELEVANCE_SCORE, RetrievedChunk
 
 
 def raw_similarity_ranked(
@@ -15,25 +17,19 @@ def raw_similarity_ranked(
     *,
     top_k: int = 10,
 ) -> List[RetrievedChunk]:
-    """All top_k FAISS hits with scores — no MIN_RELEVANCE_SCORE filter (for MRR / Hit@K)."""
+    """Ranked hits (hybrid when enabled) — no MIN_RELEVANCE filter (for MRR / Hit@K)."""
     q = (query or "").strip()
     if not q:
         return []
-    pairs = vector_store.similarity_search_with_score(q, k=top_k)
-    out: List[RetrievedChunk] = []
-    for doc, dist in pairs:
-        sim = _distance_to_similarity(float(dist))
-        meta = dict(doc.metadata or {})
-        source = str(meta.get("source") or "Document")
-        out.append(
-            RetrievedChunk(
-                source=source,
-                text=doc.page_content.strip(),
-                score=sim,
-                metadata=meta,
-            )
-        )
-    return out
+    mult = get_terms_retrieval_candidate_multiplier()
+    candidate_k = max(top_k, top_k * mult, 12)
+    return fetch_ranked_chunks(
+        q,
+        vector_store,
+        top_k=top_k,
+        candidate_k=candidate_k,
+        use_hybrid=is_hybrid_terms_retrieval_enabled(),
+    )
 
 
 def source_matches(expected: Sequence[str], source: str) -> bool:

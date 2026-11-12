@@ -6,3 +6,11 @@
 {"test_id": "W-06", "destination": "Xyznonexistent999City", "query": "travel guide", "expect_ok": false, "min_chunks": 0, "expected_keywords": []}
 {"test_id": "W-07", "destination": "", "query": "anything", "expect_ok": false, "min_chunks": 0, "expected_keywords": []}
 {"test_id": "W-08", "destination": "Paris", "query": "", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Paris"]}
+{"test_id": "W-09", "destination": "Rome", "query": "important attractions museums", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Rome"]}
+{"test_id": "W-10", "destination": "Barcelona", "query": "local transportation getting around", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Barcelona"]}
+{"test_id": "W-11", "destination": "Kyoto", "query": "best time to visit", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Kyoto"]}
+{"test_id": "W-12", "destination": "Delhi", "query": "travel recommendations food", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Delhi"]}
+{"test_id": "W-13", "destination": "Bangkok", "query": "local transportation getting around", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Bangkok"]}
+{"test_id": "W-14", "destination": "Sydney", "query": "important attractions museums", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Sydney"]}
+{"test_id": "W-15", "destination": "Singapore", "query": "", "expect_ok": true, "min_chunks": 1, "expected_keywords": ["Singapore"]}
+{"test_id": "W-16", "destination": "Xyznonexistent888Town", "query": "travel guide", "expect_ok": false, "min_chunks": 0, "expected_keywords": []}

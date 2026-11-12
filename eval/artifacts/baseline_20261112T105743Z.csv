@@ -1,0 +1,2 @@
+generated_at,evaluation_mode,retrieval_profile,embedding_mode,mrr_mean,hit_rate_at_3,ndcg_at_3_mean,faithfulness,answer_relevance,context_precision,context_recall,pass_rate
+2026-11-12T10:56:54.616198+00:00,heuristic_offline,hybrid_rerank_v1,HuggingFace:sentence-transformers/all-MiniLM-L6-v2,0.7311,0.8684,0.7348,0.8083,0.8712,0.8917,0.6842,0.95

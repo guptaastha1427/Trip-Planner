@@ -82,7 +82,7 @@ EMBEDDING_MODEL_FALLBACKS = (
     "models/text-embedding-004",
 )
 # Bump when embedding defaults change so Streamlit @st.cache_resource rebuilds indices.
-EMBEDDING_CACHE_VERSION = 4
+EMBEDDING_CACHE_VERSION = 5
 
 # Bump when GROUNDED_SYSTEM_INSTRUCTION changes so Gemini CachedContent is recreated.
 PROMPT_CACHE_VERSION = 1
@@ -192,6 +192,32 @@ def is_gemini_prompt_cache_enabled() -> bool:
 def is_semantic_cache_enabled() -> bool:
     """Reuse retrieved policy chunks for paraphrased queries (LLM answer always fresh)."""
     return _env_bool("SEMANTIC_CACHE_ENABLED", default=False)
+
+
+def is_hybrid_terms_retrieval_enabled() -> bool:
+    """FAISS wide fetch + lexical rerank for Terms KB (default on)."""
+    return _env_bool("HYBRID_TERMS_RETRIEVAL", default=True)
+
+
+def get_terms_retrieval_candidate_multiplier() -> int:
+    raw = _strip_env_value(os.environ.get("TERMS_RETRIEVAL_CANDIDATE_MULTIPLIER", ""))
+    if not raw:
+        return 3
+    try:
+        return max(2, min(8, int(raw)))
+    except ValueError:
+        return 3
+
+
+def get_grounded_generation_temperature() -> float:
+    """Low temperature for faithfulness in policy answers."""
+    raw = _strip_env_value(os.environ.get("GROUNDED_ANSWER_TEMPERATURE", ""))
+    if not raw:
+        return 0.05
+    try:
+        return max(0.0, min(0.3, float(raw)))
+    except ValueError:
+        return 0.05
 
 
 def get_semantic_cache_threshold() -> float:

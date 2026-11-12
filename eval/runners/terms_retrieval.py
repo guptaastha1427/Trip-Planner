@@ -5,8 +5,6 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
-from langchain_community.embeddings import FakeEmbeddings
-
 from eval.evaluators.retrieval_metrics import (
     aggregate_retrieval_rows,
     hit_at_k,
@@ -14,6 +12,7 @@ from eval.evaluators.retrieval_metrics import (
     recall_at_k,
 )
 from eval.helpers.io import load_jsonl
+from eval.helpers.real_embeddings import build_terms_vector_store_with_huggingface
 from eval.helpers.terms_retrieval import (
     chunk_preview,
     passes_min_score,
@@ -23,15 +22,13 @@ from eval.helpers.terms_retrieval import (
 from services.rag.terms_rag import answer_from_terms_document, retrieve_policy_chunks
 from services.rag.website_rag import (
     MIN_RELEVANCE_SCORE,
-    _terms_source_documents,
-    build_faiss_index,
     chunks_to_context,
     retrieve_from_terms_kb,
 )
 
 
-def fake_terms_store():
-    return build_faiss_index(_terms_source_documents(), FakeEmbeddings(size=384))
+def terms_eval_vector_store():
+    return build_terms_vector_store_with_huggingface()
 
 
 def evaluate_terms_retrieval_row(
@@ -46,7 +43,7 @@ def evaluate_terms_retrieval_row(
     expected_sources = case.get("expected_sources") or []
     expect_escalate = bool(case.get("expect_escalate"))
 
-    store = fake_terms_store()
+    store = terms_eval_vector_store()
     with patch("services.rag.website_rag.get_terms_vector_store", return_value=store):
         raw = raw_similarity_ranked(question, store, top_k=raw_k)
         raw_sources = [c.source for c in raw]
@@ -124,7 +121,7 @@ def evaluate_terms_generation_row(
 ) -> Dict[str, Any]:
     from eval.evaluators.code_checks import generation_code_score
 
-    store = fake_terms_store()
+    store = terms_eval_vector_store()
     with patch("services.rag.website_rag.get_terms_vector_store", return_value=store), patch(
         "services.rag.website_rag.MIN_RELEVANCE_SCORE", min_score
     ), patch("services.rag.website_rag.get_gemini_api_key", return_value=None):

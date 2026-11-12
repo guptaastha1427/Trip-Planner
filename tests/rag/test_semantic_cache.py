@@ -1,25 +1,18 @@
 """Semantic retrieval cache — chunks only, never LLM output."""
 
-from unittest.mock import MagicMock, patch
-
-from langchain_community.embeddings import FakeEmbeddings
+from unittest.mock import patch
 
 from services.rag.terms_rag import answer_from_terms_document
 from services.rag.website_rag import (
     RetrievedChunk,
-    _terms_source_documents,
-    build_faiss_index,
     retrieve_from_terms_kb,
     similarity_search,
 )
-
-
-def _fake_terms_store():
-    return build_faiss_index(_terms_source_documents(), FakeEmbeddings(size=8))
+from tests.helpers.embeddings import build_terms_vector_store_with_huggingface
 
 
 def test_cache_disabled_uses_faiss_only():
-    store = _fake_terms_store()
+    store = build_terms_vector_store_with_huggingface()
     with patch("config.is_semantic_cache_enabled", return_value=False), patch(
         "services.rag.website_rag.get_terms_vector_store", return_value=store
     ), patch("services.rag.website_rag.MIN_RELEVANCE_SCORE", 0.0), patch(
@@ -31,8 +24,8 @@ def test_cache_disabled_uses_faiss_only():
 
 
 def test_cache_hit_skips_faiss_still_calls_llm():
-    store = _fake_terms_store()
-    vec = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    store = build_terms_vector_store_with_huggingface()
+    vec = [1.0] + [0.0] * 383
     sample_chunks = [
         RetrievedChunk(source="Terms — Refunds", text="Demo refund text.", score=0.9)
     ]
