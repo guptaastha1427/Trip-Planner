@@ -56,6 +56,92 @@ EVAL_FLOWCHART_LINES = [
     "",
 ]
 
+RAGAS_PER_CASE_FLOWCHART_LINES = [
+    "",
+    "## Appendix — Terms RAG pipeline (per golden case)",
+    "",
+    "Run: `python -m eval.run_pipeline` (default dataset: `eval/datasets/terms_rag_golden.jsonl`).",
+    "Each JSONL row runs retrieve → answer → score → pass/fail; summary and artifact are written once after all rows.",
+    "Add `--auxiliary` to include Support FAQ, Wikivoyage, and Refund evals in the same artifact (not in this loop).",
+    "",
+    "```mermaid",
+    "flowchart TB",
+    '  START(["Run eval<br/>python -m eval.run_pipeline"])',
+    '  DATA["Load golden questions<br/>eval/datasets/terms_rag_golden.jsonl"]',
+    "  START --> DATA",
+    "",
+    '  DATA --> LOOP{{"Each test question"}}',
+    "",
+    '  LOOP --> RET["Retrieve policy chunks<br/>FAISS over Terms & Policies<br/>eval: HuggingFace index, cache OFF"]',
+    '  RET --> ANS["Build answer<br/>answer_from_terms_document<br/>(same path as Policy / Support bot)"]',
+    "",
+    '  ANS --> GEN_OK{"Answer produced?"}',
+    '  GEN_OK -->|No| FAIL["Case FAILED + reason"]',
+    '  GEN_OK -->|Yes| SCORE["Score this case"]',
+    "",
+    '  SCORE --> R["Retrieval metrics<br/>MRR, Hit@K, NDCG<br/>vs expected_sources"]',
+    '  SCORE --> Q["Answer quality<br/>keywords, citations, groundedness<br/>(Ragas-style metrics)"]',
+    "",
+    '  R --> DECIDE{"Meets thresholds?"}',
+    "  Q --> DECIDE",
+    "",
+    '  DECIDE -->|Yes| OK["Case PASSED"]',
+    '  DECIDE -->|No| FAIL',
+    "",
+    "  OK --> NEXT",
+    "  FAIL --> NEXT",
+    '  NEXT{{"Another row in JSONL?"}}',
+    "  NEXT -->|Yes| LOOP",
+    '  NEXT -->|No| SUM["Summary<br/>pass rate, average scores"]',
+    "",
+    '  SUM --> SAVE["Save artifact<br/>eval/artifacts/*.json (+ optional .csv / report)"]',
+    "",
+    '  AUX["Optional: --auxiliary<br/>support_faq, wikivoyage, refund_rules"]',
+    "  SAVE -.-> AUX",
+    "```",
+    "",
+]
+
+ARTIFACTS_FOLDER_REFERENCE_LINES = [
+    "",
+    "## Appendix — `eval/artifacts/` files (reference)",
+    "",
+    "New runs add timestamped `evaluation_run_*.json` or `baseline_*.json` (often gitignored).",
+    "Look for Ragas eval under `summary.terms_rag_pipeline` / `cases.terms_rag`;",
+    "Support / Wikivoyage / Refund under `summary.support_faq`, `summary.wikivoyage`, `summary.refund_rules`.",
+    "",
+    "| File | Source / type | What's inside |",
+    "|------|----------------|---------------|",
+    "| **`baseline_20261112T105743Z.json`** | `run_pipeline --refresh-baseline` | **All four:** Ragas Terms RAG (`cases.terms_rag[]`) + support_faq + wikivoyage + refund summaries |",
+    "| **`baseline_20261112T092643Z.json`** | Full baseline run | Same — Ragas pipeline + support + wikivoyage + refund |",
+    "| **`evaluation_run_real_embeddings.json`** | `run_pipeline` (no `--auxiliary`) | **Ragas / Terms only** — no support / wikivoyage / refund |",
+    "| **`baseline_20261112T092947Z.json`** | Legacy `run_baseline.py` | **Not Ragas:** `terms_retrieval` + `terms_generation`, support, wikivoyage, refund, `min_relevance_sweep` |",
+    "| **`baseline_20261112T105743Z.csv`** | Companion to `105743Z.json` | **One row** — Terms RAG / Ragas means only (MRR, Hit@3, faithfulness, pass_rate, …) |",
+    "",
+]
+
+RAGAS_ARCHITECTURE_MMD = REPORTS_DIR / "ragas_pipeline_architecture.mmd"
+
+
+def ragas_detailed_architecture_lines() -> List[str]:
+    """Detailed Mermaid architecture (maintained in eval/reports/ragas_pipeline_architecture.mmd)."""
+    if not RAGAS_ARCHITECTURE_MMD.is_file():
+        return []
+    body = RAGAS_ARCHITECTURE_MMD.read_text(encoding="utf-8").strip()
+    return [
+        "",
+        "## Appendix — RAGAS pipeline architecture (detailed)",
+        "",
+        "Code path: `eval/run_pipeline.py` → `eval/runners/ragas_pipeline.py`.",
+        "Diagram source: `eval/reports/ragas_pipeline_architecture.mmd`.",
+        "",
+        "```mermaid",
+        body,
+        "```",
+        "",
+    ]
+
+
 STATUS_LEGEND = [
     "## Status legend",
     "- **Passed** / **Failed** — automated eval result",
@@ -183,6 +269,9 @@ def write_pipeline_report(
     else:
         lines.append("- All Terms pipeline cases passed configured thresholds.")
     lines.append("- Per-case detail: `cases.terms_rag[]` in the artifact JSON.")
+    lines.extend(RAGAS_PER_CASE_FLOWCHART_LINES)
+    lines.extend(ARTIFACTS_FOLDER_REFERENCE_LINES)
+    lines.extend(ragas_detailed_architecture_lines())
 
     md_path.write_text("\n".join(lines), encoding="utf-8")
     return md_path
@@ -246,6 +335,9 @@ def write_legacy_baseline_report(
         "",
         "## Failure analysis",
         "Inspect `eval/artifacts/baseline_*.json` `details.*_rows` where `pass` is false.",
+        *RAGAS_PER_CASE_FLOWCHART_LINES,
+        *ARTIFACTS_FOLDER_REFERENCE_LINES,
+        *ragas_detailed_architecture_lines(),
     ]
     md_path.write_text("\n".join(lines), encoding="utf-8")
     return md_path

@@ -100,3 +100,221 @@ Full JSON artifact: `eval/artifacts/baseline_20261112T105743Z.json`
 - Failed Terms cases: T-R25, T-R40
 - Inspect per-case `failure_analysis` in the JSON artifact.
 - Per-case detail: `cases.terms_rag[]` in the artifact JSON.
+
+## Appendix — Terms RAG pipeline (per golden case)
+
+Run: `python -m eval.run_pipeline` (default dataset: `eval/datasets/terms_rag_golden.jsonl`).
+Each JSONL row runs retrieve → answer → score → pass/fail; summary and artifact are written once after all rows.
+Add `--auxiliary` to include Support FAQ, Wikivoyage, and Refund evals in the same artifact (not in this loop).
+
+```mermaid
+flowchart TB
+  START(["Run eval<br/>python -m eval.run_pipeline"])
+  DATA["Load golden questions<br/>eval/datasets/terms_rag_golden.jsonl"]
+  START --> DATA
+
+  DATA --> LOOP{{"Each test question"}}
+
+  LOOP --> RET["Retrieve policy chunks<br/>FAISS over Terms & Policies<br/>eval: HuggingFace index, cache OFF"]
+  RET --> ANS["Build answer<br/>answer_from_terms_document<br/>(same path as Policy / Support bot)"]
+
+  ANS --> GEN_OK{"Answer produced?"}
+  GEN_OK -->|No| FAIL["Case FAILED + reason"]
+  GEN_OK -->|Yes| SCORE["Score this case"]
+
+  SCORE --> R["Retrieval metrics<br/>MRR, Hit@K, NDCG<br/>vs expected_sources"]
+  SCORE --> Q["Answer quality<br/>keywords, citations, groundedness<br/>(Ragas-style metrics)"]
+
+  R --> DECIDE{"Meets thresholds?"}
+  Q --> DECIDE
+
+  DECIDE -->|Yes| OK["Case PASSED"]
+  DECIDE -->|No| FAIL
+
+  OK --> NEXT
+  FAIL --> NEXT
+  NEXT{{"Another row in JSONL?"}}
+  NEXT -->|Yes| LOOP
+  NEXT -->|No| SUM["Summary<br/>pass rate, average scores"]
+
+  SUM --> SAVE["Save artifact<br/>eval/artifacts/*.json (+ optional .csv / report)"]
+
+  AUX["Optional: --auxiliary<br/>support_faq, wikivoyage, refund_rules"]
+  SAVE -.-> AUX
+```
+
+## Appendix — `eval/artifacts/` files (reference)
+
+New runs add timestamped `evaluation_run_*.json` or `baseline_*.json` (often gitignored).
+Look for Ragas eval under `summary.terms_rag_pipeline` / `cases.terms_rag`;
+Support / Wikivoyage / Refund under `summary.support_faq`, `summary.wikivoyage`, `summary.refund_rules`.
+
+| File | Source / type | What's inside |
+|------|----------------|---------------|
+| **`baseline_20261112T105743Z.json`** | `run_pipeline --refresh-baseline` | **All four:** Ragas Terms RAG (`cases.terms_rag[]`) + support_faq + wikivoyage + refund summaries |
+| **`baseline_20261112T092643Z.json`** | Full baseline run | Same — Ragas pipeline + support + wikivoyage + refund |
+| **`evaluation_run_real_embeddings.json`** | `run_pipeline` (no `--auxiliary`) | **Ragas / Terms only** — no support / wikivoyage / refund |
+| **`baseline_20261112T092947Z.json`** | Legacy `run_baseline.py` | **Not Ragas:** `terms_retrieval` + `terms_generation`, support, wikivoyage, refund, `min_relevance_sweep` |
+| **`baseline_20261112T105743Z.csv`** | Companion to `105743Z.json` | **One row** — Terms RAG / Ragas means only (MRR, Hit@3, faithfulness, pass_rate, …) |
+
+## Appendix — RAGAS pipeline architecture (detailed)
+
+Code path: `eval/run_pipeline.py` → `eval/runners/ragas_pipeline.py`.
+Diagram source: `eval/reports/ragas_pipeline_architecture.mmd`.
+
+```mermaid
+flowchart TB
+  subgraph ENTRY["Entry: python -m eval.run_pipeline"]
+    CLI["argparse: --dataset, --k, --min-answer-correctness,<br/>--auxiliary, --baseline, --refresh-baseline, --report"]
+    TH["MetricThresholds(k, ndcg_at_k, answer_correctness, …)"]
+    CLI --> TH
+    TH --> BUILD["build_payload()"]
+  end
+
+  subgraph CORE["Core runner: run_terms_rag_pipeline()"]
+    DS["load_jsonl(dataset)<br/>default: eval/datasets/terms_rag_golden.jsonl"]
+    LOOP["For each golden case"]
+    ROW["evaluate_terms_rag_pipeline_row(case, thresholds)"]
+    AGG["_aggregate_pipeline_rows(rows, k)"]
+    OUT["return { summary, thresholds, rows }"]
+    DS --> LOOP --> ROW --> AGG --> OUT
+  end
+
+  BUILD --> CORE
+
+  subgraph CASE["Per case: evaluate_terms_rag_pipeline_row"]
+    INP["Input from JSONL:<br/>test_id, question,<br/>expected_sources, expected_keywords,<br/>expected_behavior, expect_escalate"]
+    EMB["build_terms_vector_store_with_huggingface()<br/>EVAL_EMBEDDINGS=gemini → production index"]
+    PATCH["unittest.mock.patch:<br/>get_terms_vector_store → eval FAISS store"]
+    INP --> EMB --> PATCH
+  end
+
+  ROW --> CASE
+
+  subgraph RET_RAW["Raw retrieval (ranking ground truth)"]
+    RAW["raw_similarity_ranked(question, store, top_k=raw_k=10)"]
+    RLIST["retrieved_contexts[]: rank, source, score, text preview"]
+    RSRC["raw_sources = chunk source labels"]
+    RAW --> RLIST
+    RAW --> RSRC
+  end
+
+  PATCH --> RET_RAW
+
+  subgraph RET_PROD["Production retrieval path (patched)"]
+    PATCH2["patch MIN_RELEVANCE_SCORE = min_score<br/>patch get_gemini_api_key → None (typical offline eval)"]
+    KB["retrieve_from_terms_kb(question, top_k=4,<br/>allow_semantic_cache=False)"]
+    KBIN["get_terms_vector_store → eval FAISS"]
+    NOCACHE["Skip semantic_cache.lookup/store"]
+    SS["similarity_search → RetrievedChunk list"]
+    CTX["chunks_to_context(kb_chunks) → filtered_context_text"]
+    PATCH2 --> KB
+    KB --> KBIN --> NOCACHE --> SS --> CTX
+  end
+
+  PATCH --> PATCH2
+
+  subgraph GEN["Generation path: answer_from_terms_document"]
+    AFTD["answer_from_terms_document(question,<br/>min_score=0.0, top_k)"]
+    RKB2["retrieve_from_terms_kb (again inside terms_rag)"]
+    STRONG["Filter chunks with score ≥ min_score"]
+    GGA["generate_grounded_answer(query, strong)"]
+    NOKEY{"GEMINI_API_KEY<br/>present?"}
+    MD["format_chunks_as_markdown(chunks)<br/>(offline eval default)"]
+    GEM["Gemini generate_content_with_fallback<br/>+ GROUNDED_SYSTEM_INSTRUCTION"]
+    POLISH["polish_ui_copy + embed_sources_in_reply<br/>(rag-inline-cite citations)"]
+    ESC["escalate = low_confidence(top1 vs min_score+0.08)"]
+    AFTD --> RKB2 --> STRONG --> GGA
+    GGA --> NOKEY
+    NOKEY -->|No| MD
+    NOKEY -->|Yes| GEM
+    MD --> POLISH
+    GEM --> POLISH
+    POLISH --> ESC
+  end
+
+  PATCH2 --> GEN
+
+  subgraph CODE["Deterministic code checks"]
+    GCS["generation_code_score(answer)"]
+    KW["keywords_ok vs expected_keywords"]
+    CIT["citation_ok: rag-inline-cite"]
+    TERM["terms_attribution_ok"]
+    PKG["package_math_hints (heuristic)"]
+    GCS --> KW & CIT & TERM & PKG
+  end
+
+  POLISH --> CODE
+
+  subgraph QUALITY["compute_answer_quality_metrics()"]
+    HEU["Heuristic offline (always computed):<br/>answer_correctness, context_utilization,<br/>hallucination_rate, groundedness<br/>evaluation_mode = heuristic_offline"]
+    LIVE{"EVAL_LIVE=1 +<br/>GEMINI_API_KEY?"}
+    RAGASLIB{"ragas package +<br/>EVAL_RAGAS≠0?"}
+    TRYL["try_ragas_evaluate()<br/>faithfulness, answer_correctness,<br/>context_precision → mapped fields"]
+    JUDGE["run_llm_judge() → 1–5 scores<br/>_judge_to_ragas_fields()"]
+    MODE["evaluation_mode:<br/>heuristic_offline | ragas_library |<br/>llm_judge_live | mixed_live (run aggregate)"]
+    HEU --> LIVE
+    LIVE -->|No| MODE
+    LIVE -->|Yes| RAGASLIB
+    RAGASLIB -->|Success| TRYL --> MODE
+    RAGASLIB -->|Fail / missing| JUDGE --> MODE
+  end
+
+  CODE --> QUALITY
+  CTX --> QUALITY
+
+  subgraph RET_MET["Retrieval metrics (labeled cases only)"]
+    MRR["mrr = mean_reciprocal_rank(expected_sources, raw_sources)"]
+    HIT["hit_at_k, hit_rate_at_k"]
+    NDCG["ndcg_at_k"]
+    REC["recall_at_3"]
+    CONF["top1_score, low_confidence,<br/>retrieve_error, retrieved_sources_ranked"]
+    RSRC --> MRR & HIT & NDCG & REC & CONF
+  end
+
+  subgraph CANON["Ragas canonical mapping (artifact names)"]
+    MAP["ragas_canonical_metrics():<br/>faithfulness ← groundedness<br/>answer_relevance ← answer_correctness<br/>context_precision ← context_utilization<br/>context_recall ← retrieval recall@K"]
+  end
+
+  QUALITY --> CANON
+  RET_MET --> CANON
+
+  subgraph PASS["Pass / fail per case"]
+    FAIL["_build_failure_analysis():<br/>generation_error, retrieval thresholds,<br/>answer_correctness, ndcg, groundedness,<br/>hallucination_rate"]
+    OK["passed = no generation_error AND<br/>failure_analysis == 'All configured metrics met thresholds.'"]
+    RECORD["Case record: input, output,<br/>retrieval_metrics, ragas_metrics,<br/>thresholds_applied, failure_analysis"]
+    FAIL --> OK --> RECORD
+  end
+
+  CANON --> FAIL
+
+  subgraph SUMMARY["Run summary: _aggregate_pipeline_rows"]
+    MEANS["Means: mrr_mean, hit_rate_at_k, ndcg_at_k_mean,<br/>answer_correctness_mean, groundedness_mean, …<br/>ragas_canonical_mean{faithfulness, …}"]
+    PR["pass_rate, embedding_mode,<br/>evaluation_mode via aggregate_evaluation_mode(rows)"]
+    MEANS --> PR
+  end
+
+  RECORD --> SUMMARY
+
+  subgraph ARTIFACT["Artifacts & optional extras"]
+    CTXBLK["run_context_block():<br/>evaluation_mode, official_ragas_requested,<br/>retrieval_profile, artifact_lineage"]
+    JSON["eval/artifacts/evaluation_run_*.json<br/>or baseline_*.json"]
+    CSV["Companion .csv (one-row summary)"]
+    REP["--report → eval/reports/EVAL_REPORT.md"]
+    AUX{"--auxiliary / refresh-baseline?"}
+    SF["run_support_faq_eval()"]
+    WV["run_wikivoyage_eval()"]
+    RF["run_refund_rules_eval()"]
+    BUILD --> CTXBLK
+    OUT --> CTXBLK
+    CTXBLK --> JSON --> CSV
+    JSON --> REP
+    BUILD --> AUX
+    AUX -->|Yes| SF & WV & RF
+  end
+
+  subgraph REG["Regression (tests / CI)"]
+    RT["eval/regression_thresholds.json<br/>terms_rag_pipeline: MRR, hit@3, nDCG,<br/>groundedness, ragas_canonical_mean"]
+    RT -.->|"pytest test_regression_thresholds"| JSON
+  end
+```

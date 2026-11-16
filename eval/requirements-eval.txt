@@ -1,3 +1,0 @@
-# Optional dependencies for official Ragas / live eval (install alongside requirements.txt)
-ragas>=0.2.0
-datasets>=2.14.0
