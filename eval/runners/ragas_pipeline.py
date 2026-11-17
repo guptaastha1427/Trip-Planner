@@ -24,7 +24,7 @@ from services.rag.terms_rag import answer_from_terms_document
 from services.rag.website_rag import MIN_RELEVANCE_SCORE, chunks_to_context, retrieve_from_terms_kb
 
 
-@dataclass
+@dataclass #defines a dataclass for the metric thresholds.
 class MetricThresholds:
     hit_at_k: float = 0.0
     ndcg_at_k: float = 0.0
@@ -46,12 +46,12 @@ class MetricThresholds:
         }
 
 
-def ragas_canonical_metrics(
+def ragas_canonical_metrics( #calculates the canonical metrics for the Ragas pipeline.
     ragas_metrics: Dict[str, Any],
     retrieval_metrics: Dict[str, Any],
     *,
     k: int,
-) -> Dict[str, Optional[float]]:
+) -> Dict[str, Optional[float]]: 
     """
     Stable Ragas-style names for artifacts and regression diffs.
 
@@ -70,7 +70,7 @@ def ragas_canonical_metrics(
     }
 
 
-def _build_failure_analysis(
+def _build_failure_analysis( #builds the failure analysis for the Ragas pipeline.
     *,
     thresholds: MetricThresholds,
     retrieval: Dict[str, Any],
@@ -125,7 +125,7 @@ def _build_failure_analysis(
     return " ".join(reasons)
 
 
-def evaluate_terms_rag_pipeline_row(
+def evaluate_terms_rag_pipeline_row( #evaluates a single row of the terms Ragas pipeline dataset.
     case: Dict[str, Any],
     *,
     thresholds: MetricThresholds,
@@ -141,7 +141,7 @@ def evaluate_terms_rag_pipeline_row(
     expect_escalate = bool(case.get("expect_escalate"))
     k = thresholds.k
 
-    store = build_terms_vector_store_with_huggingface()
+    store = build_terms_vector_store_with_huggingface() #builds the terms vector store with HuggingFace.
     with patch("services.rag.website_rag.get_terms_vector_store", return_value=store):
         raw = raw_similarity_ranked(question, store, top_k=raw_k)
         raw_sources = [c.source for c in raw]
@@ -158,12 +158,12 @@ def evaluate_terms_rag_pipeline_row(
         with patch("services.rag.website_rag.MIN_RELEVANCE_SCORE", min_score), patch(
             "services.rag.website_rag.get_gemini_api_key", return_value=None
         ):
-            gen_out = answer_from_terms_document(question, min_score=0.0, top_k=top_k)
+            gen_out = answer_from_terms_document(question, min_score=0.0, top_k=top_k) #generates the answer from the terms document.
             kb_chunks, retrieve_err = retrieve_from_terms_kb(
                 question, top_k=top_k, allow_semantic_cache=False
             )
 
-    context_text = chunks_to_context(kb_chunks[:top_k]) if kb_chunks else ""
+    context_text = chunks_to_context(kb_chunks[:top_k]) if kb_chunks else "" #gets the context text from the KB chunks.
     generation_error: Optional[str] = None
     answer = ""
     escalate = None
@@ -174,14 +174,14 @@ def evaluate_terms_rag_pipeline_row(
     else:
         answer, escalate, source_meta = gen_out
 
-    from eval.evaluators.code_checks import generation_code_score
+    from eval.evaluators.code_checks import generation_code_score #checks the generation code score.
 
-    code_checks = generation_code_score(
+    code_checks = generation_code_score( 
         answer,
         expected_keywords=expected_keywords,
         require_citation=bool(answer),
     )
-    ragas_metrics, judge_err = compute_answer_quality_metrics(
+    ragas_metrics, judge_err = compute_answer_quality_metrics( 
         question=question,
         answer=answer,
         retrieved_context=context_text,
@@ -216,19 +216,19 @@ def evaluate_terms_rag_pipeline_row(
         "retrieved_sources_ranked": raw_sources[:raw_k],
     }
 
-    failure_analysis = _build_failure_analysis(
+    failure_analysis = _build_failure_analysis( #builds the failure analysis for the Ragas pipeline.
         thresholds=thresholds,
         retrieval={**retrieval_metrics, "expected_sources": expected_sources},
         ragas_metrics=ragas_metrics,
         generation_error=generation_error,
     )
 
-    passed = (
+    passed = ( #checks if the pipeline passed.
         generation_error is None
         and failure_analysis == "All configured metrics met thresholds."
     )
 
-    return {
+    return { #returns the evaluation results.
         "test_id": test_id,
         "suite": "terms_rag",
         "input": {
@@ -263,7 +263,7 @@ def evaluate_terms_rag_pipeline_row(
     }
 
 
-def _aggregate_pipeline_rows(rows: List[Dict[str, Any]], *, k: int) -> Dict[str, Any]:
+def _aggregate_pipeline_rows(rows: List[Dict[str, Any]], *, k: int) -> Dict[str, Any]: #aggregates the pipeline rows.
     labeled = [r for r in rows if r["retrieval_metrics"].get(f"hit_at_{k}") is not None]
     n = max(len(labeled), 1)
     mrr = sum(float(r["retrieval_metrics"].get("mrr") or 0) for r in labeled) / n
@@ -282,7 +282,7 @@ def _aggregate_pipeline_rows(rows: List[Dict[str, Any]], *, k: int) -> Dict[str,
             sum(float(r["ragas_metrics"].get(key) or 0) for r in gen_rows) / gn, 4
         )
 
-    def avg_canonical(key: str) -> Optional[float]:
+    def avg_canonical(key: str) -> Optional[float]: #calculates the average canonical metric.
         vals = [
             r["ragas_metrics"].get("ragas_canonical", {}).get(key)
             for r in rows
@@ -300,7 +300,7 @@ def _aggregate_pipeline_rows(rows: List[Dict[str, Any]], *, k: int) -> Dict[str,
         "mrr_mean": round(mrr, 4),
         f"hit_rate_at_{k}": round(hit_k, 4),
         f"ndcg_at_{k}_mean": round(ndcg_k, 4),
-        "answer_correctness_mean": avg_metric("answer_correctness"),
+        "answer_correctness_mean": avg_metric("answer_correctness"), 
         "context_utilization_mean": avg_metric("context_utilization"),
         "hallucination_rate_mean": avg_metric("hallucination_rate"),
         "groundedness_mean": avg_metric("groundedness"),
@@ -317,13 +317,13 @@ def _aggregate_pipeline_rows(rows: List[Dict[str, Any]], *, k: int) -> Dict[str,
     }
 
 
-def _summary_evaluation_mode(rows: List[Dict[str, Any]]) -> str:
+def _summary_evaluation_mode(rows: List[Dict[str, Any]]) -> str: #summarizes the evaluation mode.
     from eval.helpers.run_metadata import aggregate_evaluation_mode
 
     return aggregate_evaluation_mode(rows)
 
 
-def run_terms_rag_pipeline(
+def run_terms_rag_pipeline( #runs the terms Ragas pipeline evaluation.
     dataset_name: str = "terms_rag_golden.jsonl",
     *,
     thresholds: Optional[MetricThresholds] = None,

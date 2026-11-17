@@ -10,8 +10,8 @@ from eval.helpers.io import load_jsonl
 from services.rag import wikivoyage_rag
 
 
-def _sample_html(city: str) -> str:
-    name = (city or "City").split(",")[0].strip()
+def _sample_html(city: str) -> str: 
+    name = (city or "City").split(",")[0].strip() #extract the city name from the city string.
     return f"""
 <h2>Understand</h2><p>{name} is a popular travel destination with distinct seasons.</p>
 <h2>See</h2><p>Visit museums, landmarks, and attractions across {name}.</p>
@@ -25,12 +25,12 @@ def _offline_fetch(title: str, _ua: str):
     return _sample_html(title)
 
 
-def evaluate_wikivoyage_row(
+def evaluate_wikivoyage_row( #evaluates a single row of the wikivoyage dataset.
     case: Dict[str, Any],
     *,
     enabled: bool = True,
     user_agent: str = "eval-test/1.0 (eval@example.com)",
-) -> Dict[str, Any]:
+) -> Dict[str, Any]: #evaluates a single row of the wikivoyage dataset.
     wikivoyage_rag._RAG_CACHE.clear()
     dest = case.get("destination", "")
     query = case.get("query", "")
@@ -64,7 +64,7 @@ def evaluate_wikivoyage_row(
         and len(disabled_result.get("chunks") or []) == 0
     )
 
-    return {
+    return { #returns the evaluation results.
         "test_id": case["test_id"],
         "destination": dest,
         "query": query,
@@ -76,13 +76,13 @@ def evaluate_wikivoyage_row(
     }
 
 
-def run_wikivoyage_eval(
-    dataset_name: str = "wikivoyage_golden.jsonl",
+def run_wikivoyage_eval( #runs the wikivoyage evaluation.
+    dataset_name: str = "wikivoyage_golden.jsonl", #the name of the dataset to evaluate.
     *,
     live_network: bool = False,
 ) -> Dict[str, Any]:
     cases = load_jsonl(dataset_name)
-    if live_network and os.environ.get("EVAL_LIVE", "").lower() in ("1", "true", "yes"):
+    if live_network and os.environ.get("EVAL_LIVE", "").lower() in ("1", "true", "yes"): 
         rows: List[Dict[str, Any]] = []
         for case in cases:
             wikivoyage_rag._RAG_CACHE.clear()

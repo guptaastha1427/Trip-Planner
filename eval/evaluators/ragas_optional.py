@@ -8,21 +8,21 @@ from typing import Any, Dict, List, Optional
 from eval.evaluators.llm_judge import is_live_judge_enabled
 
 
-def is_ragas_library_enabled() -> bool:
+def is_ragas_library_enabled() -> bool: #checks if the Ragas library is enabled.
     """Official Ragas metrics when package installed and live eval requested."""
     if not is_live_judge_enabled():
         return False
     return os.environ.get("EVAL_RAGAS", "1").strip().lower() in ("1", "true", "yes", "")
 
 
-def try_ragas_evaluate(
+def try_ragas_evaluate( #evaluates the Ragas library.
     question: str,
     answer: str,
     contexts: List[str],
     reference: str,
 ) -> Optional[Dict[str, float]]:
     """
-    Run ragas metrics when the package is installed and an LLM is configured.
+    Run ragas metrics when the package is installed and an LLM is configured. This function evaluates the Ragas library.
     Returns None when ragas is unavailable or evaluation fails.
     """
     try:

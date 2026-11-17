@@ -1,18 +1,21 @@
 # Trip Planner — Project guide (`info.md`)
 
-**Run:** `streamlit run app.py` · **In browser:** [http://localhost:8501/dev](http://localhost:8501/dev) (Developer docs)
+**Run:** `streamlit run app.py` · **In browser:** [http://localhost:8501/dev](http://localhost:8501/dev) (Developer docs)  
+**Full handbook (returning to the repo):** [`docs/PROJECT_HANDBOOK.md`](docs/PROJECT_HANDBOOK.md)
 
 ## 1. 30-second summary
 
-| | |
-|--|--|
-| **App** | Multi-day **Trip Planner** + simulated **customer portal** (bookings, refunds, support, admin). |
-| **UI** | Streamlit multipage; itinerary / map / travel tabs. |
-| **AI** | **Gemini** builds JSON itineraries; every `poi_id` must exist in OSM catalog first. |
-| **Places** | Nominatim + Overpass. |
-| **Policy Q&A** | **LangChain + FAISS + Gemini** on in-app terms (`website_rag.py`) — separate from trip agent. |
-| **Refunds** | `refund_eligibility.py` — UI/bots must not override. |
-| **Data** | `app_state.json`, `feedback.jsonl`, `demo_bookings.json`, `customer_portal_state.json`, RAG auth JSON. |
+
+|                |                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------ |
+| **App**        | Multi-day **Trip Planner** + simulated **customer portal** (bookings, refunds, support, admin).        |
+| **UI**         | Streamlit multipage; itinerary / map / travel tabs.                                                    |
+| **AI**         | **Gemini** builds JSON itineraries; every `poi_id` must exist in OSM catalog first.                    |
+| **Places**     | Nominatim + Overpass.                                                                                  |
+| **Policy Q&A** | **LangChain + FAISS + Gemini** on in-app terms (`website_rag.py`) — separate from trip agent.          |
+| **Refunds**    | `refund_eligibility.py` — UI/bots must not override.                                                   |
+| **Data**       | `app_state.json`, `feedback.jsonl`, `demo_bookings.json`, `customer_portal_state.json`, RAG auth JSON. |
+
 
 **Golden rule:** Model **must not invent places** — all stops reference `tool_state.pois`.
 
@@ -32,13 +35,17 @@ flowchart LR
   FAISS --> GA[Gemini answer]
 ```
 
+
+
+
+
 ## 4. Code map
 
 ```
 app.py, config.py, pages/, services/, data/, tests/, info.md, using.md
 ```
 
-**`app.py`:** `main`, `_init_session`, `_run_generation`, `_render_itinerary`, map/travel, `_flush_persist`.
+`app.py`**:** `main`, `_init_session`, `_run_generation`, `_render_itinerary`, map/travel, `_flush_persist`.
 
 **Planner services:** `agent`, `poi_search`, `geocoding`, `validation`, `refine_itinerary`, `feedback`, `persistence`, `trip_history`, `travel_hints`, `destination_guide`, `weather`, `map_viz`, `nearby_pois`, `wikivoyage_rag`, `website_rag`, `terms_rag`, `support_faq`, `policy_bot_ui`, `http_client`, `retry_utils`, UI/trace modules.
 
@@ -50,10 +57,10 @@ Every interaction reruns the script → state in `st.session_state` + disk flush
 
 ## 6. Agent flow
 
-1. `validate_trip_inputs`  
-2. `run_agent` — default **fast generate:** OSM POIs (+ feedback boosts) → Gemini JSON.  
-3. Fallback **tool loop:** `search_pois`, optional `retrieve_guides` (Wikivoyage TF-IDF if enabled & not fast mode).  
-4. `_finalize_itinerary` — parse JSON, validate `poi_id`s, enrich photos/hints.  
+1. `validate_trip_inputs`
+2. `run_agent` — default **fast generate:** OSM POIs (+ feedback boosts) → Gemini JSON.
+3. Fallback **tool loop:** `search_pois`, optional `retrieve_guides` (Wikivoyage TF-IDF if enabled & not fast mode).
+4. `_finalize_itinerary` — parse JSON, validate `poi_id`s, enrich photos/hints.
 5. Append trip history on successful **generate**; persist `tool_state` with POIs (and Wikivoyage chunks if any).
 
 Modes: `generate`, `refine`, `single_day` — UI only wires generate + single_day.
@@ -84,13 +91,15 @@ Open-Meteo weather; destination guide (optional Gemini if `DESTINATION_GUIDE_AI`
 
 ## 13. Data & memory
 
-| File | Holds |
-|------|--------|
-| `app_state.json` | Itinerary, forms, `tool_state`, trace tail, `trip_history` |
-| `feedback.jsonl` | POI votes |
-| `demo_bookings.json` | Static catalog |
-| `customer_portal_state.json` | Refunds, tickets, packages, appeals, audit, overrides |
-| RAG auth JSON | Local sign-in accounts/sessions |
+
+| File                         | Holds                                                      |
+| ---------------------------- | ---------------------------------------------------------- |
+| `app_state.json`             | Itinerary, forms, `tool_state`, trace tail, `trip_history` |
+| `feedback.jsonl`             | POI votes                                                  |
+| `demo_bookings.json`         | Static catalog                                             |
+| `customer_portal_state.json` | Refunds, tickets, packages, appeals, audit, overrides      |
+| RAG auth JSON                | Local sign-in accounts/sessions                            |
+
 
 Policy **FAISS index:** in-process only (`@st.cache_resource`), rebuilt after restart.
 
@@ -114,11 +123,13 @@ Enrichment may add `lat`, `lon`, `category`, `url`, `image_url`.
 
 Setup: venv → `pip install -r requirements.txt` → `.env` → `streamlit run app.py`.
 
-| Env | Required | Purpose |
-|-----|----------|---------|
-| `GEMINI_API_KEY` | Yes | Trip + embeddings + RAG answers |
-| `OSM_CONTACT_EMAIL` | Yes | OSM User-Agent |
-| `ENABLE_WIKIVOYAGE_RAG` | No | Agent tool |
+
+| Env                     | Required | Purpose                         |
+| ----------------------- | -------- | ------------------------------- |
+| `GEMINI_API_KEY`        | Yes      | Trip + embeddings + RAG answers |
+| `OSM_CONTACT_EMAIL`     | Yes      | OSM User-Agent                  |
+| `ENABLE_WIKIVOYAGE_RAG` | No       | Agent tool                      |
+
 
 Notable `config.py`: `DEFAULT_MODEL`, `FAST_POI_LIMIT` 45, vote boosts ±0.25/0.35, portal paths.
 
@@ -150,26 +161,30 @@ Catalog in `travel_packages.py`; UI in `package_booking_ui.py`; confirm writes p
 
 ## 22. Admin console
 
-Passphrase **`demo_admin`** (or Admin dashboard unlock); tabs refunds/tickets/accounts/audit; mutates portal JSON + audit log.
+Passphrase `demo_admin` (or Admin dashboard unlock); tabs refunds/tickets/accounts/audit; mutates portal JSON + audit log.
 
 ## 23. Glossary
 
-| Term | Meaning |
-|------|---------|
-| **POI / poi_id** | OSM place / stable id in catalog |
-| **tool_state** | Agent+UI shared POIs (and optional chunks) |
-| **Fast mode** | Fewer steps; default from app |
-| **Tool loop** | Gemini calls OSM/Wikivoyage tools |
-| **Terms RAG** | FAISS over terms/FAQ/policies |
-| **Wikivoyage RAG** | TF-IDF guide chunks for agent tool |
-| **city_key** | Feedback scope for ranking |
-| **Portal state** | `customer_portal_state.json` |
-| **Catalog vs package booking** | `demo_bookings.json` vs user `BK-PKG-*` |
-| **Rule engine** | `refund_eligibility.py` |
-| **Session rerun** | Streamlit full script rerun |
+
+| Term                           | Meaning                                    |
+| ------------------------------ | ------------------------------------------ |
+| **POI / poi_id**               | OSM place / stable id in catalog           |
+| **tool_state**                 | Agent+UI shared POIs (and optional chunks) |
+| **Fast mode**                  | Fewer steps; default from app              |
+| **Tool loop**                  | Gemini calls OSM/Wikivoyage tools          |
+| **Terms RAG**                  | FAISS over terms/FAQ/policies              |
+| **Wikivoyage RAG**             | TF-IDF guide chunks for agent tool         |
+| **city_key**                   | Feedback scope for ranking                 |
+| **Portal state**               | `customer_portal_state.json`               |
+| **Catalog vs package booking** | `demo_bookings.json` vs user `BK-PKG-`*    |
+| **Rule engine**                | `refund_eligibility.py`                    |
+| **Session rerun**              | Streamlit full script rerun                |
+
+
+
 
 ## Credits
 
 OpenStreetMap, Wikivoyage, Google Gemini, Open-Meteo, Wikipedia.
 
-*Update this file when features change; detailed specs also in `PRD.md`, `ARCHITECTURE.md`, `API.md`, `DATABASE.md`.*
+*Update this file when features change; detailed specs also in* `PRD.md`*,* `ARCHITECTURE.md`*,* `API.md`*,* `DATABASE.md`*.*

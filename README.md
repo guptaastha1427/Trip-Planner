@@ -2,6 +2,8 @@
 
 **Streamlit capstone:** multi-day trips via **Gemini + OpenStreetMap**; **demo portal** (bookings/refunds/support); **policy Q&A** via **LangChain + in-memory FAISS**. Not a real travel agency — no real payments.
 
+**Re-onboarding:** start with [`docs/PROJECT_HANDBOOK.md`](docs/PROJECT_HANDBOOK.md) for structure, flows, data, flags, eval, and troubleshooting.
+
 ## Features (short)
 
 **Trip Planner:** Form (1–14 days, pace, interests) → **Create my itinerary** → itinerary / map / travel tabs; nearby swap; 👍/👎 → `feedback.jsonl`; single-day update; package prefill; policy FAB; export JSON; agent trace; trip history (User sidebar); balloons on generate.

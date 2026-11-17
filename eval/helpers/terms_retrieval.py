@@ -11,7 +11,7 @@ from services.rag.hybrid_retrieval import fetch_ranked_chunks
 from services.rag.website_rag import MIN_RELEVANCE_SCORE, RetrievedChunk
 
 
-def raw_similarity_ranked(
+def raw_similarity_ranked( #ranks the chunks by similarity.
     query: str,
     vector_store: FAISS,
     *,
@@ -22,30 +22,30 @@ def raw_similarity_ranked(
     if not q:
         return []
     mult = get_terms_retrieval_candidate_multiplier()
-    candidate_k = max(top_k, top_k * mult, 12)
-    return fetch_ranked_chunks(
+    candidate_k = max(top_k, top_k * mult, 12) #calculates the candidate k.
+    return fetch_ranked_chunks( #fetches the ranked chunks.
         q,
         vector_store,
         top_k=top_k,
         candidate_k=candidate_k,
-        use_hybrid=is_hybrid_terms_retrieval_enabled(),
+        use_hybrid=is_hybrid_terms_retrieval_enabled(), #uses the hybrid terms retrieval.
     )
 
 
-def source_matches(expected: Sequence[str], source: str) -> bool:
-    s = (source or "").lower()
-    for exp in expected:
+def source_matches(expected: Sequence[str], source: str) -> bool: 
+    s = (source or "").lower() #converts the source to lowercase.
+    for exp in expected: #checks if the expected source is in the source.
         if (exp or "").lower() in s:
             return True
     return False
 
 
-def chunk_preview(text: str, limit: int = 200) -> str:
+def chunk_preview(text: str, limit: int = 200) -> str: #preview the text.
     t = (text or "").replace("\n", " ").strip()
     if len(t) <= limit:
         return t
     return t[: limit - 1] + "…"
 
 
-def passes_min_score(score: float, min_score: float = MIN_RELEVANCE_SCORE) -> bool:
+def passes_min_score(score: float, min_score: float = MIN_RELEVANCE_SCORE) -> bool: #checks if the score passes the minimum score.
     return score >= min_score

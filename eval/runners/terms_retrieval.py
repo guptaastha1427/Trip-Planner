@@ -27,11 +27,11 @@ from services.rag.website_rag import (
 )
 
 
-def terms_eval_vector_store():
+def terms_eval_vector_store(): #builds the vector store for the terms retrieval evaluation.
     return build_terms_vector_store_with_huggingface()
 
 
-def evaluate_terms_retrieval_row(
+def evaluate_terms_retrieval_row( #evaluates a single row of the terms retrieval dataset.
     case: Dict[str, Any],
     *,
     top_k: int = 4,
@@ -43,9 +43,9 @@ def evaluate_terms_retrieval_row(
     expected_sources = case.get("expected_sources") or []
     expect_escalate = bool(case.get("expect_escalate"))
 
-    store = terms_eval_vector_store()
-    with patch("services.rag.website_rag.get_terms_vector_store", return_value=store):
-        raw = raw_similarity_ranked(question, store, top_k=raw_k)
+    store = terms_eval_vector_store() #builds the terms vector store.
+    with patch("services.rag.website_rag.get_terms_vector_store", return_value=store): 
+        raw = raw_similarity_ranked(question, store, top_k=raw_k) #retrieves the raw similarity ranked chunks.
         raw_sources = [c.source for c in raw]
 
         with patch("services.rag.website_rag.MIN_RELEVANCE_SCORE", min_score):
@@ -54,7 +54,7 @@ def evaluate_terms_retrieval_row(
             )
         filtered_sources = [c.source for c in kb_chunks]
 
-        policy_hits = retrieve_policy_chunks(question, top_k=top_k, min_score=min_score)
+        policy_hits = retrieve_policy_chunks(question, top_k=top_k, min_score=min_score) #retrieves the policy hits.
 
     top1_score = raw[0].score if raw else 0.0
     low_confidence = not raw or top1_score < (min_score + 0.08)
@@ -98,7 +98,7 @@ def evaluate_terms_retrieval_row(
     return row
 
 
-def run_terms_retrieval_eval(
+def run_terms_retrieval_eval( #runs the terms retrieval evaluation.
     dataset_name: str = "terms_rag_golden.jsonl",
 ) -> Dict[str, Any]:
     cases = load_jsonl(dataset_name)
@@ -114,34 +114,34 @@ def run_terms_retrieval_eval(
     return {"summary": summary, "rows": rows}
 
 
-def evaluate_terms_generation_row(
+def evaluate_terms_generation_row( #evaluates a single row of the terms generation dataset.
     case: Dict[str, Any],
     *,
     min_score: float = 0.0,
 ) -> Dict[str, Any]:
-    from eval.evaluators.code_checks import generation_code_score
+    from eval.evaluators.code_checks import generation_code_score #checks the generation code score.
 
     store = terms_eval_vector_store()
-    with patch("services.rag.website_rag.get_terms_vector_store", return_value=store), patch(
-        "services.rag.website_rag.MIN_RELEVANCE_SCORE", min_score
-    ), patch("services.rag.website_rag.get_gemini_api_key", return_value=None):
-        out = answer_from_terms_document(case["question"], min_score=min_score)
+    with patch("services.rag.website_rag.get_terms_vector_store", return_value=store), patch( #patches the terms vector store.
+        "services.rag.website_rag.MIN_RELEVANCE_SCORE", min_score #patches the minimum relevance score.
+    ), patch("services.rag.website_rag.get_gemini_api_key", return_value=None): #patches the Gemini API key.
+        out = answer_from_terms_document(case["question"], min_score=min_score) #generates the answer from the terms document.
 
-    if not out:
+    if not out: 
         return {
             "test_id": case["test_id"],
             "pass": False,
             "error": "no_answer",
         }
-    reply, escalate, sources = out
+    reply, escalate, sources = out 
     code = generation_code_score(
         reply,
-        expected_keywords=case.get("expected_keywords") or [],
+        expected_keywords=case.get("expected_keywords") or [], #gets the expected keywords.
         require_citation=True,
     )
-    with patch("services.rag.website_rag.get_terms_vector_store", return_value=store):
-        chunks, _ = retrieve_from_terms_kb(case["question"], allow_semantic_cache=False)
-    context = chunks_to_context(chunks[:3]) if chunks else ""
+    with patch("services.rag.website_rag.get_terms_vector_store", return_value=store): #retrieves the chunks from the terms KB.
+        chunks, _ = retrieve_from_terms_kb(case["question"], allow_semantic_cache=False)  
+    context = chunks_to_context(chunks[:3]) if chunks else "" #gets the context from the chunks.
 
     return {
         "test_id": case["test_id"],
@@ -150,7 +150,7 @@ def evaluate_terms_generation_row(
         "expect_escalate": case.get("expect_escalate"),
         "sources_count": len(sources),
         "code_checks": code,
-        "context_preview": context[:500],
+        "context_preview": context[:500], #gets the context preview.
         "pass": code["passed"]
         and (
             case.get("expect_escalate") is None
@@ -159,16 +159,16 @@ def evaluate_terms_generation_row(
     }
 
 
-def run_terms_generation_eval(dataset_name: str = "terms_rag_golden.jsonl") -> Dict[str, Any]:
+def run_terms_generation_eval(dataset_name: str = "terms_rag_golden.jsonl") -> Dict[str, Any]: #runs the terms generation evaluation.
     cases = load_jsonl(dataset_name)
-    rows = [evaluate_terms_generation_row(c) for c in cases]
+    rows = [evaluate_terms_generation_row(c) for c in cases] #evaluates the terms generation rows.
     passed = sum(1 for r in rows if r.get("pass"))
-    return {
-        "summary": {
-            "total": len(rows),
-            "passed": passed,
-            "pass_rate": round(passed / max(len(rows), 1), 4),
-            "mode": "markdown_fallback_no_gemini",
+    return { #returns the evaluation results.
+        "summary": { #returns the summary.
+            "total": len(rows), #returns the total number of rows.
+            "passed": passed, #returns the number of passed rows.
+            "pass_rate": round(passed / max(len(rows), 1), 4), #returns the pass rate.
+            "mode": "markdown_fallback_no_gemini", #returns the mode.
         },
-        "rows": rows,
+        "rows": rows, #returns the rows.
     }

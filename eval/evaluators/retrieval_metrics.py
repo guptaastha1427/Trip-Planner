@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Sequence
 
 
-def hit_at_k(
+def hit_at_k( #checks if the expected sources are hit at the given rank.
     expected_sources: Sequence[str],
     retrieved_sources: Sequence[str],
     k: int,
@@ -25,7 +25,7 @@ def hit_at_k(
     return False
 
 
-def recall_at_k(
+def recall_at_k( #calculates the recall at the given rank.
     expected_sources: Sequence[str],
     retrieved_sources: Sequence[str],
     k: int,
@@ -47,7 +47,7 @@ def _dcg(relevances: Sequence[float]) -> float:
     return sum(rel / math.log2(i + 2) for i, rel in enumerate(relevances))
 
 
-def ndcg_at_k(
+def ndcg_at_k( #calculates the NDCG at the given rank.
     expected_sources: Sequence[str],
     retrieved_sources: Sequence[str],
     k: int,
@@ -71,7 +71,7 @@ def ndcg_at_k(
     return dcg / idcg
 
 
-def hit_rate_at_k(
+def hit_rate_at_k( #calculates the hit rate at the given rank.
     expected_sources: Sequence[str],
     retrieved_sources: Sequence[str],
     k: int,
@@ -84,7 +84,7 @@ def hit_rate_at_k(
     return 1.0 if hit_at_k(expected_sources, retrieved_sources, k, matcher=matcher) else 0.0
 
 
-def mean_reciprocal_rank(
+def mean_reciprocal_rank( #calculates the mean reciprocal rank.
     expected_sources: Sequence[str],
     retrieved_sources: Sequence[str],
     *,
@@ -101,7 +101,7 @@ def mean_reciprocal_rank(
 
 
 @dataclass
-class RetrievalAggregate:
+class RetrievalAggregate: #defines a dataclass for the retrieval aggregate.
     count: int = 0
     hit1: float = 0.0
     hit3: float = 0.0
@@ -112,7 +112,7 @@ class RetrievalAggregate:
     escalation_accuracy: float = 0.0
     per_case: List[Dict[str, Any]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]: #converts the retrieval aggregate to a dictionary.
         return {
             "count": self.count,
             "hit_at_1": round(self.hit1, 4),
@@ -125,18 +125,18 @@ class RetrievalAggregate:
         }
 
 
-def aggregate_retrieval_rows(rows: List[Dict[str, Any]]) -> RetrievalAggregate:
-    agg = RetrievalAggregate(count=len(rows))
+def aggregate_retrieval_rows(rows: List[Dict[str, Any]]) -> RetrievalAggregate: #aggregates the retrieval rows.
+    agg = RetrievalAggregate(count=len(rows)) #initializes the retrieval aggregate.
     if not rows:
         return agg
     h1 = h3 = rec3 = mrr = top1 = low = esc = 0.0
     for row in rows:
-        h1 += 1.0 if row.get("hit_at_1") else 0.0
-        h3 += 1.0 if row.get("hit_at_3") else 0.0
-        rec3 += float(row.get("recall_at_3") or 0.0)
-        mrr += float(row.get("mrr") or 0.0)
+        h1 += 1.0 if row.get("hit_at_1") else 0.0 #adds 1.0 to the hit1 if the expected sources are hit at the given rank.
+        h3 += 1.0 if row.get("hit_at_3") else 0.0 #adds 1.0 to the hit3 if the expected sources are hit at the given rank.
+        rec3 += float(row.get("recall_at_3") or 0.0) #adds the recall at the given rank to the rec3.
+        mrr += float(row.get("mrr") or 0.0) #adds the mean reciprocal rank to the mrr.
         top1 += float(row.get("top1_score") or 0.0)
-        if row.get("low_confidence"):
+        if row.get("low_confidence"): 
             low += 1.0
         if row.get("escalation_match"):
             esc += 1.0

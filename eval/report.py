@@ -23,7 +23,7 @@ from eval.helpers.eval_report import write_eval_report  # noqa: E402
 ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
 
 
-def _latest_baseline_json() -> Optional[Path]:
+def _latest_baseline_json() -> Optional[Path]: #gets the latest baseline JSON file.
     candidates = sorted(ARTIFACTS_DIR.glob("baseline_*.json"), reverse=True)
     for path in candidates:
         try:
@@ -35,7 +35,7 @@ def _latest_baseline_json() -> Optional[Path]:
     return candidates[0] if candidates else None
 
 
-def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace: 
     p = argparse.ArgumentParser(description="Write EVAL_REPORT.md from artifact JSON")
     p.add_argument(
         "--artifact",
@@ -45,7 +45,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int: 
     args = parse_args(argv)
     if args.artifact:
         json_path = Path(args.artifact)

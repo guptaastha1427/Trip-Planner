@@ -12,35 +12,35 @@ from eval.evaluators.ragas_optional import is_ragas_library_enabled, try_ragas_e
 _WORD_RE = re.compile(r"[a-z0-9]{4,}", re.I)
 
 
-def _token_set(text: str) -> set[str]:
+def _token_set(text: str) -> set[str]: #tokenizes the text.
     return {m.group(0).lower() for m in _WORD_RE.finditer(text or "")}
 
 
-def _context_utilization_score(context: str, expected_keywords: Sequence[str]) -> float:
+def _context_utilization_score(context: str, expected_keywords: Sequence[str]) -> float: #calculates the context utilization score.
     if not expected_keywords:
-        return 1.0 if (context or "").strip() else 0.0
+        return 1.0 if (context or "").strip() else 0.0 
     hits = sum(1 for kw in expected_keywords if kw and kw.lower() in (context or "").lower())
     return hits / len(expected_keywords)
 
 
-def _groundedness_heuristic(answer: str, context: str) -> float:
-    ctx = _token_set(context)
-    ans = _token_set(answer)
-    if not ans:
+def _groundedness_heuristic(answer: str, context: str) -> float: 
+    ctx = _token_set(context)  #tokenizes the context.
+    ans = _token_set(answer)  #tokenizes the answer.
+    if not ans: #if the answer is not tokenized, return 0.0.
         return 0.0
     if not ctx:
         return 0.0
-    overlap = len(ans & ctx)
-    return overlap / len(ans)
+    overlap = len(ans & ctx) #overlap between the answer and the context.
+    return overlap / len(ans) #returns the groundedness score.
 
 
-def _hallucination_rate_heuristic(answer: str, context: str) -> float:
+def _hallucination_rate_heuristic(answer: str, context: str) -> float: #calculates the hallucination rate.
     """Fraction of answer content tokens not supported by context (higher = more hallucination)."""
     grounded = _groundedness_heuristic(answer, context)
     return round(max(0.0, min(1.0, 1.0 - grounded)), 4)
 
 
-def _answer_correctness_heuristic(
+def _answer_correctness_heuristic( #calculates the answer correctness score.
     answer: str,
     context: str,
     *,
@@ -58,11 +58,11 @@ def _answer_correctness_heuristic(
     return round(sum(parts) / len(parts), 4)
 
 
-def _judge_to_ragas_fields(judge: Dict[str, Any]) -> Dict[str, float]:
-    def norm(key: str) -> float:
-        return round(float(judge.get(key, 0)) / 5.0, 4)
+def _judge_to_ragas_fields(judge: Dict[str, Any]) -> Dict[str, float]: #converts the judge scores to ragas fields.
+    def norm(key: str) -> float: #normalizes the judge scores.
+        return round(float(judge.get(key, 0)) / 5.0, 4) 
 
-    hallucination_score = float(judge.get("hallucination", 0))
+    hallucination_score = float(judge.get("hallucination", 0)) 
     return {
         "answer_correctness": norm("correctness"),
         "context_utilization": norm("faithfulness"),
@@ -71,7 +71,7 @@ def _judge_to_ragas_fields(judge: Dict[str, Any]) -> Dict[str, float]:
     }
 
 
-def compute_answer_quality_metrics(
+def compute_answer_quality_metrics( 
     *,
     question: str,
     answer: str,
@@ -120,7 +120,7 @@ def compute_answer_quality_metrics(
             merged["evaluation_mode"] = "ragas_library"
             return merged, None
 
-    judge_scores, judge_err = run_llm_judge(
+    judge_scores, judge_err = run_llm_judge( 
         question,
         retrieved_context,
         expected_criteria=expected_behavior or "Answer from context with citations.",

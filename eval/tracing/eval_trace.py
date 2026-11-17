@@ -1,12 +1,12 @@
 """JSONL evaluation trace writer (no secrets)."""
 
-from __future__ import annotations
+from __future__ import annotations #for type hints.
 
 import json
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional 
 
 EVAL_ROOT = Path(__file__).resolve().parents[1]
 TRACES_DIR = EVAL_ROOT / "traces"

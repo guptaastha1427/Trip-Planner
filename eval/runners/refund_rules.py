@@ -10,11 +10,11 @@ from services.portal.bookings import get_booking
 from services.portal.refund_eligibility import evaluate_refund_request
 
 
-def _parse_now(s: str) -> datetime:
+def _parse_now(s: str) -> datetime: #parses the now timestamp.
     return datetime.fromisoformat(s.replace("Z", ""))
 
 
-def evaluate_refund_row(case: Dict[str, Any]) -> Dict[str, Any]:
+def evaluate_refund_row(case: Dict[str, Any]) -> Dict[str, Any]: #evaluates a single row of the refund rules dataset.
     booking_id = case["booking_id"]
     booking = get_booking(booking_id)
     if booking is None:
@@ -49,7 +49,7 @@ def evaluate_refund_row(case: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def run_refund_rules_eval(dataset_name: str = "refund_decision_table.jsonl") -> Dict[str, Any]:
+def run_refund_rules_eval(dataset_name: str = "refund_decision_table.jsonl") -> Dict[str, Any]: #runs the refund rules evaluation.
     cases = load_jsonl(dataset_name)
     rows = [evaluate_refund_row(c) for c in cases]
     passed = sum(1 for r in rows if r.get("pass"))

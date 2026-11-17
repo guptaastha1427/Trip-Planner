@@ -9,12 +9,12 @@ from eval.helpers.io import load_jsonl
 from services.rag.support_faq import answer_support_query
 
 
-def _classify_route(
-    message: str,
-    reply: str,
-    *,
-    rag_calls: int,
-    rag_loose: bool,
+def _classify_route( #classifies the route of the support query.
+    message: str, 
+    reply: str, 
+    *, #keyword-only arguments.
+    rag_calls: int, 
+    rag_loose: bool, 
 ) -> str:
     text = (message or "").strip().lower()
     if not text:
@@ -25,7 +25,7 @@ def _classify_route(
         return "account_status"
     if "refund" in text and "status" in text:
         return "refund_status"
-    upper = (message or "").upper().split()
+    upper = (message or "").upper().split() #splits the message into uppercase tokens.
     if "booking" in text or any(tok.startswith("BK-") for tok in upper):
         if "not found" in (reply or "").lower():
             return "booking_not_found"
@@ -38,7 +38,7 @@ def _classify_route(
     return "unknown"
 
 
-def evaluate_support_row(case: Dict[str, Any]) -> Dict[str, Any]:
+def evaluate_support_row(case: Dict[str, Any]) -> Dict[str, Any]: #evaluates a single row of the support FAQ dataset.
     user_id = case["user_id"]
     message = case["message"]
     expected = case["expected_route"]
@@ -46,33 +46,33 @@ def evaluate_support_row(case: Dict[str, Any]) -> Dict[str, Any]:
 
     call_count = {"n": 0, "loose": False}
 
-    def _count_rag(query, **kwargs):
-        call_count["n"] += 1
-        if kwargs.get("min_score", 0.42) < 0.4:
+    def _count_rag(query, **kwargs): 
+        call_count["n"] += 1 
+        if kwargs.get("min_score", 0.42) < 0.4: 
             call_count["loose"] = True
-        from eval.helpers.real_embeddings import build_terms_vector_store_with_huggingface
-        from services.rag.terms_rag import answer_from_terms_document as real
+        from eval.helpers.real_embeddings import build_terms_vector_store_with_huggingface 
+        from services.rag.terms_rag import answer_from_terms_document as real 
 
-        with patch(
-            "services.rag.website_rag.get_terms_vector_store",
-            return_value=build_terms_vector_store_with_huggingface(),
+        with patch( 
+            "services.rag.website_rag.get_terms_vector_store", 
+            return_value=build_terms_vector_store_with_huggingface(), 
         ), patch(
             "services.rag.website_rag.MIN_RELEVANCE_SCORE", 0.0
         ):
             return real(query, **kwargs)
 
     with patch("services.rag.support_faq.answer_from_terms_document", side_effect=_count_rag):
-        reply, escalate, _sources = answer_support_query(user_id, message)
+        reply, escalate, _sources = answer_support_query(user_id, message) #answers the support query.
 
-    route = _classify_route(
+    route = _classify_route( #classifies the route of the support query.
         message,
         reply,
-        rag_calls=call_count["n"],
-        rag_loose=call_count["loose"],
+        rag_calls=call_count["n"], 
+        rag_loose=call_count["loose"], 
     )
 
     route_ok = route == expected
-    if expected == "terms_rag" and route in ("terms_rag", "terms_rag_loose"):
+    if expected == "terms_rag" and route in ("terms_rag", "terms_rag_loose"): #checks if the route is correct.
         route_ok = True
     if expected == "no_match_or_loose" and route in ("no_match_or_loose", "terms_rag_loose"):
         route_ok = True
@@ -96,7 +96,7 @@ def evaluate_support_row(case: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def run_support_faq_eval(dataset_name: str = "support_faq_routing.jsonl") -> Dict[str, Any]:
+def run_support_faq_eval(dataset_name: str = "support_faq_routing.jsonl") -> Dict[str, Any]: #runs the support FAQ evaluation.
     cases = load_jsonl(dataset_name)
     rows = [evaluate_support_row(c) for c in cases]
     route_acc = sum(1 for r in rows if r["route_match"]) / max(len(rows), 1)

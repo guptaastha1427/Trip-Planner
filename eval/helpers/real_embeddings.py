@@ -23,7 +23,7 @@ def _require_real_embeddings_message() -> str:
 
 
 @lru_cache(maxsize=4)
-def get_huggingface_embeddings(
+def get_huggingface_embeddings( 
     model_name: str = DEFAULT_HF_EMBEDDING_MODEL,
 ) -> Any:
     from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -31,7 +31,7 @@ def get_huggingface_embeddings(
     return HuggingFaceEmbeddings(model_name=model_name)
 
 
-def _gemini_embeddings_for_eval() -> Any:
+def _gemini_embeddings_for_eval() -> Any: #gets the Gemini embeddings for evaluation.
     from config import get_gemini_api_key
     from services.rag.website_rag import get_embeddings
 

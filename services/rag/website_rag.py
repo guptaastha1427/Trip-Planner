@@ -266,13 +266,13 @@ def _build_faiss_from_documents(
     return FAISS.from_documents(chunks, embeddings)
 
 
-@st.cache_resource(show_spinner=False)
-def get_terms_vector_store(_cache_version: int = EMBEDDING_CACHE_VERSION) -> Optional[FAISS]:
+@st.cache_resource(show_spinner=False) 
+def get_terms_vector_store(_cache_version: int = EMBEDDING_CACHE_VERSION) -> Optional[FAISS]: 
     embeddings = get_embeddings()
     if embeddings is None:
         return None
     try:
-        return build_faiss_index(_terms_source_documents(), embeddings)
+        return build_faiss_index(_terms_source_documents(), embeddings) 
     except Exception as exc:  # noqa: BLE001
         _remember_embedding_error(str(exc))
         return None

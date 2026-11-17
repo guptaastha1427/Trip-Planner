@@ -37,7 +37,7 @@ from eval.helpers.eval_report import write_pipeline_report  # noqa: E402
 ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
 
 
-def _timestamp_slug() -> str:
+def _timestamp_slug() -> str: 
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
@@ -49,12 +49,12 @@ def build_payload(
     refresh_reason: Optional[str] = None,
     baseline: bool = False,
 ) -> Dict[str, Any]:
-    terms = run_terms_rag_pipeline(dataset, thresholds=thresholds)
+    terms = run_terms_rag_pipeline(dataset, thresholds=thresholds) 
     rows = terms["rows"]
     payload: Dict[str, Any] = {
         "pipeline": "eval.run_pipeline",
         "phase": "baseline_assessment",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(), 
         "dataset": dataset,
         "datasets_dir": "eval/datasets",
         "thresholds": thresholds.to_dict(),
@@ -97,7 +97,7 @@ def write_artifact(
     return path
 
 
-def write_summary_csv(json_path: Path, payload: dict) -> Optional[Path]:
+def write_summary_csv(json_path: Path, payload: dict) -> Optional[Path]: 
     """Write a one-row CSV companion for spreadsheet / dashboard use."""
     import csv
 
@@ -130,7 +130,7 @@ def write_summary_csv(json_path: Path, payload: dict) -> Optional[Path]:
     return csv_path
 
 
-def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace: 
     p = argparse.ArgumentParser(description="Ragas + retrieval evaluation pipeline")
     p.add_argument(
         "--dataset",

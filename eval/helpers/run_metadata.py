@@ -47,7 +47,7 @@ def retrieval_profile() -> Dict[str, Any]:
     }
 
 
-def aggregate_evaluation_mode(case_rows: List[Dict[str, Any]]) -> str:
+def aggregate_evaluation_mode(case_rows: List[Dict[str, Any]]) -> str: #aggregates the evaluation mode.
     """
     Run-level mode for artifact header.
 
@@ -73,7 +73,7 @@ def aggregate_evaluation_mode(case_rows: List[Dict[str, Any]]) -> str:
     return "heuristic_offline"
 
 
-def artifact_lineage(
+def artifact_lineage( #artifact lineage.
     *,
     refresh_reason: Optional[str] = None,
     baseline: bool = False,

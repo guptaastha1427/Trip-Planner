@@ -10,7 +10,7 @@ from eval.helpers.io import load_jsonl
 from services.rag.website_rag import MIN_RELEVANCE_SCORE
 
 
-def sweep_min_relevance(
+def sweep_min_relevance( 
     thresholds: List[float] | None = None,
     dataset_name: str = "terms_rag_golden.jsonl",
 ) -> Dict[str, Any]:
@@ -31,3 +31,12 @@ def sweep_min_relevance(
             }
         )
     return {"experiment": "min_relevance_sweep", "rows": results}
+
+
+
+# for each threshold:
+#   run every golden case at that threshold
+#   aggregate Hit@3 (labeled only)
+#   aggregate escalation accuracy (all cases)
+#   mark which row is production default
+# return experiment payload

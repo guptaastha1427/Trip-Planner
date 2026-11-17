@@ -4,20 +4,24 @@ Test without unnecessary Gemini calls or wiping FAISS/user `data/`. FAISS is **i
 
 ## Layout
 
-| Pattern | How |
-|---------|-----|
-| A | `python -m tests.<module>` with `main()` |
-| B | `test_*` functions need **`pytest`** (not in `requirements.txt`) |
 
-| Module | Runner | Network | Touches `data/` |
-|--------|--------|---------|-----------------|
-| `test_validation` | `-m` | No | No |
-| `test_refund_eligibility` | `-m` | No | Reads `demo_bookings.json` |
-| `test_terms_rag` | pytest | HuggingFace MiniLM FAISS | No |
-| `test_rag_citations` | pytest | No | No |
-| `test_package_details` | pytest | No | No |
-| `test_info_markdown_view` | pytest | No | Reads `info.md` |
-| `test_map_tooltip` | `-m` | No | May read `app_state.json` |
+| Pattern | How                                                          |
+| ------- | ------------------------------------------------------------ |
+| A       | `python -m tests.<module>` with `main()`                     |
+| B       | `test_*` functions need `pytest` (not in `requirements.txt`) |
+
+
+
+| Module                    | Runner | Network                  | Touches `data/`            |
+| ------------------------- | ------ | ------------------------ | -------------------------- |
+| `test_validation`         | `-m`   | No                       | No                         |
+| `test_refund_eligibility` | `-m`   | No                       | Reads `demo_bookings.json` |
+| `test_terms_rag`          | pytest | HuggingFace MiniLM FAISS | No                         |
+| `test_rag_citations`      | pytest | No                       | No                         |
+| `test_package_details`    | pytest | No                       | No                         |
+| `test_info_markdown_view` | pytest | No                       | Reads `info.md`            |
+| `test_map_tooltip`        | `-m`   | No                       | May read `app_state.json`  |
+
 
 **Note:** `python -m tests.test_terms_rag` imports only — use pytest for tests.
 
@@ -32,18 +36,22 @@ pytest tests/ -q
 streamlit run app.py   # manual — needs .env; mutates data/
 ```
 
+
+
 ## Critical journeys (manual)
 
-| ID | Journey | RAG/Gemini |
-|----|---------|------------|
-| J-1 | Create itinerary | Gemini + OSM |
-| J-2–J-3 | Policy / support bot | FAISS + embed + Gemini |
-| J-4 | Terms page | Static corpus |
-| J-5 | Sign in | Local JSON |
-| J-6–J-7 | Refunds / Refund Assistant | Rules only |
-| J-8 | Admin | Portal JSON |
-| J-9 | URL scrape test | HTTP + optional URL FAISS |
-| J-10–J-11 | Export / trip history | `app_state.json` |
+
+| ID        | Journey                    | RAG/Gemini                |
+| --------- | -------------------------- | ------------------------- |
+| J-1       | Create itinerary           | Gemini + OSM              |
+| J-2–J-3   | Policy / support bot       | FAISS + embed + Gemini    |
+| J-4       | Terms page                 | Static corpus             |
+| J-5       | Sign in                    | Local JSON                |
+| J-6–J-7   | Refunds / Refund Assistant | Rules only                |
+| J-8       | Admin                      | Portal JSON               |
+| J-9       | URL scrape test            | HTTP + optional URL FAISS |
+| J-10–J-11 | Export / trip history      | `app_state.json`          |
+
 
 Default agent: `fast_mode=True`, Wikivoyage off.
 
@@ -70,16 +78,18 @@ Patch `get_gemini_api_key`, inject fake FAISS store (`test_terms_rag`). No HTTP 
 
 ## Regression matrix
 
-| Area | Auto | Manual |
-|------|------|--------|
-| Validation | `test_validation` | Single-day planner |
-| Refunds | `test_refund_eligibility` | Refund Assistant |
-| Terms RAG | pytest terms_rag | Policy question |
-| Citations | pytest rag_citations | Support bot cites |
-| Packages | pytest package_details | Book package |
-| Dev page | pytest info_markdown | `/dev` |
-| Map | test_map_tooltip | Map hover |
-| Full trip | — | Short J-1 |
+
+| Area       | Auto                      | Manual             |
+| ---------- | ------------------------- | ------------------ |
+| Validation | `test_validation`         | Single-day planner |
+| Refunds    | `test_refund_eligibility` | Refund Assistant   |
+| Terms RAG  | pytest terms_rag          | Policy question    |
+| Citations  | pytest rag_citations      | Support bot cites  |
+| Packages   | pytest package_details    | Book package       |
+| Dev page   | pytest info_markdown      | `/dev`             |
+| Map        | test_map_tooltip          | Map hover          |
+| Full trip  | —                         | Short J-1          |
+
 
 Preserve prompts, FAISS stack, and `data/` unless approved.
 

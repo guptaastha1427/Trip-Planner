@@ -318,3 +318,57 @@ flowchart TB
     RT -.->|"pytest test_regression_thresholds"| JSON
   end
 ```
+
+## Appendix — Auxiliary eval workflows (Support, Wikivoyage, Refund)
+
+Triggered by `python -m eval.run_pipeline --auxiliary`, `run_baseline.py`, or `pytest tests/eval/`.
+Bundled into the same artifact as Terms RAG when `--auxiliary` or `--refresh-baseline` is used.
+
+### 1. `support_faq_routing.jsonl` → `run_support_faq_eval()`
+
+**Runner:** `eval/runners/support_faq.py`
+
+| Step | What happens |
+|------|----------------|
+| 1 | Load row: `user_id`, `message`, `expected_route`, `expect_escalate` |
+| 2 | Patch `answer_from_terms_document` to count RAG calls and run real Terms RAG with eval FAISS (HuggingFace) |
+| 3 | Call production `answer_support_query(user_id, message)` (greeting, account, refund status, booking BK-…, or terms RAG) |
+| 4 | `_classify_route` on message + reply + RAG call count → `actual_route` (e.g. `terms_rag`, `booking_lookup`) |
+| 5 | Compare `actual_route` to `expected_route` (small relaxations for `terms_rag` / `no_match_or_loose`) |
+| 6 | Escalation: for most routes, `escalate` must match `expect_escalate`; greeting/empty/booking/refund_status → routing only |
+| 7 | Aggregate: `routing_accuracy`, `pass_rate` |
+
+**Pass** = correct branch (+ escalation when required). Does **not** grade answer text quality.
+
+### 2. `wikivoyage_golden.jsonl` → `run_wikivoyage_eval()`
+
+**Runner:** `eval/runners/wikivoyage.py` · Default mode: **`mocked_wikivoyage_html`** (no real HTTP).
+
+| Step | What happens |
+|------|----------------|
+| 1 | Load row: `destination`, `query`, `expected_keywords`, `min_chunks`, `expect_ok`, … |
+| 2 | Clear `_RAG_CACHE` |
+| 3 | Patch `_fetch_wikivoyage_article` → fake HTML for that city (or `None` for bad titles) |
+| 4 | `retrieve_guides(..., enabled=True)` → TF-IDF build/search → chunks + scores |
+| 5 | `retrieve_guides(..., enabled=False)` → must return **no chunks** |
+| 6 | Check: `ok`, chunk count ≥ `min_chunks`, keywords appear in chunk text (or destination) |
+| 7 | Aggregate: `pass_rate`, `mode: mocked_wikivoyage_html` |
+
+Optional: `EVAL_LIVE=1` + `live_network=True` → real API; logs `ok` + chunk count only.
+
+**Pass** = retrieval behaves when RAG is on and off; optional keyword/chunk checks.
+
+### 3. `refund_decision_table.jsonl` → `run_refund_rules_eval()`
+
+**Runner:** `eval/runners/refund_rules.py` · **No RAG, no LLM.**
+
+| Step | What happens |
+|------|----------------|
+| 1 | Load row: `booking_id`, `user_id`, `now`, `account_status`, `reason`, `expected_eligibility`, optional refund bounds |
+| 2 | `get_booking(booking_id)` from demo portal data |
+| 3 | If missing → pass only if case expects `missing_booking` error |
+| 4 | `evaluate_refund_request(...)` — pure rules (policy, timing, fees) |
+| 5 | Compare `ev.eligibility` to `expected_eligibility`; optional min/max `estimated_refund` |
+| 6 | Aggregate: `pass_rate` |
+
+**Pass** = rule engine output matches the golden row.
